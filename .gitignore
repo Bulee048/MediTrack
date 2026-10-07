@@ -1,7 +1,38 @@
-node_modules
-dist
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Build outputs
+dist/
+build/
+**/dist/
+**/build/
+*.tsbuildinfo
+
+# Environment & secret files
 .env
 .env.local
+.env.development
+.env.production
+.env.*
 client/.env
+client/.env.local
+client/.env.*
 server/.env
+server/.env.local
+server/.env.*
+app/.env
+app/.env.local
+app/.env.development
+app/.env.production
+app/*/.env
+app/*/.env.*
+
+# Logs & OS metadata
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 .DS_Store
+Thumbs.db
+.vscode/
