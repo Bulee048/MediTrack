@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { env } from '../config/env.js';
+import authRoutes from './auth.routes.js';
 
 const router = Router();
 
@@ -15,5 +16,8 @@ router.get('/health', (_req: Request, res: Response) => {
     },
   });
 });
+
+// Authentication routes
+router.use('/auth', authRoutes);
 
 export default router;

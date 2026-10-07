@@ -83,7 +83,4 @@ const userSchema = new Schema<IUser>(
   }
 );
 
-userSchema.index({ phone: 1 });
-userSchema.index({ email: 1 }, { sparse: true, unique: true });
-
 export const User = model<IUser>('User', userSchema);
