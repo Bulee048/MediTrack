@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { QueueApiService, type QueueTicketData } from '@/services/queueApi';
 import { QueueStatusProgress } from './components/QueueStatusProgress';
 import { getAuthErrorStatus, useAuthSession } from '@/config/api';
+import { Link, useLocation } from 'react-router-dom';
 
 type QueueStatus = QueueTicketData['status'];
 
@@ -32,6 +33,7 @@ function formatTime(value: string | undefined) {
 }
 
 export function PatientLiveQueue({ onCheckInClick }: PatientLiveQueueProps) {
+  const location = useLocation();
   const authSession = useAuthSession();
   const { data: ticket, isLoading, isFetching, error, refetch } = useQuery<QueueTicketData | null>({
     queryKey: ['myActiveQueueTicket', authSession],
@@ -73,10 +75,12 @@ export function PatientLiveQueue({ onCheckInClick }: PatientLiveQueueProps) {
           <XCircle aria-hidden="true" className="mx-auto h-9 w-9 text-rose-700" />
           <h2 className="mt-4 text-lg font-bold">{authError === 401 ? 'Sign in to view your queue' : authError === 403 ? 'Queue access unavailable' : 'Unable to load your queue'}</h2>
           <p className="mt-2 text-sm leading-relaxed text-slate-600">{authError === 401 ? 'Your session is missing or has expired. Please sign in, then try again.' : authError === 403 ? 'This page is available to patient accounts.' : 'Please check your connection and try again.'}</p>
-          <Button onClick={() => void refetch()} disabled={isFetching} aria-label="Retry loading queue status"
+          {authError === 401 ? (
+            <Link to="/login" state={{ from: location.pathname }} className="mt-5 inline-flex items-center justify-center rounded-xl bg-teal-700 px-4 py-2 text-sm font-medium text-white hover:bg-teal-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-700 focus-visible:ring-offset-2">Sign in</Link>
+          ) : <Button onClick={() => void refetch()} disabled={isFetching} aria-label="Retry loading queue status"
             className="mt-5 rounded-xl bg-teal-700 text-white hover:bg-teal-800 focus-visible:ring-teal-700">
             <RefreshCw aria-hidden="true" className="mr-2 h-4 w-4" /> Try again
-          </Button>
+          </Button>}
         </section>
       ) : !ticket ? (
         <section className={`${cardStyle} px-5 py-8 text-center`}>

@@ -4,6 +4,7 @@ import { Bell, CalendarDays, CheckCircle2, Clock3, AlertCircle, Info, CheckCheck
 import { Button } from '@/components/ui/button';
 import { NotificationApiService, type NotificationData } from '@/services/notificationApi';
 import { getAuthErrorStatus, useAuthSession } from '@/config/api';
+import { Link, useLocation } from 'react-router-dom';
 
 type Filter = 'all' | 'queue' | 'appointment' | 'system';
 const filters: { value: Filter; label: string }[] = [
@@ -39,6 +40,7 @@ export function notificationTime(createdAt: string, now: number): string {
 }
 
 export function NotificationsList() {
+  const location = useLocation();
   const authSession = useAuthSession();
   const queryKey = ['myNotifications', authSession];
   const queryClient = useQueryClient();
@@ -107,8 +109,10 @@ export function NotificationsList() {
           <AlertCircle aria-hidden="true" className="mx-auto h-8 w-8 text-rose-700" />
           <h2 className="mt-3 text-base font-bold">{authError === 401 ? 'Sign in to view notifications' : authError === 403 ? 'Notification access unavailable' : 'Unable to load notifications'}</h2>
           <p className="mt-2 text-sm leading-relaxed text-slate-600">{authError === 401 ? 'Your session is missing or has expired. Please sign in, then try again.' : authError === 403 ? 'This page is available to patient accounts.' : notifications.length ? 'Your last notifications are shown below. Please try refreshing.' : 'Please check your connection and try again.'}</p>
-          <Button variant="outline" disabled={isFetching} aria-label="Retry loading notifications" onClick={() => void refetch()}
-            className="mt-4 min-h-11 rounded-xl text-teal-700 focus-visible:ring-teal-700">{isFetching ? 'Retrying…' : 'Try again'}</Button>
+          {authError === 401 ? (
+            <Link to="/login" state={{ from: location.pathname }} className="mt-4 inline-flex min-h-11 items-center justify-center rounded-xl bg-teal-700 px-4 py-2 text-sm font-medium text-white hover:bg-teal-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-700 focus-visible:ring-offset-2">Sign in</Link>
+          ) : <Button variant="outline" disabled={isFetching} aria-label="Retry loading notifications" onClick={() => void refetch()}
+            className="mt-4 min-h-11 rounded-xl text-teal-700 focus-visible:ring-teal-700">{isFetching ? 'Retrying…' : 'Try again'}</Button>}
         </section>
       )}
       {isLoading ? (
