@@ -4,6 +4,8 @@ import authRoutes from './auth.routes.js';
 import departmentRoutes from './department.routes.js';
 import doctorRoutes from './doctor.routes.js';
 import appointmentRoutes from './appointment.routes.js';
+import queueRoutes from './queue.routes.js';
+import notificationRoutes from './notification.routes.js';
 
 const router = Router();
 
@@ -25,5 +27,8 @@ router.use('/auth', authRoutes);
 router.use('/departments', departmentRoutes);
 router.use('/doctors', doctorRoutes);
 router.use('/appointments', appointmentRoutes);
+router.use('/queue', queueRoutes);
+router.use('/notifications', notificationRoutes);
 
 export default router;
+

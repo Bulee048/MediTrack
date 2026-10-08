@@ -73,5 +73,16 @@ const notificationSchema = new Schema<INotification>(
 );
 
 notificationSchema.index({ user: 1, isRead: 1, createdAt: -1 });
+notificationSchema.index(
+  { user: 1, queueTicket: 1, category: 1 },
+  {
+    name: 'unique_queue_turn_notification',
+    unique: true,
+    partialFilterExpression: {
+      queueTicket: { $type: 'objectId' },
+      category: { $in: ['ALMOST_TURN', 'YOUR_TURN'] },
+    },
+  }
+);
 
 export const Notification = model<INotification>('Notification', notificationSchema);
