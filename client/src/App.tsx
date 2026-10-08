@@ -4,6 +4,8 @@ import { Toaster } from '@/components/ui/sonner';
 import { Activity, Hospital, UserCheck, Clock } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { PatientLiveQueue } from '@/features/queue/PatientLiveQueue';
+import { NotificationsList } from '@/features/notifications/NotificationsList';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -86,6 +88,8 @@ export default function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/queue" element={<main className="min-h-screen bg-slate-50 p-6"><PatientLiveQueue /></main>} />
+          <Route path="/notifications" element={<main className="min-h-screen bg-slate-50 p-6"><NotificationsList /></main>} />
         </Routes>
       </BrowserRouter>
       <Toaster />

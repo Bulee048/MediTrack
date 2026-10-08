@@ -76,8 +76,19 @@ export function PatientLiveQueue({ onCheckInClick }: PatientLiveQueueProps) {
     );
   }
 
-  const isYourTurn = ticket.status === 'IN_CONSULTATION' || ticket.status === 'CALLING' || ticket.patientsAhead === 0;
-  const isAlmostTurn = ticket.status === 'ALMOST_TURN' || (ticket.patientsAhead > 0 && ticket.patientsAhead <= 2);
+  const isWaiting = ticket.status === 'WAITING' || ticket.status === 'ALMOST_TURN';
+  const isYourTurn = ticket.status === 'CALLING';
+  const isAlmostTurn = ticket.status === 'ALMOST_TURN';
+  const statusNotice = {
+    IN_CONSULTATION: ['Consultation in progress', 'Your consultation has started.'],
+    HELD: ['Queue ticket on hold', 'Your ticket is on hold. Please wait for staff instructions.'],
+    SKIPPED: ['Queue ticket skipped', 'Your ticket was skipped. Please contact the reception counter.'],
+    COMPLETED: ['Consultation completed', 'Your consultation is complete.'],
+    CANCELLED: ['Queue ticket cancelled', 'Your ticket has been cancelled.'],
+  };
+  const notice = ticket.status in statusNotice
+    ? statusNotice[ticket.status as keyof typeof statusNotice]
+    : undefined;
 
   return (
     <div className="space-y-6 max-w-md mx-auto">
@@ -104,6 +115,13 @@ export function PatientLiveQueue({ onCheckInClick }: PatientLiveQueueProps) {
               Please proceed immediately to {ticket.doctor.roomNumber || 'the consultation room'}.
             </p>
           </div>
+        </div>
+      )}
+
+      {notice && (
+        <div className="p-4 rounded-xl border border-slate-200 bg-slate-50 text-slate-900">
+          <h4 className="font-bold text-sm">{notice[0]}</h4>
+          <p className="text-xs text-slate-600 mt-0.5">{notice[1]}</p>
         </div>
       )}
 
@@ -146,7 +164,7 @@ export function PatientLiveQueue({ onCheckInClick }: PatientLiveQueueProps) {
             <div className="p-2 rounded-lg bg-slate-50 border border-slate-100">
               <span className="text-[11px] font-medium text-slate-500 block">Current Position</span>
               <span className="text-lg font-bold text-slate-900 mt-0.5 block">
-                {ticket.currentPosition}
+                {isWaiting ? ticket.currentPosition : '—'}
               </span>
             </div>
 
@@ -162,16 +180,16 @@ export function PatientLiveQueue({ onCheckInClick }: PatientLiveQueueProps) {
             <div className="p-2 rounded-lg bg-amber-50 border border-amber-100">
               <span className="text-[11px] font-medium text-amber-700 block">Est. Wait</span>
               <span className="text-lg font-bold text-amber-800 mt-0.5 block">
-                ~{ticket.estimatedWaitMins}m
+                {isWaiting ? `~${ticket.estimatedWaitMins}m` : '—'}
               </span>
             </div>
           </div>
 
           {/* Patients ahead notice */}
-          <div className="flex items-center justify-center gap-1.5 text-xs text-slate-600 font-medium pt-1">
+          {isWaiting && <div className="flex items-center justify-center gap-1.5 text-xs text-slate-600 font-medium pt-1">
             <Users className="h-4 w-4 text-slate-400" />
             <span>{ticket.patientsAhead} patient{ticket.patientsAhead === 1 ? '' : 's'} ahead of you</span>
-          </div>
+          </div>}
 
           {/* Badges */}
           <div className="flex flex-wrap justify-center gap-2 pt-2">
@@ -182,7 +200,7 @@ export function PatientLiveQueue({ onCheckInClick }: PatientLiveQueueProps) {
                 ? 'bg-amber-500 text-white'
                 : 'bg-blue-600 text-white'
             }>
-              {ticket.status.replace('_', ' ')}
+              {ticket.status.replaceAll('_', ' ')}
             </Badge>
             <Badge variant="outline" className="text-slate-600 border-slate-200">
               Checked in {new Date(ticket.checkedInAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}

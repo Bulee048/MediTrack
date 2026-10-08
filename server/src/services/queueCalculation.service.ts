@@ -2,15 +2,23 @@ import { QueueCounter } from '../models/QueueCounter.js';
 import { QueueTicket, IQueueTicket, QueueTicketStatus } from '../models/QueueTicket.js';
 
 export interface LiveQueueCalculationResult {
-  currentPosition: number; // Patients ahead + 1
-  patientsAhead: number;   // Patients strictly ahead in WAITING status
+  currentPosition: number; // Patients ahead + 1 for waiting tickets; otherwise 0
+  patientsAhead: number;   // Patients strictly ahead in active waiting states
   nowServingTicket: string | null;
   nowServingStatus: QueueTicketStatus | null;
-  estimatedWaitMins: number; // Position * 6 mins
+  estimatedWaitMins: number; // Patients ahead * 6 mins
   status: QueueTicketStatus;
 }
 
 export class QueueCalculationService {
+  static getQueueDayRange(date: Date = new Date()) {
+    const start = new Date(date);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(start);
+    end.setDate(end.getDate() + 1);
+    return { $gte: start, $lt: end };
+  }
+
   /**
    * Generates atomic next sequence number for a department on a given date string (YYYY-MM-DD)
    */
@@ -47,31 +55,34 @@ export class QueueCalculationService {
       };
     }
 
-    // Find currently active ticket being served for this doctor/department
-    const nowServing = await QueueTicket.findOne({
+    const context = {
       doctor: ticket.doctor,
-      status: { $in: ['CALLING', 'IN_CONSULTATION'] },
-    }).sort({ updatedAt: -1 });
+      department: ticket.department,
+      createdAt: this.getQueueDayRange(ticket.createdAt ?? ticket.checkedInAt ?? new Date()),
+    };
+
+    // Prefer a calling ticket, even when a consultation was updated more recently.
+    const nowServing = await QueueTicket.findOne({ ...context, status: 'CALLING' })
+      .sort({ updatedAt: -1 })
+      ?? await QueueTicket.findOne({ ...context, status: 'IN_CONSULTATION' })
+        .sort({ updatedAt: -1 });
+
+    const isWaiting = ticket.status === 'WAITING' || ticket.status === 'ALMOST_TURN';
 
     // Count tickets strictly ahead in queue that are active (WAITING / ALMOST_TURN)
-    const activeAheadCount = await QueueTicket.countDocuments({
-      doctor: ticket.doctor,
+    const activeAheadCount = isWaiting ? await QueueTicket.countDocuments({
+      ...context,
       status: { $in: ['WAITING', 'ALMOST_TURN'] },
       sequenceNumber: { $lt: ticket.sequenceNumber },
-      createdAt: {
-        $gte: new Date(new Date().setHours(0, 0, 0, 0)),
-      },
-    });
+    }) : 0;
 
-    let currentPosition = activeAheadCount + 1;
+    const currentPosition = isWaiting ? activeAheadCount + 1 : 0;
     let computedStatus = ticket.status;
 
-    if (ticket.status === 'WAITING' || ticket.status === 'ALMOST_TURN') {
-      if (currentPosition <= 2 && currentPosition > 0) {
-        computedStatus = 'ALMOST_TURN';
-      } else {
-        computedStatus = 'WAITING';
-      }
+    if (ticket.status === 'WAITING' && currentPosition <= 2) {
+      computedStatus = 'ALMOST_TURN';
+    } else if (ticket.status === 'ALMOST_TURN' && currentPosition > 2) {
+      computedStatus = 'WAITING';
     }
 
     const estimatedWaitMins = activeAheadCount * 6; // 6 mins per patient estimate
