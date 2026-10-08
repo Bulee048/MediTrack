@@ -1,238 +1,192 @@
-import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { RefreshCw, Clock, Users, Hospital, QrCode, AlertCircle, CheckCircle2 } from 'lucide-react';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { Bell, CheckCircle2, Clock, Hospital, Pause, RefreshCw, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { QueueApiService, type QueueTicketData } from '@/services/queueApi';
+import { QueueStatusProgress } from './components/QueueStatusProgress';
+import { getAuthErrorStatus, useAuthSession } from '@/config/api';
+
+type QueueStatus = QueueTicketData['status'];
 
 interface PatientLiveQueueProps {
+  // Supplied only by a parent with a real appointment/check-in context.
   onCheckInClick?: () => void;
 }
 
-export function PatientLiveQueue({ onCheckInClick }: PatientLiveQueueProps) {
-  const [showQr, setShowQr] = useState(false);
+const cardStyle = 'min-w-0 rounded-2xl border border-slate-200 bg-white shadow-[0_1px_2px_rgba(16,26,46,0.04),0_8px_24px_-12px_rgba(16,26,46,0.12)]';
+const labelStyle = 'text-xs font-semibold uppercase tracking-wide text-slate-600';
+const statusLabels: Record<QueueStatus, string> = {
+  WAITING: 'Waiting',
+  ALMOST_TURN: 'Almost your turn',
+  CALLING: "It's Your Turn!",
+  IN_CONSULTATION: 'Consultation in progress',
+  HELD: 'Queue ticket on hold',
+  SKIPPED: 'Queue ticket skipped',
+  COMPLETED: 'Consultation completed',
+  CANCELLED: 'Queue ticket cancelled',
+};
 
-  // Poll GET /api/queue/me every 15 seconds using TanStack Query
-  const {
-    data: ticket,
-    isLoading,
-    isFetching,
-    error,
-    refetch,
-  } = useQuery<QueueTicketData | null>({
-    queryKey: ['myActiveQueueTicket'],
+function formatTime(value: string | undefined) {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+export function PatientLiveQueue({ onCheckInClick }: PatientLiveQueueProps) {
+  const authSession = useAuthSession();
+  const { data: ticket, isLoading, isFetching, error, refetch } = useQuery<QueueTicketData | null>({
+    queryKey: ['myActiveQueueTicket', authSession],
     queryFn: QueueApiService.getMyActiveTicket,
-    refetchInterval: 15000, // 15 seconds live polling
+    refetchInterval: 15000,
     staleTime: 10000,
   });
 
-  if (isLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center p-12 space-y-4 text-center">
-        <RefreshCw className="h-8 w-8 text-blue-600 animate-spin" />
-        <p className="text-slate-600 font-medium">Loading your queue status...</p>
-      </div>
-    );
-  }
+  const isWaiting = ticket?.status === 'WAITING' || ticket?.status === 'ALMOST_TURN';
+  const authError = getAuthErrorStatus(error);
+  const room = ticket?.doctor?.roomNumber || ticket?.department?.roomNumber;
+  const checkedIn = formatTime(ticket?.checkedInAt);
+  const updated = formatTime(ticket?.lastUpdated);
 
-  if (error) {
-    return (
-      <Card className="border-red-200 bg-red-50/50">
-        <CardContent className="pt-6 text-center space-y-4">
-          <AlertCircle className="h-10 w-10 text-red-500 mx-auto" />
-          <div>
-            <h3 className="text-lg font-semibold text-red-900">Failed to load queue ticket</h3>
-            <p className="text-sm text-red-700 mt-1">{(error as Error).message || 'Please check your connection and try again.'}</p>
-          </div>
-          <Button variant="outline" onClick={() => refetch()} className="border-red-300 text-red-800 hover:bg-red-100">
-            <RefreshCw className="h-4 w-4 mr-2" /> Retry
+  return (
+    <div className="mx-auto w-full min-w-0 max-w-md space-y-4 text-slate-900">
+      <header className="flex min-w-0 items-center justify-between gap-3 pb-1">
+        <h1 className="min-w-0 text-xl font-extrabold tracking-tight">Live OPD Ticket</h1>
+        <Button
+          variant="outline"
+          size="icon"
+          aria-label="Refresh queue status"
+          disabled={isFetching}
+          onClick={() => void refetch()}
+          className="shrink-0 rounded-xl border-slate-200 bg-white text-teal-700 hover:bg-teal-50 focus-visible:ring-teal-700"
+        >
+          <RefreshCw aria-hidden="true" className={`h-4 w-4 ${isFetching ? 'motion-safe:animate-spin' : ''}`} />
+        </Button>
+      </header>
+
+      {isLoading ? (
+        <section className={`${cardStyle} px-5 py-10 text-center`} role="status" aria-live="polite" aria-busy="true">
+          <Clock aria-hidden="true" className="mx-auto h-9 w-9 text-teal-700" />
+          <h2 className="mt-4 text-lg font-bold">Loading your queue</h2>
+          <p className="mt-2 text-sm text-slate-600">Getting the latest information for your ticket.</p>
+        </section>
+      ) : error && (!ticket || authError) ? (
+        <section className={`${cardStyle} border-rose-200 px-5 py-8 text-center`} role="alert">
+          <XCircle aria-hidden="true" className="mx-auto h-9 w-9 text-rose-700" />
+          <h2 className="mt-4 text-lg font-bold">{authError === 401 ? 'Sign in to view your queue' : authError === 403 ? 'Queue access unavailable' : 'Unable to load your queue'}</h2>
+          <p className="mt-2 text-sm leading-relaxed text-slate-600">{authError === 401 ? 'Your session is missing or has expired. Please sign in, then try again.' : authError === 403 ? 'This page is available to patient accounts.' : 'Please check your connection and try again.'}</p>
+          <Button onClick={() => void refetch()} disabled={isFetching} aria-label="Retry loading queue status"
+            className="mt-5 rounded-xl bg-teal-700 text-white hover:bg-teal-800 focus-visible:ring-teal-700">
+            <RefreshCw aria-hidden="true" className="mr-2 h-4 w-4" /> Try again
           </Button>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (!ticket) {
-    return (
-      <Card className="border-slate-200 shadow-sm text-center p-8">
-        <CardContent className="space-y-4 pt-4">
-          <div className="p-4 bg-blue-50 text-blue-600 rounded-full w-16 h-16 mx-auto flex items-center justify-center">
-            <Hospital className="h-8 w-8" />
-          </div>
-          <div>
-            <h3 className="text-xl font-bold text-slate-900">You are not in a queue yet</h3>
-            <p className="text-slate-600 text-sm mt-1 max-w-md mx-auto">
-              Check in to your appointment to receive a digital queue token and live wait-time updates.
-            </p>
-          </div>
+        </section>
+      ) : !ticket ? (
+        <section className={`${cardStyle} px-5 py-8 text-center`}>
+          <span className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-teal-50 text-teal-700">
+            <Hospital aria-hidden="true" className="h-7 w-7" />
+          </span>
+          <h2 className="mt-5 text-lg font-extrabold">You are not in a queue yet</h2>
+          <p className="mt-2 text-sm leading-relaxed text-slate-600">
+            Check in to your appointment to receive your queue ticket and waiting-time updates.
+          </p>
           {onCheckInClick && (
-            <Button onClick={onCheckInClick} className="bg-blue-600 hover:bg-blue-700">
+            <Button onClick={onCheckInClick} className="mt-5 h-auto w-full whitespace-normal rounded-xl bg-teal-700 px-4 py-3 text-white hover:bg-teal-800 focus-visible:ring-teal-700">
               Check in to my appointment
             </Button>
           )}
-        </CardContent>
-      </Card>
-    );
-  }
-
-  const isWaiting = ticket.status === 'WAITING' || ticket.status === 'ALMOST_TURN';
-  const isYourTurn = ticket.status === 'CALLING';
-  const isAlmostTurn = ticket.status === 'ALMOST_TURN';
-  const statusNotice = {
-    IN_CONSULTATION: ['Consultation in progress', 'Your consultation has started.'],
-    HELD: ['Queue ticket on hold', 'Your ticket is on hold. Please wait for staff instructions.'],
-    SKIPPED: ['Queue ticket skipped', 'Your ticket was skipped. Please contact the reception counter.'],
-    COMPLETED: ['Consultation completed', 'Your consultation is complete.'],
-    CANCELLED: ['Queue ticket cancelled', 'Your ticket has been cancelled.'],
-  };
-  const notice = ticket.status in statusNotice
-    ? statusNotice[ticket.status as keyof typeof statusNotice]
-    : undefined;
-
-  return (
-    <div className="space-y-6 max-w-md mx-auto">
-      {/* Almost your turn banner */}
-      {isAlmostTurn && !isYourTurn && (
-        <div className="p-4 rounded-xl border border-amber-300 bg-amber-50 text-amber-900 flex items-start gap-3 shadow-sm animate-pulse">
-          <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5 shrink-0" />
-          <div>
-            <h4 className="font-bold text-sm">Almost Your Turn!</h4>
-            <p className="text-xs text-amber-800 mt-0.5">
-              You have only {ticket.patientsAhead} patient{ticket.patientsAhead === 1 ? '' : 's'} ahead. Please start moving towards {ticket.doctor.roomNumber || 'the OPD room'}.
+        </section>
+      ) : (
+        <>
+          {error && (
+            <p role="alert" className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+              Updates are temporarily unavailable. Your last queue information is shown; use Refresh to try again.
             </p>
-          </div>
-        </div>
-      )}
-
-      {/* Your turn banner */}
-      {isYourTurn && (
-        <div className="p-4 rounded-xl border border-emerald-300 bg-emerald-50 text-emerald-900 flex items-start gap-3 shadow-sm">
-          <CheckCircle2 className="h-5 w-5 text-emerald-600 mt-0.5 shrink-0" />
-          <div>
-            <h4 className="font-bold text-sm">It's Your Turn!</h4>
-            <p className="text-xs text-emerald-800 mt-0.5">
-              Please proceed immediately to {ticket.doctor.roomNumber || 'the consultation room'}.
-            </p>
-          </div>
-        </div>
-      )}
-
-      {notice && (
-        <div className="p-4 rounded-xl border border-slate-200 bg-slate-50 text-slate-900">
-          <h4 className="font-bold text-sm">{notice[0]}</h4>
-          <p className="text-xs text-slate-600 mt-0.5">{notice[1]}</p>
-        </div>
-      )}
-
-      {/* Main Ticket Card */}
-      <Card className="border-slate-200 shadow-md overflow-hidden bg-white">
-        <CardHeader className="text-center pb-2 bg-slate-50 border-b flex flex-row items-center justify-between">
-          <div className="text-left">
-            <CardTitle className="text-base font-bold text-slate-900">{ticket.department.name}</CardTitle>
-            <CardDescription className="text-xs text-slate-500">
-              {ticket.doctor.name} · Room {ticket.doctor.roomNumber || ticket.department.roomNumber}
-            </CardDescription>
-          </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => refetch()}
-            className="text-slate-500 hover:text-blue-600"
-            title="Refresh Queue"
-          >
-            <RefreshCw className={`h-4 w-4 ${isFetching ? 'animate-spin text-blue-600' : ''}`} />
-          </Button>
-        </CardHeader>
-
-        <CardContent className="pt-6 space-y-6 text-center">
-          {/* QUEUE NUMBER DISPLAY */}
-          <div>
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">Queue Number</span>
-            <div className="relative mx-auto mt-3 h-32 w-32 flex items-center justify-center">
-              <span className="absolute inset-0 rounded-full border-4 border-blue-600" />
-              <span className="absolute inset-0 rounded-full border-4 border-blue-400/30 animate-ping" />
-              <span className="text-3xl font-extrabold tracking-tight text-blue-700">
-                {ticket.ticketNumber}
-              </span>
-            </div>
-          </div>
-
-          {/* DISTINCT METRICS GRID: Now Serving, Position, Est Wait */}
-          <div className="grid grid-cols-3 gap-2 pt-4 border-t border-slate-100 text-center">
-            {/* CURRENT POSITION */}
-            <div className="p-2 rounded-lg bg-slate-50 border border-slate-100">
-              <span className="text-[11px] font-medium text-slate-500 block">Current Position</span>
-              <span className="text-lg font-bold text-slate-900 mt-0.5 block">
-                {isWaiting ? ticket.currentPosition : '—'}
-              </span>
-            </div>
-
-            {/* NOW SERVING */}
-            <div className="p-2 rounded-lg bg-blue-50 border border-blue-100">
-              <span className="text-[11px] font-medium text-blue-700 block">Now Serving</span>
-              <span className="text-lg font-bold text-blue-800 mt-0.5 block">
-                {ticket.nowServing || '—'}
-              </span>
-            </div>
-
-            {/* ESTIMATED WAIT */}
-            <div className="p-2 rounded-lg bg-amber-50 border border-amber-100">
-              <span className="text-[11px] font-medium text-amber-700 block">Est. Wait</span>
-              <span className="text-lg font-bold text-amber-800 mt-0.5 block">
-                {isWaiting ? `~${ticket.estimatedWaitMins}m` : '—'}
-              </span>
-            </div>
-          </div>
-
-          {/* Patients ahead notice */}
-          {isWaiting && <div className="flex items-center justify-center gap-1.5 text-xs text-slate-600 font-medium pt-1">
-            <Users className="h-4 w-4 text-slate-400" />
-            <span>{ticket.patientsAhead} patient{ticket.patientsAhead === 1 ? '' : 's'} ahead of you</span>
-          </div>}
-
-          {/* Badges */}
-          <div className="flex flex-wrap justify-center gap-2 pt-2">
-            <Badge className={
-              isYourTurn
-                ? 'bg-emerald-600 text-white'
-                : isAlmostTurn
-                ? 'bg-amber-500 text-white'
-                : 'bg-blue-600 text-white'
-            }>
-              {ticket.status.replaceAll('_', ' ')}
-            </Badge>
-            <Badge variant="outline" className="text-slate-600 border-slate-200">
-              Checked in {new Date(ticket.checkedInAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-            </Badge>
-          </div>
-        </CardContent>
-
-        {/* QR Code Section */}
-        <div className="p-4 bg-slate-50 border-t border-slate-100 text-center space-y-3">
-          <p className="text-xs text-slate-600">
-            Show your digital QR code at the reception counter upon request.
-          </p>
-          {showQr ? (
-            <div className="p-4 bg-white rounded-lg border border-dashed border-slate-300 inline-block">
-              <QrCode className="h-24 w-24 text-slate-800 mx-auto" />
-            </div>
-          ) : (
-            <Button variant="outline" size="sm" onClick={() => setShowQr(true)} className="text-xs">
-              <QrCode className="h-3.5 w-3.5 mr-1.5" /> Show Check-In QR
-            </Button>
           )}
-        </div>
+          <section className={`${cardStyle} px-5 py-6 sm:px-6`} aria-labelledby="queue-number-label">
+            <div className="text-center">
+              <h2 id="queue-number-label" className={labelStyle}>Your queue number</h2>
+              <div className="relative mx-auto mt-4 grid min-h-40 w-40 place-items-center rounded-full border-[6px] border-teal-700 bg-teal-50/40 p-2 ring-4 ring-teal-100/60">
+                <p className="max-w-full break-all text-[28px] font-extrabold leading-tight tracking-tight text-teal-700">
+                  {ticket.ticketNumber}
+                </p>
+              </div>
+              <p className="mt-5 break-words text-lg font-extrabold tracking-tight">
+                {ticket.department?.name || 'OPD'}{room ? ` — Room ${room}` : ''}
+              </p>
+              {ticket.doctor?.name && <p className="mt-1 break-words text-sm text-slate-600">{ticket.doctor.name}</p>}
+            </div>
 
-        {/* Polling status footer */}
-        <div className="px-4 py-2 bg-slate-100 border-t flex items-center justify-between text-[11px] text-slate-500">
-          <span className="flex items-center gap-1.5">
-            <Clock className="h-3 w-3" />
-            Live polling every 15s
-          </span>
-          <span>Updated {new Date(ticket.lastUpdated).toLocaleTimeString()}</span>
-        </div>
-      </Card>
+            <dl className="mt-6">
+              <div className="flex min-w-0 items-center justify-between gap-4 rounded-xl border border-teal-200 bg-teal-50 px-4 py-4">
+                <dt className="text-sm font-bold text-teal-900">Current position</dt>
+                <dd className="shrink-0 text-2xl font-extrabold leading-none text-teal-800">
+                  {isWaiting ? ticket.currentPosition : <span className="text-sm font-semibold">Not waiting</span>}
+                </dd>
+              </div>
+              <div className="mt-5 grid grid-cols-2 gap-4 border-b border-slate-200 pb-5">
+                <div className="min-w-0">
+                  <dt className={labelStyle}>Now serving</dt>
+                  <dd className="mt-1 break-all text-xl font-extrabold text-teal-700">{ticket.nowServing || '—'}</dd>
+                </div>
+                <div className="min-w-0 text-right">
+                  <dt className={labelStyle}>Estimated wait</dt>
+                  <dd className="mt-1 break-words text-xl font-extrabold text-rose-700">
+                    {isWaiting ? `~${ticket.estimatedWaitMins} mins` : '—'}
+                  </dd>
+                </div>
+              </div>
+            </dl>
+            <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-xs font-semibold">
+              <span className="rounded-full bg-teal-50 px-3 py-1.5 text-teal-800">{statusLabels[ticket.status]}</span>
+              {checkedIn && <span className="rounded-full bg-slate-100 px-3 py-1.5 text-slate-700">Checked in {checkedIn}</span>}
+            </div>
+          </section>
+
+          <QueueStatusCard status={ticket.status} room={room} position={ticket.currentPosition} />
+          <QueueStatusProgress status={ticket.status} />
+
+          {isWaiting && (
+            <aside className="rounded-2xl border border-teal-200 bg-teal-50/60 p-5 text-center">
+              <h2 className="text-sm font-extrabold text-teal-900">Hospital counter check-in</h2>
+              <p className="mt-2 text-sm leading-relaxed text-teal-900">Keep this ticket handy. Show your queue number at reception if requested.</p>
+            </aside>
+          )}
+          {updated && <p className="pb-2 text-center text-xs text-slate-600">Last updated {updated}</p>}
+        </>
+      )}
     </div>
+  );
+}
+
+function QueueStatusCard({ status, room, position }: { status: QueueStatus; room?: string; position: number }) {
+  const calling = status === 'CALLING';
+  const almost = status === 'ALMOST_TURN';
+  const exceptional = ['HELD', 'SKIPPED', 'CANCELLED'].includes(status);
+  const Icon = calling || status === 'COMPLETED' ? CheckCircle2 : almost ? Bell : exceptional ? Pause : Clock;
+  const description: Record<QueueStatus, string> = {
+    WAITING: position === 1 ? 'You are at the front of the waiting queue. Please wait until your ticket is called.' : 'Please wait for your ticket to be called. Your position updates as the queue moves.',
+    ALMOST_TURN: `Please be ready near ${room ? `Room ${room}` : 'the OPD room'}. Wait for your ticket to be called before entering.`,
+    CALLING: `Please proceed now to ${room ? `Room ${room}` : 'the consultation room'}.`,
+    IN_CONSULTATION: 'Your consultation has started. You are no longer in the waiting queue.',
+    HELD: 'Your ticket is on hold. Please contact reception for guidance.',
+    SKIPPED: 'Your ticket has been skipped. Please speak to reception about the next steps.',
+    COMPLETED: 'Your consultation is complete. You are no longer in the queue.',
+    CANCELLED: 'This queue ticket has been cancelled. Please contact reception if you need help.',
+  };
+  return (
+    <section
+      role="status"
+      aria-live={calling ? 'assertive' : 'polite'}
+      aria-atomic="true"
+      className={`rounded-2xl p-5 ${calling ? 'bg-gradient-to-b from-teal-700 to-teal-900 text-white shadow-lg' : almost ? 'border border-amber-200 bg-amber-50 text-amber-950' : exceptional ? 'border border-slate-300 bg-slate-100 text-slate-900' : 'border border-teal-200 bg-teal-50/60 text-teal-900'}`}
+    >
+      <div className="flex items-start gap-3">
+        <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-full ${calling ? 'bg-white/15' : 'bg-white/80'}`}>
+          <Icon aria-hidden="true" className="h-5 w-5" />
+        </span>
+        <div className="min-w-0">
+          <h2 className={`font-extrabold tracking-tight ${calling ? 'text-2xl' : 'text-lg'}`}>{statusLabels[status]}</h2>
+          <p className={`mt-2 break-words text-sm leading-relaxed ${calling ? 'text-white' : ''}`}>{description[status]}</p>
+        </div>
+      </div>
+    </section>
   );
 }
