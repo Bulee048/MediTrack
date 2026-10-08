@@ -1,5 +1,43 @@
 @import "tailwindcss";
 
+@theme {
+  --color-brand-50: #ECFDF9;
+  --color-brand-100: #D2F5EE;
+  --color-brand-200: #A7EADD;
+  --color-brand-300: #6FD9C6;
+  --color-brand-400: #35BFA9;
+  --color-brand-500: #16A794;
+  --color-brand-600: #0E8B7C;
+  --color-brand-700: #0C6F64;
+  --color-brand-800: #0D5950;
+  --color-brand-900: #0D4A43;
+
+  --color-ink: #101A2E;
+  --color-ink-soft: #3A465C;
+  --color-ink-muted: #6C7A90;
+  --color-ink-faint: #93A1B5;
+
+  --color-canvas: #F4F7FA;
+  --color-line: #E6ECF3;
+
+  --color-danger: #E8455F;
+  --color-danger-soft: #FDECEF;
+  --color-danger-600: #D3304A;
+
+  --color-warn: #F5A623;
+  --color-warn-soft: #FFF6E6;
+
+  --color-success: #2FBF71;
+  --color-success-soft: #E8F9F0;
+
+  --color-info: #3B82F6;
+  --color-info-soft: #EBF2FE;
+
+  --shadow-card: 0 1px 2px rgba(16,26,46,0.04), 0 8px 24px -12px rgba(16,26,46,0.12);
+  --shadow-float: 0 12px 40px -12px rgba(16,26,46,0.25);
+  --shadow-soft: 0 2px 8px -4px rgba(16,26,46,0.12);
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -11,7 +49,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    --primary: 221.2 83.2% 53.3%;
+    --primary: 172.5 84.8% 29.6%;
     --primary-foreground: 210 40% 98%;
 
     --secondary: 210 40% 96.1%;
@@ -28,9 +66,10 @@
 
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
+    --ring: 172.5 84.8% 29.6%;
 
     --radius: 0.5rem;
+    --app-text-size: 16px;
   }
 
   .dark {
@@ -43,7 +82,7 @@
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 217.2 91.2% 59.8%;
+    --primary: 172.5 84.8% 29.6%;
     --primary-foreground: 222.2 47.4% 11.2%;
 
     --secondary: 217.2 32.6% 17.5%;
@@ -60,17 +99,18 @@
 
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 48%;
+    --ring: 172.5 84.8% 29.6%;
   }
 }
 
 @layer base {
   * {
     border-color: hsl(var(--border));
+    -webkit-tap-highlight-color: transparent;
   }
   body {
-    background-color: hsl(var(--background));
-    color: hsl(var(--foreground));
+    background-color: var(--color-canvas, #F4F7FA);
+    color: var(--color-ink, #101A2E);
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 
@@ -79,3 +119,11 @@
     min-height: 44px;
   }
 }
+
+.device-shadow {
+  box-shadow: 0 40px 80px -30px rgba(16, 26, 46, 0.45), 0 0 0 10px #101a2e, 0 0 0 12px #26324a;
+}
+
+.hide-scrollbar::-webkit-scrollbar { display: none; }
+.hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
