@@ -1,5 +1,7 @@
 import { QueueCounter } from '../models/QueueCounter.js';
 import { QueueTicket, IQueueTicket, QueueTicketStatus } from '../models/QueueTicket.js';
+import { ClientSession } from 'mongoose';
+import { getQueueDayKey, getQueueDayRange } from '../utils/queueDay.js';
 
 export interface LiveQueueCalculationResult {
   currentPosition: number; // Patients ahead + 1 for waiting tickets; otherwise 0
@@ -11,19 +13,15 @@ export interface LiveQueueCalculationResult {
 }
 
 export class QueueCalculationService {
-  static getQueueDayRange(date: Date = new Date()) {
-    const start = new Date(date);
-    start.setHours(0, 0, 0, 0);
-    const end = new Date(start);
-    end.setDate(end.getDate() + 1);
-    return { $gte: start, $lt: end };
+  static getQueueDayRange(date: Date | string = new Date()) {
+    return getQueueDayRange(date);
   }
 
   /**
-   * Generates atomic next sequence number for a department on a given date string (YYYY-MM-DD)
+   * Generates an atomic sequence for the department's Colombo queue day.
    */
-  static async getNextSequence(deptCode: string, dateStr: string): Promise<{ sequence: number; ticketNumber: string }> {
-    const scopeKey = `DEPT:${deptCode.toUpperCase()}:${dateStr}`;
+  static async getNextSequence(deptCode: string, date: Date = new Date()): Promise<{ sequence: number; ticketNumber: string }> {
+    const scopeKey = `DEPT:${deptCode.toUpperCase()}:${getQueueDayKey(date)}`;
     
     const counter = await QueueCounter.findOneAndUpdate(
       { scopeKey },
@@ -37,6 +35,23 @@ export class QueueCalculationService {
     const ticketNumber = `${prefix}-${formattedNum}`;
 
     return { sequence, ticketNumber };
+  }
+
+  static async recalculateWaitingPositions(ticket: IQueueTicket, session: ClientSession): Promise<void> {
+    const waiting = await QueueTicket.find({
+      doctor: ticket.doctor,
+      department: ticket.department,
+      createdAt: getQueueDayRange(ticket.createdAt),
+      status: { $in: ['WAITING', 'ALMOST_TURN'] },
+    }).sort({ sequenceNumber: 1, _id: 1 }).session(session);
+
+    for (const [index, entry] of waiting.entries()) {
+      await QueueTicket.updateOne(
+        { _id: entry._id, status: { $in: ['WAITING', 'ALMOST_TURN'] } },
+        { $set: { currentPosition: index + 1, estimatedWaitMins: index * 6 } },
+        { session }
+      );
+    }
   }
 
   /**

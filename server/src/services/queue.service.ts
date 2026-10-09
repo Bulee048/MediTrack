@@ -159,10 +159,10 @@ export class QueueService {
       throw new AppError('Department not found for doctor', 404);
     }
 
-    const todayStr = new Date().toISOString().split('T')[0];
+    const checkedInAt = new Date();
     const { sequence, ticketNumber } = await QueueCalculationService.getNextSequence(
       department.code,
-      todayStr
+      checkedInAt
     );
 
     const ticket = new QueueTicket({
@@ -175,7 +175,8 @@ export class QueueService {
       currentPosition: 1,
       estimatedWaitMins: 0,
       status: 'WAITING',
-      checkedInAt: new Date(),
+      checkedInAt,
+      createdAt: checkedInAt,
     });
 
     const liveState = await QueueCalculationService.calculateLiveQueueState(ticket);
@@ -214,9 +215,7 @@ export class QueueService {
   }): Promise<IQueueTicket[]> {
     const filter: Record<string, unknown> = {};
 
-    const queueDate = params.date
-      ? new Date(params.date)
-      : new Date();
+    const queueDate = params.date ?? new Date();
     filter.createdAt = QueueCalculationService.getQueueDayRange(queueDate);
 
     if (params.departmentId) {
@@ -323,14 +322,31 @@ export class QueueService {
    * Staff PATCH /api/queue/:id/hold
    */
   static async hold(ticketId: string): Promise<IQueueTicket> {
-    return this.transitionTicket(ticketId, 'HELD');
+    const ticket = await this.transitionTicket(ticketId, 'HELD');
+    await this.notifyStatusUpdate(ticket, 'Queue Ticket On Hold', `Your queue ticket ${ticket.ticketNumber} has been placed on hold. Please contact reception for guidance.`);
+    return ticket;
   }
 
   /**
    * Staff PATCH /api/queue/:id/skip
    */
   static async skip(ticketId: string): Promise<IQueueTicket> {
-    return this.transitionTicket(ticketId, 'SKIPPED');
+    const ticket = await this.transitionTicket(ticketId, 'SKIPPED');
+    await this.notifyStatusUpdate(ticket, 'Queue Ticket Skipped', `Your queue ticket ${ticket.ticketNumber} has been skipped. Please speak to reception about the next steps.`);
+    return ticket;
+  }
+
+  private static async notifyStatusUpdate(ticket: IQueueTicket, title: string, message: string): Promise<void> {
+    // Only the winner of the guarded atomic transition reaches this call.
+    // Repeated/invalid requests return 409 before creating any notification.
+    await NotificationService.createNotification({
+      userId: ticket.patient._id.toString(),
+      queueTicketId: ticket._id.toString(),
+      appointmentId: ticket.appointment.toString(),
+      category: 'QUEUE_UPDATE',
+      title,
+      message,
+    });
   }
 
   private static async transitionTicket(

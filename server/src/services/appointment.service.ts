@@ -3,6 +3,8 @@ import { Appointment, IAppointment, AppointmentStatus } from '../models/Appointm
 import { Doctor } from '../models/Doctor.js';
 import { FamilyMember } from '../models/FamilyMember.js';
 import { User } from '../models/User.js';
+import { QueueTicket } from '../models/QueueTicket.js';
+import { QueueCalculationService } from './queueCalculation.service.js';
 import { AvailabilityService } from './availability.service.js';
 import { AppError } from '../utils/AppError.js';
 import { validateObjectId } from '../utils/objectId.js';
@@ -283,6 +285,21 @@ export class AppointmentService {
 
       appointment.status = 'CANCELLED';
       await appointment.save({ session });
+      if (appointment.queueTicket) {
+        const cancelledTicket = await QueueTicket.findOneAndUpdate(
+          {
+            _id: appointment.queueTicket,
+            appointment: appointment._id,
+            patient: patientId,
+            status: { $in: ['WAITING', 'ALMOST_TURN', 'CALLING', 'IN_CONSULTATION', 'HELD'] },
+          },
+          { $set: { status: 'CANCELLED', currentPosition: 0, estimatedWaitMins: 0 } },
+          { session, new: true }
+        );
+        if (cancelledTicket) {
+          await QueueCalculationService.recalculateWaitingPositions(cancelledTicket, session);
+        }
+      }
       await session.commitTransaction();
     } catch (err: unknown) {
       if (session && session.inTransaction()) {

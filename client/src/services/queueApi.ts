@@ -42,6 +42,42 @@ export interface QueueApiResponse {
   } | null;
 }
 
+// POST /queue/check-in returns a populated document, not GET /queue/me's live view.
+export interface CheckInQueueTicket {
+  _id: string;
+  __v: number;
+  ticketNumber: string;
+  sequenceNumber: number;
+  patient: { _id: string; name: string; email?: string; phone: string } | null;
+  doctor: { _id: string; name: string; title?: string; roomNumber?: string } | null;
+  department: { _id: string; name: string; code: string; roomNumber?: string } | null;
+  appointment: string;
+  currentPosition: number;
+  estimatedWaitMins: number;
+  status: QueueTicketData['status'];
+  checkedInAt?: string;
+  calledAt?: string;
+  consultationStartedAt?: string;
+  completedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CheckInResponse {
+  success: boolean;
+  message: string;
+  data: { ticket: CheckInQueueTicket };
+}
+
+export interface PatientQueueAppointment {
+  _id: string;
+  appointmentDate: string;
+  timeSlot: string;
+  status: 'BOOKED' | 'RESCHEDULED' | 'CANCELLED' | 'COMPLETED';
+  queueTicket?: string;
+  doctor: { _id: string; name: string; title?: string; roomNumber?: string } | null;
+}
+
 export class QueueApiService {
   static async getMyActiveTicket(): Promise<QueueTicketData | null> {
     try {
@@ -55,8 +91,13 @@ export class QueueApiService {
     }
   }
 
-  static async checkIn(appointmentId: string): Promise<QueueTicketData> {
-    const response = await apiClient.post<QueueApiResponse>('/queue/check-in', { appointmentId });
+  static async getMyAppointments(): Promise<PatientQueueAppointment[]> {
+    const response = await apiClient.get<{ data: { appointments: PatientQueueAppointment[] } }>('/appointments/my');
+    return response.data.data.appointments;
+  }
+
+  static async checkIn(appointmentId: string): Promise<CheckInQueueTicket> {
+    const response = await apiClient.post<CheckInResponse>('/queue/check-in', { appointmentId });
     if (!response.data.data?.ticket) {
       throw new Error('Failed to create queue ticket');
     }

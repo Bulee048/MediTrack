@@ -1,4 +1,6 @@
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
+import { isAxiosError } from 'axios';
 import { Bell, CheckCircle2, Clock, Hospital, Pause, RefreshCw, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { QueueApiService, type QueueTicketData } from '@/services/queueApi';
@@ -7,11 +9,6 @@ import { getAuthErrorStatus, useAuthSession } from '@/config/api';
 import { Link, useLocation } from 'react-router-dom';
 
 type QueueStatus = QueueTicketData['status'];
-
-interface PatientLiveQueueProps {
-  // Supplied only by a parent with a real appointment/check-in context.
-  onCheckInClick?: () => void;
-}
 
 const cardStyle = 'min-w-0 rounded-2xl border border-slate-200 bg-white shadow-[0_1px_2px_rgba(16,26,46,0.04),0_8px_24px_-12px_rgba(16,26,46,0.12)]';
 const labelStyle = 'text-xs font-semibold uppercase tracking-wide text-slate-600';
@@ -32,7 +29,7 @@ function formatTime(value: string | undefined) {
   return Number.isNaN(date.getTime()) ? null : date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
-export function PatientLiveQueue({ onCheckInClick }: PatientLiveQueueProps) {
+export function PatientLiveQueue() {
   const location = useLocation();
   const authSession = useAuthSession();
   const { data: ticket, isLoading, isFetching, error, refetch } = useQuery<QueueTicketData | null>({
@@ -91,11 +88,7 @@ export function PatientLiveQueue({ onCheckInClick }: PatientLiveQueueProps) {
           <p className="mt-2 text-sm leading-relaxed text-slate-600">
             Check in to your appointment to receive your queue ticket and waiting-time updates.
           </p>
-          {onCheckInClick && (
-            <Button onClick={onCheckInClick} className="mt-5 h-auto w-full whitespace-normal rounded-xl bg-teal-700 px-4 py-3 text-white hover:bg-teal-800 focus-visible:ring-teal-700">
-              Check in to my appointment
-            </Button>
-          )}
+          <PatientCheckIn key={authSession} authSession={authSession} />
         </section>
       ) : (
         <>
@@ -146,6 +139,7 @@ export function PatientLiveQueue({ onCheckInClick }: PatientLiveQueueProps) {
 
           <QueueStatusCard status={ticket.status} room={room} position={ticket.currentPosition} />
           <QueueStatusProgress status={ticket.status} />
+          {['COMPLETED', 'CANCELLED', 'SKIPPED'].includes(ticket.status) && <section className={`${cardStyle} p-5`}><PatientCheckIn key={authSession} authSession={authSession} /></section>}
 
           {isWaiting && (
             <aside className="rounded-2xl border border-teal-200 bg-teal-50/60 p-5 text-center">
@@ -158,6 +152,62 @@ export function PatientLiveQueue({ onCheckInClick }: PatientLiveQueueProps) {
       )}
     </div>
   );
+}
+
+function PatientCheckIn({ authSession }: { authSession: number }) {
+  const queryClient = useQueryClient();
+  const location = useLocation();
+  const [selectedId, setSelectedId] = useState('');
+  const appointments = useQuery({
+    queryKey: ['queueCheckInAppointments', authSession],
+    queryFn: QueueApiService.getMyAppointments,
+    refetchInterval: 15000,
+  });
+  // Appointment dates are calendar dates stored at UTC midnight; queue day is Colombo.
+  const parts = new Intl.DateTimeFormat('en', { timeZone: 'Asia/Colombo', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(new Date());
+  const today = ['year', 'month', 'day'].map(type => parts.find(part => part.type === type)?.value).join('-');
+  const eligible = (appointments.data ?? []).filter(appointment =>
+    ['BOOKED', 'RESCHEDULED'].includes(appointment.status) &&
+    appointment.appointmentDate.slice(0, 10) === today && !appointment.queueTicket && appointment.doctor
+  );
+  const appointmentId = eligible.find(appointment => appointment._id === selectedId)?._id ?? eligible[0]?._id;
+  const refresh = async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['myActiveQueueTicket'] }),
+      queryClient.invalidateQueries({ queryKey: ['queueCheckInAppointments'] }),
+      queryClient.invalidateQueries({ queryKey: ['myNotifications'] }),
+    ]);
+  };
+  const checkIn = useMutation({
+    mutationFn: QueueApiService.checkIn,
+    onSuccess: refresh,
+    onError: async error => {
+      if (isAxiosError(error) && error.response?.status === 409) await refresh();
+    },
+  });
+  const error = checkIn.error ?? appointments.error;
+  const authError = getAuthErrorStatus(error);
+  const duplicate = isAxiosError(error) && error.response?.status === 409;
+
+  return <div className="mt-5 space-y-3 text-left">
+    {appointments.isLoading ? <p role="status" className="text-sm text-slate-600">Loading your appointments…</p> : error ? (
+      <div role="alert" className="space-y-2 text-sm text-rose-700">
+        <p>{authError === 401 ? 'Please sign in again to check in.' : authError === 403 ? 'You do not have permission to check in to this appointment.' : duplicate ? 'This appointment is already checked in. Your queue has been refreshed.' : 'Unable to check in or load appointments. Please try again.'}</p>
+        {authError === 401 && <Link to="/login" state={{ from: location.pathname }} className="font-semibold underline">Sign in</Link>}
+        {appointments.error && !authError && <Button variant="outline" onClick={() => void appointments.refetch()}>Retry appointments</Button>}
+      </div>
+    ) : null}
+    {!appointments.isLoading && !appointments.error && eligible.length === 0 && <p role="status" className="text-sm text-slate-600">No appointment is available for check-in today. You need a booked appointment for today that has not already been checked in.</p>}
+    {eligible.length > 0 && !appointments.error && !authError && <>
+      <label htmlFor="queue-check-in-appointment" className="block text-sm font-semibold">Today's appointment</label>
+      <select id="queue-check-in-appointment" value={appointmentId} onChange={event => { setSelectedId(event.target.value); checkIn.reset(); }} disabled={checkIn.isPending} className="w-full min-w-0 rounded-xl border border-slate-300 bg-white p-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-700">
+        {eligible.map(appointment => <option key={appointment._id} value={appointment._id}>{appointment.timeSlot} — {appointment.doctor?.name}</option>)}
+      </select>
+      <Button disabled={!appointmentId || checkIn.isPending} onClick={() => { if (appointmentId) checkIn.mutate(appointmentId); }} className="h-auto w-full whitespace-normal rounded-xl bg-teal-700 px-4 py-3 text-white hover:bg-teal-800 focus-visible:ring-teal-700">
+        {checkIn.isPending ? 'Checking in…' : 'Check in to my appointment'}
+      </Button>
+    </>}
+  </div>;
 }
 
 function QueueStatusCard({ status, room, position }: { status: QueueStatus; room?: string; position: number }) {
