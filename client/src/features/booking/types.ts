@@ -40,3 +40,24 @@ export interface BookingStep {
   label: string;
   path: string;
 }
+
+export interface BookingDoctorRef {
+  id: string;
+  name: string;
+  department: string;
+  title?: string;
+  experienceYears?: number;
+  room?: string;
+  fee?: number;
+  availabilityStatus?: 'AVAILABLE' | 'LIMITED' | 'UNAVAILABLE';
+}
+
+export interface BookingDateSelection {
+  doctor: BookingDoctorRef;
+  date: string;
+}
+
+export interface BookingTimeSelection extends BookingDateSelection {
+  slotId: string;
+  slotLabel: string;
+}
