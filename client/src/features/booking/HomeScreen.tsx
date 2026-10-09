@@ -82,14 +82,14 @@ export default function HomeScreen() {
           />
         </div>
 
-        <div className="mt-5 rounded-2xl bg-brand-600 p-5 text-white shadow-card">
+        <div className="mt-5 rounded-2xl bg-gradient-to-br from-blue-600 to-blue-800 p-5 text-white shadow-card">
           <div className="flex items-center justify-between">
             <span className="text-[10.5px] font-extrabold uppercase tracking-wider">Find care faster</span>
             <span className="text-[11.5px] font-semibold text-white/80">Browse specialties</span>
           </div>
           <p className="mt-3 text-[17px] font-extrabold">Choose a department, then pick the doctor and time that suits you.</p>
           <p className="mt-1 text-[12.5px] text-white/80">Use the departments grid to start a booking flow.</p>
-          <Button size="sm" className="mt-4 bg-white text-brand-700 hover:bg-white/90" onClick={() => navigate('/departments')}>
+          <Button size="sm" className="mt-4 bg-white text-blue-700 hover:bg-blue-50" onClick={() => navigate('/departments')}>
             View Departments
           </Button>
         </div>
