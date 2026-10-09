@@ -5,3 +5,4 @@ export * from './departments.service';
 export * from './doctors.api';
 export * from './doctors.service';
 export { default as DepartmentsScreen } from './DepartmentsScreen';
+export { default as DoctorListScreen } from './DoctorListScreen';

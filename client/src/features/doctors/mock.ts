@@ -22,6 +22,7 @@ export const doctorMockData: DoctorDetails[] = [
     room: 'C-12',
     languages: ['Sinhala', 'English'],
     active: true,
+    availabilityStatus: 'AVAILABLE',
     nextSlot: { label: '09:20 AM', slotId: 'slot-anjali-0920' },
     slotsLeftToday: 4,
     bookedToday: 18,
@@ -43,6 +44,7 @@ export const doctorMockData: DoctorDetails[] = [
     room: 'A-04',
     languages: ['Sinhala', 'English', 'Tamil'],
     active: true,
+    availabilityStatus: 'LIMITED',
     nextSlot: { label: '10:00 AM', slotId: 'slot-madushika-1000' },
     slotsLeftToday: 6,
     bookedToday: 11,
@@ -64,6 +66,7 @@ export const doctorMockData: DoctorDetails[] = [
     room: 'B-07',
     languages: ['Sinhala', 'English'],
     active: true,
+    availabilityStatus: 'UNAVAILABLE',
     nextSlot: { label: '11:40 AM', slotId: 'slot-nimal-1140' },
     slotsLeftToday: 3,
     bookedToday: 14,
@@ -78,9 +81,10 @@ export function filterDoctors(filters: DoctorListFilters = {}) {
   return doctorMockData.filter((doctor) => {
     const matchesDepartment = !filters.departmentId || doctor.departmentId === filters.departmentId;
     const matchesRating = !filters.minRating || doctor.rating >= filters.minRating;
+    const matchesAvailability = !filters.available || doctor.availabilityStatus !== 'UNAVAILABLE';
     const matchesQuery = !q || [doctor.name, doctor.department, doctor.title, doctor.about].some((value) => value.toLowerCase().includes(q));
 
-    return matchesDepartment && matchesRating && matchesQuery;
+    return matchesDepartment && matchesRating && matchesAvailability && matchesQuery;
   });
 }
 

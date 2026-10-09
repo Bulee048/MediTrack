@@ -1,11 +1,23 @@
 import { buildDoctorAvailability, doctorMockData, filterDoctors, getDoctorById } from './mock';
 import { getDoctor, getDoctorAvailability, listDoctors } from './doctors.api';
-import type { DoctorAvailability, DoctorListFilters, DoctorSummary } from './types';
+import type { DoctorAvailability, DoctorListFilters, DoctorSummary, DoctorsResult } from './types';
 
 const useMockData = import.meta.env.VITE_USE_FEATURE_MOCKS !== 'false';
 
-export async function fetchDoctors(filters: DoctorListFilters = {}): Promise<DoctorSummary[]> {
-  return useMockData ? filterDoctors(filters) : listDoctors(filters);
+export async function fetchDoctors(filters: DoctorListFilters = {}): Promise<DoctorsResult> {
+  if (useMockData) {
+    return { doctors: filterDoctors(filters), source: 'mock' };
+  }
+
+  try {
+    return { doctors: await listDoctors(filters), source: 'api' };
+  } catch (error) {
+    return {
+      doctors: filterDoctors(filters),
+      source: 'mock',
+      fallbackReason: error instanceof Error ? error.message : 'Live doctor list is temporarily unavailable',
+    };
+  }
 }
 
 export async function fetchDoctor(id: string): Promise<DoctorSummary | null> {

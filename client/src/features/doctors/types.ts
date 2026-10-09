@@ -26,6 +26,7 @@ export interface DoctorSummary {
   room: string;
   languages: string[];
   active: boolean;
+  availabilityStatus?: 'AVAILABLE' | 'LIMITED' | 'UNAVAILABLE';
   nextSlot?: { label: string; slotId: string } | null;
   slotsLeftToday?: number;
   bookedToday?: number;
@@ -40,6 +41,15 @@ export interface DoctorListFilters {
   departmentId?: string;
   q?: string;
   minRating?: number;
+  available?: boolean;
+}
+
+export type DoctorsSource = 'api' | 'mock';
+
+export interface DoctorsResult {
+  doctors: DoctorSummary[];
+  source: DoctorsSource;
+  fallbackReason?: string;
 }
 
 export interface DoctorAvailabilitySlot {
