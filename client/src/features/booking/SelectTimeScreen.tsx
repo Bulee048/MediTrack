@@ -85,7 +85,7 @@ export default function SelectTimeScreen() {
 
   const continueTo = () => {
     if (!doctor || !selectedDate || !selectedSlot) return;
-    navigate(`/patient/doctors/${doctor.id}/availability`, {
+    navigate(`/patient/doctors/${doctor.id}/review`, {
       state: {
         doctor,
         date: selectedDate,
