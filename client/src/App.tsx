@@ -11,6 +11,7 @@ import DoctorAvailabilityScreen from '@/features/doctors/DoctorAvailabilityScree
 import SelectDateScreen from '@/features/booking/SelectDateScreen';
 import SelectTimeScreen from '@/features/booking/SelectTimeScreen';
 import ReviewAppointmentScreen from '@/features/booking/ReviewAppointmentScreen';
+import BookingConfirmedScreen from '@/features/booking/BookingConfirmedScreen'; // NEW
 import { Activity, Hospital, UserCheck, Clock } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -106,6 +107,7 @@ export default function App() {
           <Route path="/patient/doctors/:id/date" element={<SelectDateScreen />} />
           <Route path="/patient/doctors/:id/time" element={<SelectTimeScreen />} />
           <Route path="/patient/doctors/:id/review" element={<ReviewAppointmentScreen />} />
+          <Route path="/patient/doctors/:id/confirmed" element={<BookingConfirmedScreen />} /> {/* NEW */}
         </Routes>
       </BrowserRouter>
       <Toaster />
