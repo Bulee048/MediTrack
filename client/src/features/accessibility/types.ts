@@ -6,18 +6,20 @@ export interface Settings {
   reminder: '30m' | '1h' | '1d';
   textSize: 'small' | 'medium' | 'large';
   highContrast: boolean;
+  reducedMotion: boolean;
   screenReader: boolean;
   language: string;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
-  userId: 'patient-default',
-  push: true,
-  realtimeQueue: true,
+  userId: '',
+  push: false,
+  realtimeQueue: false,
   promo: false,
   reminder: '1h',
   textSize: 'medium',
   highContrast: false,
-  screenReader: true,
+  reducedMotion: false,
+  screenReader: false,
   language: 'English (United States)',
 };

@@ -2,51 +2,44 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { AlertTriangle, Info, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { PhoneShell } from '@/components/PhoneShell';
+import { FeaturePageContent } from '@/components/FeaturePageContent';
 import { Button } from '@/components/ui/button';
-import { Select } from '@/components/ui/select';
 import { AlertDialog } from '@/components/ui/alert-dialog';
 import { appointmentsApi } from './api/appointmentsApi';
 import type { Appointment } from './types';
 import { fmtMediumDate, inr } from '@/lib/formatters';
 
-const REASONS = [
-  'Found another doctor',
-  'Change of plans / Personal emergency',
-  'Doctor unavailable',
-  'Symptoms resolved',
-  'Booked by mistake',
-  'Other',
-];
-
 const POLICY =
-  'Free cancellation is available up to 2 hours before the scheduled appointment. ' +
-  'A full refund will be credited back to your original payment method within 3-5 business days.';
+  'Cancellation releases the reserved slot. Refund information is not provided by the current backend.';
 
 export default function CancelAppointment() {
   const { id = '' } = useParams();
   const navigate = useNavigate();
 
   const [appt, setAppt] = useState<Appointment | null>(null);
-  const [reason, setReason] = useState(REASONS[0]);
+  const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
-  const [done, setDone] = useState<{ refund: number } | null>(null);
+  const [done, setDone] = useState(false);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
 
   useEffect(() => {
+    let active = true;
+    setAppt(null); setError('');
+    setDone(false);
     appointmentsApi
       .detail(id)
-      .then(setAppt)
-      .catch(() => navigate('/app/appointments', { replace: true }));
-  }, [id, navigate]);
+      .then((appointment) => { if (active) setAppt(appointment); })
+      .catch((e) => { if (active) setError((e as Error).message); });
+    return () => { active = false; };
+  }, [id]);
 
   const executeCancel = async () => {
     setBusy(true);
     try {
-      const res = await appointmentsApi.cancel(id, reason);
-      setDone({ refund: res.refund });
+      await appointmentsApi.cancel(id);
+      setDone(true);
       toast.success('Appointment cancelled', {
-        description: res.refund > 0 ? `${inr(res.refund)} refund initiated` : 'Slot released.',
+        description: 'Slot released.',
       });
     } catch (e) {
       toast.error((e as Error).message || 'Could not cancel appointment');
@@ -55,19 +48,22 @@ export default function CancelAppointment() {
     }
   };
 
+  if (error) return <FeaturePageContent title="Cancel Appointment" back><p role="alert" className="rounded-xl border border-danger/20 bg-danger-soft p-4 text-sm">{error}</p></FeaturePageContent>;
+
   if (!appt) {
     return (
-      <PhoneShell title="Cancel Appointment" back>
+      <FeaturePageContent title="Cancel Appointment" back>
         <div className="flex min-h-[300px] flex-col items-center justify-center gap-3 text-ink-muted">
           <div className="h-6 w-6 animate-spin rounded-full border-2 border-brand-600 border-t-transparent" />
           <p className="text-[13px] font-medium">Loading details…</p>
         </div>
-      </PhoneShell>
+      </FeaturePageContent>
     );
   }
 
   return (
-    <PhoneShell title="Cancel Appointment" back>
+    <FeaturePageContent title="Cancel Appointment" back>
+      {(appt.checkedIn || !['confirmed', 'rescheduled'].includes(appt.status)) && <p role="status" className="mb-4 text-sm text-ink-muted">This appointment cannot be changed here. Checked-in visits are managed through the OPD queue.</p>}
       {/* Warning banner */}
       <div className="flex items-start gap-3 rounded-2xl bg-danger-soft p-4 border border-danger/20">
         <AlertTriangle size={20} className="mt-0.5 shrink-0 text-danger-600" />
@@ -95,20 +91,6 @@ export default function CancelAppointment() {
         </div>
       </div>
 
-      {/* Reason for Cancellation */}
-      <div className="mt-5">
-        <label className="mb-1.5 block text-[13px] font-semibold text-ink">
-          Reason for Cancellation
-        </label>
-        <Select value={reason} onChange={(e) => setReason(e.target.value)}>
-          {REASONS.map((r) => (
-            <option key={r} value={r}>
-              {r}
-            </option>
-          ))}
-        </Select>
-      </div>
-
       {/* Policy Card */}
       <div className="mt-5 flex items-start gap-3 rounded-2xl border border-brand-300 bg-brand-50/70 p-4">
         <Info size={18} className="mt-0.5 shrink-0 text-brand-600" />
@@ -128,7 +110,7 @@ export default function CancelAppointment() {
             variant="destructive"
             size="lg"
             className="w-full font-bold shadow-soft"
-            disabled={busy}
+            disabled={busy || appt.checkedIn || !['confirmed', 'rescheduled'].includes(appt.status)}
             onClick={() => setConfirmDialogOpen(true)}
           >
             {busy ? 'Cancelling…' : 'Yes, Cancel Appointment'}
@@ -153,11 +135,6 @@ export default function CancelAppointment() {
           <p className="text-[14px] font-extrabold text-success">
             Appointment cancelled successfully
           </p>
-          {done.refund > 0 && (
-            <p className="mt-1 text-[12.5px] font-semibold text-success/90">
-              {inr(done.refund)} refund initiated to original payment source
-            </p>
-          )}
           <Button
             variant="outline"
             size="sm"
@@ -174,12 +151,12 @@ export default function CancelAppointment() {
         open={confirmDialogOpen}
         onOpenChange={setConfirmDialogOpen}
         title="Confirm Cancellation"
-        description={`Are you sure you want to cancel your appointment with ${appt.doctorName} on ${fmtMediumDate(appt.date)} at ${appt.time}? Reason: "${reason}". This cannot be undone.`}
+        description={`Are you sure you want to cancel your appointment with ${appt.doctorName} on ${fmtMediumDate(appt.date)} at ${appt.time}? This cannot be undone.`}
         confirmText="Confirm Cancel"
         cancelText="Nevermind"
         variant="destructive"
         onConfirm={executeCancel}
       />
-    </PhoneShell>
+    </FeaturePageContent>
   );
 }

@@ -8,12 +8,13 @@ export interface EmergencyContact {
 
 export interface UserProfile {
   id: string;
+  role?: string;
   displayId: string;
   name: string;
   phone: string;
   email: string;
   dob: string;
-  gender: Gender;
+  gender: Gender | '';
   bloodGroup: string;
   address: string;
   insuranceProvider: string;

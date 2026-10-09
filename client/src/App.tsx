@@ -1,6 +1,19 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter, Routes, Route, Link, Navigate } from 'react-router-dom';
 import { Toaster } from '@/components/ui/sonner';
+import LoginScreen from '@/features/auth/LoginScreen';
+import RegisterScreen from '@/features/auth/RegisterScreen';
+import HomeScreen from '@/features/booking/HomeScreen';
+import DepartmentsScreen from '@/features/doctors/DepartmentsScreen';
+import DoctorListScreen from '@/features/doctors/DoctorListScreen';
+import DoctorProfileScreen from '@/features/doctors/DoctorProfileScreen';
+import DoctorAvailabilityScreen from '@/features/doctors/DoctorAvailabilityScreen';
+import SelectDateScreen from '@/features/booking/SelectDateScreen';
+import SelectTimeScreen from '@/features/booking/SelectTimeScreen';
+import ReviewAppointmentScreen from '@/features/booking/ReviewAppointmentScreen';
+import BookingConfirmedScreen from '@/features/booking/BookingConfirmedScreen'; // NEW
+import { PatientLiveQueue } from '@/features/queue/PatientLiveQueue';
+import { NotificationsList } from '@/features/notifications/NotificationsList';
 import {
   Activity,
   Hospital,
@@ -17,6 +30,7 @@ import { Badge } from '@/components/ui/badge';
 
 // Feature Contexts
 import { AccessibilityProvider } from '@/features/accessibility/context/AccessibilityContext';
+import PatientShell from '@/components/layout/PatientShell';
 import { ProfileProvider } from '@/features/profile/context/ProfileContext';
 
 // Feature Pages (Nawodya Module)
@@ -127,7 +141,7 @@ function Home() {
                 </div>
                 <h3 className="font-extrabold text-ink group-hover:text-brand-700">Patient Profile</h3>
                 <p className="mt-1 text-xs text-ink-muted leading-relaxed">
-                  Medical history, insurance, emergency contact &amp; personal info
+                  Personal details and patient account information
                 </p>
               </div>
               <div className="mt-4 flex items-center gap-1 text-xs font-bold text-brand-600">
@@ -146,7 +160,7 @@ function Home() {
                 </div>
                 <h3 className="font-extrabold text-ink group-hover:text-brand-700">Accessibility</h3>
                 <p className="mt-1 text-xs text-ink-muted leading-relaxed">
-                  Large text, high contrast mode, and reminder settings
+                  Local text size, contrast and reduced-motion preferences
                 </p>
               </div>
               <div className="mt-4 flex items-center gap-1 text-xs font-bold text-brand-600">
@@ -207,13 +221,15 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AccessibilityProvider>
-        <ProfileProvider>
           <BrowserRouter>
             <Routes>
               {/* Landing & Home */}
               <Route path="/" element={<Home />} />
+              <Route path="/login" element={<LoginScreen />} />
+              <Route path="/register" element={<RegisterScreen />} />
+              <Route element={<ProfileProvider><PatientShell /></ProfileProvider>}>
               <Route path="/app" element={<Navigate to="/app/appointments" replace />} />
-              <Route path="/app/home" element={<Home />} />
+
 
               {/* Appointment Management */}
               <Route path="/app/appointments" element={<Appointments />} />
@@ -228,14 +244,41 @@ export default function App() {
               {/* Profile & Settings */}
               <Route path="/app/profile" element={<Profile />} />
               <Route path="/app/profile/edit" element={<EditProfile />} />
-              <Route path="/app/settings" element={<SettingsAccessibility />} />
+              <Route path="/app/settings/accessibility" element={<SettingsAccessibility />} />
+              <Route path="/app/settings" element={<Navigate to="/app/settings/accessibility" replace />} />
 
+          <Route path="/queue" element={<main className="min-h-screen bg-slate-50 p-6"><PatientLiveQueue /></main>} />
+          <Route path="/notifications" element={<main className="min-h-screen bg-slate-50 p-6"><NotificationsList /></main>} />
+
+
+
+          {/* Primary patient booking routes */}
+          <Route path="/app/home" element={<HomeScreen />} />
+          <Route path="/app/departments" element={<DepartmentsScreen />} />
+          <Route path="/app/doctors" element={<DoctorListScreen />} />
+          <Route path="/app/doctor/:id" element={<DoctorProfileScreen />} />
+          <Route path="/app/book/date/:doctorId" element={<SelectDateScreen />} />
+          <Route path="/app/book/time/:doctorId" element={<SelectTimeScreen />} />
+          <Route path="/app/book/review" element={<ReviewAppointmentScreen />} />
+          <Route path="/app/book/done/:id" element={<BookingConfirmedScreen />} />
+
+          {/* Feature Route Aliases */}
+          <Route path="/patient/home" element={<HomeScreen />} />
+          <Route path="/patient/departments" element={<DepartmentsScreen />} />
+          <Route path="/patient/doctors" element={<DoctorListScreen />} />
+          <Route path="/patient/doctors/:id" element={<DoctorProfileScreen />} />
+          <Route path="/patient/doctors/:id/availability" element={<DoctorAvailabilityScreen />} />
+          <Route path="/patient/doctors/:id/date" element={<SelectDateScreen />} />
+          <Route path="/patient/doctors/:id/time" element={<SelectTimeScreen />} />
+          <Route path="/patient/doctors/:id/review" element={<ReviewAppointmentScreen />} />
+          <Route path="/patient/doctors/:id/confirmed" element={<BookingConfirmedScreen />} />
+
+              </Route>
               {/* Catch-all */}
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </BrowserRouter>
           <Toaster />
-        </ProfileProvider>
       </AccessibilityProvider>
     </QueryClientProvider>
   );

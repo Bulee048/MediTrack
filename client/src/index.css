@@ -205,3 +205,14 @@
   font-weight: 700 !important;
 }
 
+
+/* Patient module keyboard, responsive and device accessibility support. */
+:where(button, a, input, select, textarea):focus-visible { outline: 3px solid #0e8b7c; outline-offset: 3px; }
+#patient-content { overflow-wrap: anywhere; }
+#patient-content input, #patient-content select, #patient-content textarea { min-width: 0; max-width: 100%; }
+[data-high-contrast] { --color-ink-muted: #111827; --color-ink-faint: #111827; --color-line: #374151; }
+[data-high-contrast] .text-ink-muted, [data-high-contrast] .label { color: #111827; }
+[data-reduced-motion] *, [data-reduced-motion] *::before, [data-reduced-motion] *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+}

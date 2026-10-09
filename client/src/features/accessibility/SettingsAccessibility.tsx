@@ -1,5 +1,6 @@
+import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
-import { PhoneShell } from '@/components/PhoneShell';
+import { FeaturePageContent } from '@/components/FeaturePageContent';
 import { SwitchRow } from '@/components/ui/switch';
 import { Select } from '@/components/ui/select';
 import { useAccessibility } from './context/AccessibilityContext';
@@ -28,32 +29,37 @@ const LANGUAGES = [
 
 export default function SettingsAccessibility() {
   const navigate = useNavigate();
-  const { settings, updateSettings } = useAccessibility();
+  const { settings, error, updateSettings } = useAccessibility();
 
   const set = (patch: Partial<Settings>) => {
-    updateSettings(patch);
+    void updateSettings(patch).catch((e) => toast.error((e as Error).message));
   };
 
   const textSize = settings?.textSize ?? 'medium';
   const sizeIndex = TEXT_SIZES.findIndex((t) => t.key === textSize);
 
   return (
-    <PhoneShell title="Settings & Accessibility" back>
+    <FeaturePageContent title="Settings & Accessibility" back>
+      <p role="status" className="mb-4 text-sm text-ink-muted">Text size, contrast and reduced motion are saved only in this browser. Account notification, reminder, screen-reader mode and language settings are not supported yet.</p>
+      {error && <p role="alert">{error}</p>}
       <p className="label">Notification Preferences</p>
       <div className="mt-2.5 rounded-2xl border border-line bg-white p-4 shadow-card">
         <SwitchRow
+          disabled
           checked={settings?.push ?? true}
           onChange={(v) => set({ push: v })}
           title="Push Notifications"
           description="Enable instant alerts"
         />
         <SwitchRow
+          disabled
           checked={settings?.realtimeQueue ?? true}
           onChange={(v) => set({ realtimeQueue: v })}
           title="Real-time Queue Updates"
           description="Get live queue progression alerts"
         />
         <SwitchRow
+          disabled
           checked={settings?.promo ?? false}
           onChange={(v) => set({ promo: v })}
           title="Promotional Emails"
@@ -67,6 +73,7 @@ export default function SettingsAccessibility() {
           <button
             key={r.key}
             type="button"
+            disabled
             onClick={() => set({ reminder: r.key })}
             className={cn(
               'rounded-xl border px-2 py-2.5 text-[11.5px] font-bold transition min-h-0',
@@ -108,8 +115,10 @@ export default function SettingsAccessibility() {
             title="High Contrast Mode"
             description="Increases color contrast readability"
           />
+          <SwitchRow checked={settings.reducedMotion} onChange={(v) => set({ reducedMotion: v })} title="Reduced Motion" description="Reduce animations on this device" />
           <SwitchRow
-            checked={settings?.screenReader ?? true}
+            disabled
+          checked={settings?.screenReader ?? true}
             onChange={(v) => set({ screenReader: v })}
             title="Screen Reader Optimal"
             description="Optimizes layout hierarchies for voice readers"
@@ -120,6 +129,7 @@ export default function SettingsAccessibility() {
       <p className="mt-7 text-[13.5px] font-extrabold text-ink">Preferred Application Language</p>
       <div className="mt-2.5">
         <Select
+          disabled
           value={settings?.language ?? LANGUAGES[0]}
           onChange={(e) => set({ language: e.target.value })}
         >
@@ -132,7 +142,7 @@ export default function SettingsAccessibility() {
       </div>
 
       <p className="mt-8 text-center text-[11.5px] text-ink-muted">
-        MediTrack Mobile v2.4.0 (Build 20261009)
+        Local accessibility preferences
       </p>
 
       <button
@@ -144,8 +154,8 @@ export default function SettingsAccessibility() {
       </button>
 
       <p className="mt-4 text-center text-[11.5px] text-ink-muted">
-        Signed in as patient user
+        Preferences are not synced to your account
       </p>
-    </PhoneShell>
+    </FeaturePageContent>
   );
 }

@@ -5,7 +5,7 @@ export type AppointmentStatus =
   | 'rescheduled'
   | 'no_show';
 
-export type PaymentStatus = 'pending' | 'paid' | 'refunded' | 'failed';
+export type PaymentStatus = 'pending' | 'paid' | 'refunded' | 'failed' | 'unknown';
 
 export interface QueueStatusSummary {
   id: string;
@@ -45,6 +45,7 @@ export interface Appointment {
     reviews: number;
   };
   queueEntry?: QueueStatusSummary;
+  checkedIn?: boolean;
   createdAt: string;
   updatedAt: string;
 }

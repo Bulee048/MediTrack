@@ -6,7 +6,7 @@ export interface FamilyMember {
   name: string;
   relation: string;
   dob: string;
-  gender: Gender;
+  gender: Gender | '';
   phone?: string;
   notes?: string;
 }
