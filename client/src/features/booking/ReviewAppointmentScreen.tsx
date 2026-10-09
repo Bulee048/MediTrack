@@ -39,7 +39,6 @@ export default function ReviewAppointmentScreen() {
   const [quote, setQuote] = useState<{ consultationFee: number; platformFee: number; total: number } | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [successRef, setSuccessRef] = useState('');
   const [error, setError] = useState('');
 
   const doctor = doctorResult?.doctor ?? state.doctor ?? null;
@@ -145,7 +144,12 @@ export default function ReviewAppointmentScreen() {
         patientName: patientSummary,
       });
 
-      setSuccessRef(appointment.ref);
+      navigate(`/patient/doctors/${doctor.id}/confirmed`, {
+        state: {
+          appointment,
+          doctor,
+        },
+      });
     } catch (submitError: unknown) {
       setError(submitError instanceof Error ? submitError.message : 'Unable to confirm appointment');
     } finally {
@@ -199,13 +203,6 @@ export default function ReviewAppointmentScreen() {
         {error ? (
           <div className="mt-2 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-[13px] font-semibold text-red-700">
             {error}
-          </div>
-        ) : null}
-
-        {successRef ? (
-          <div className="mt-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4 text-emerald-800">
-            <p className="text-[15px] font-extrabold">Temporary booking saved</p>
-            <p className="mt-1 text-[12.5px] font-medium">Reference {successRef}</p>
           </div>
         ) : null}
 
