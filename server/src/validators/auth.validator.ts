@@ -18,3 +18,15 @@ export const loginSchema = z.object({
 
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
+
+export const updateProfileSchema = z.object({
+  name: z.string().trim().min(2, 'Name must be at least 2 characters').optional(),
+  email: z.string().trim().email('Invalid email address').optional().or(z.literal('')),
+  phone: z.string().trim().min(8, 'Phone number must be at least 8 characters').optional(),
+  nic: z.string().trim().optional(),
+  dateOfBirth: z.union([z.string().trim(), z.date()]).optional(),
+  gender: z.string().trim().optional(),
+  address: z.string().trim().optional(),
+});
+
+export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;

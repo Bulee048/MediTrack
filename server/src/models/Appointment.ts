@@ -11,6 +11,8 @@ export interface IAppointment extends Document {
   reason?: string;
   status: AppointmentStatus;
   queueTicket?: Types.ObjectId;
+  ref?: string;
+  referenceId?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -56,6 +58,18 @@ const appointmentSchema = new Schema<IAppointment>(
     queueTicket: {
       type: Schema.Types.ObjectId,
       ref: 'QueueTicket',
+    },
+    ref: {
+      type: String,
+      trim: true,
+      sparse: true,
+      index: true,
+    },
+    referenceId: {
+      type: String,
+      trim: true,
+      sparse: true,
+      index: true,
     },
   },
   {

@@ -2,7 +2,7 @@ import bcrypt from 'bcryptjs';
 import { User, IUser } from '../models/User.js';
 import { AppError } from '../utils/AppError.js';
 import { signAccessToken } from '../utils/jwt.js';
-import { RegisterInput, LoginInput } from '../validators/auth.validator.js';
+import { RegisterInput, LoginInput, UpdateProfileInput } from '../validators/auth.validator.js';
 
 export interface SafeUserResponse {
   id: string;
@@ -96,6 +96,52 @@ export class AuthService {
       throw new AppError('User not found or inactive', 404);
     }
 
+    return formatUserResponse(user);
+  }
+
+  static async updatePatientProfile(
+    userId: string,
+    data: UpdateProfileInput
+  ): Promise<SafeUserResponse> {
+    const user = await User.findById(userId);
+    if (!user || !user.isActive) {
+      throw new AppError('User not found or inactive', 404);
+    }
+
+    if (data.email !== undefined && data.email !== '') {
+      const normalizedEmail = data.email.toLowerCase();
+      const existingEmail = await User.findOne({
+        email: normalizedEmail,
+        _id: { $ne: user._id },
+      });
+      if (existingEmail) {
+        throw new AppError('An account with this email address already exists', 409);
+      }
+      user.email = normalizedEmail;
+    } else if (data.email === '') {
+      user.email = undefined;
+    }
+
+    if (data.phone !== undefined && data.phone !== user.phone) {
+      const existingPhone = await User.findOne({
+        phone: data.phone,
+        _id: { $ne: user._id },
+      });
+      if (existingPhone) {
+        throw new AppError('An account with this phone number already exists', 409);
+      }
+      user.phone = data.phone;
+    }
+
+    if (data.name !== undefined) user.name = data.name;
+    if (data.nic !== undefined) user.nic = data.nic;
+    if (data.dateOfBirth !== undefined) {
+      user.dateOfBirth = data.dateOfBirth ? new Date(data.dateOfBirth) : undefined;
+    }
+    if (data.gender !== undefined) user.gender = data.gender;
+    if (data.address !== undefined) user.address = data.address;
+
+    await user.save();
     return formatUserResponse(user);
   }
 }
