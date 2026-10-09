@@ -1,3 +1,5 @@
+import PatientAccess from '@/features/auth/PatientAccess';
+import PatientAccountScreen from '@/features/auth/PatientAccountScreen';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Toaster } from '@/components/ui/sonner';
@@ -104,26 +106,32 @@ export default function App() {
           <Route path="/login" element={<LoginScreen />} />
           <Route path="/register" element={<RegisterScreen />} />
 
-          {/* Primary patient booking routes */}
-          <Route path="/app/home" element={<HomeScreen />} />
-          <Route path="/app/departments" element={<DepartmentsScreen />} />
-          <Route path="/app/doctors" element={<DoctorListScreen />} />
-          <Route path="/app/doctor/:id" element={<DoctorProfileScreen />} />
-          <Route path="/app/book/date/:doctorId" element={<SelectDateScreen />} />
-          <Route path="/app/book/time/:doctorId" element={<SelectTimeScreen />} />
-          <Route path="/app/book/review" element={<ReviewAppointmentScreen />} />
-          <Route path="/app/book/done/:id" element={<BookingConfirmedScreen />} />
+          <Route element={<PatientAccess />}>
+            <Route path="/app/profile" element={<PatientAccountScreen />} />
+            <Route path="/app/account" element={<PatientAccountScreen />} />
+            <Route path="/app/doctor/:id/availability" element={<DoctorAvailabilityScreen />} />
 
-          {/* Feature Route Aliases */}
-          <Route path="/patient/home" element={<HomeScreen />} />
-          <Route path="/patient/departments" element={<DepartmentsScreen />} />
-          <Route path="/patient/doctors" element={<DoctorListScreen />} />
-          <Route path="/patient/doctors/:id" element={<DoctorProfileScreen />} />
-          <Route path="/patient/doctors/:id/availability" element={<DoctorAvailabilityScreen />} />
-          <Route path="/patient/doctors/:id/date" element={<SelectDateScreen />} />
-          <Route path="/patient/doctors/:id/time" element={<SelectTimeScreen />} />
-          <Route path="/patient/doctors/:id/review" element={<ReviewAppointmentScreen />} />
-          <Route path="/patient/doctors/:id/confirmed" element={<BookingConfirmedScreen />} />
+            {/* Primary Integration Routes for Shared PatientShell */}
+            <Route path="/app/home" element={<HomeScreen />} />
+            <Route path="/app/departments" element={<DepartmentsScreen />} />
+            <Route path="/app/doctors" element={<DoctorListScreen />} />
+            <Route path="/app/doctor/:id" element={<DoctorProfileScreen />} />
+            <Route path="/app/book/date/:doctorId" element={<SelectDateScreen />} />
+            <Route path="/app/book/time/:doctorId" element={<SelectTimeScreen />} />
+            <Route path="/app/book/review" element={<ReviewAppointmentScreen />} />
+            <Route path="/app/book/done/:id" element={<BookingConfirmedScreen />} />
+
+            {/* Feature Route Aliases */}
+            <Route path="/patient/home" element={<HomeScreen />} />
+            <Route path="/patient/departments" element={<DepartmentsScreen />} />
+            <Route path="/patient/doctors" element={<DoctorListScreen />} />
+            <Route path="/patient/doctors/:id" element={<DoctorProfileScreen />} />
+            <Route path="/patient/doctors/:id/availability" element={<DoctorAvailabilityScreen />} />
+            <Route path="/patient/doctors/:id/date" element={<SelectDateScreen />} />
+            <Route path="/patient/doctors/:id/time" element={<SelectTimeScreen />} />
+            <Route path="/patient/doctors/:id/review" element={<ReviewAppointmentScreen />} />
+            <Route path="/patient/doctors/:id/confirmed" element={<BookingConfirmedScreen />} />
+          </Route>
         </Routes>
       </BrowserRouter>
       <Toaster />

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, Building2, CalendarPlus, Clock3, LayoutGrid, RotateCcw, Search, User2, X } from 'lucide-react';
+import { Building2, CalendarPlus, Clock3, LayoutGrid, RotateCcw, Search, User2, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,10 +9,10 @@ import { fetchDepartments } from '@/features/doctors/departments.service';
 import type { DoctorDepartment } from '@/features/doctors/types';
 
 const QUICK_ACTIONS = [
-  { label: 'Book OPD', icon: CalendarPlus, to: '/patient/departments', tone: 'bg-[#ECFDF9] text-[#0E8B7C]' },
-  { label: 'My Queue', icon: Clock3, to: '/queue', tone: 'bg-[#FDECEF] text-[#E8455F]' },
-  { label: 'Departments', icon: LayoutGrid, to: '/patient/departments', tone: 'bg-[#EBF2FE] text-[#3B82F6]' },
-  { label: 'My Profile', icon: User2, to: '/patient/home', tone: 'bg-[#F3EEFE] text-[#8B5CF6]' },
+  { label: 'Book OPD', icon: CalendarPlus, to: '/app/departments', tone: 'bg-[#ECFDF9] text-[#0E8B7C]' },
+  { label: 'Doctors', icon: Clock3, to: '/app/doctors', tone: 'bg-[#FDECEF] text-[#E8455F]' },
+  { label: 'Departments', icon: LayoutGrid, to: '/app/departments', tone: 'bg-[#EBF2FE] text-[#3B82F6]' },
+  { label: 'My Profile', icon: User2, to: '/app/profile', tone: 'bg-[#F3EEFE] text-[#8B5CF6]' },
 ];
 
 export default function HomeScreen() {
@@ -59,14 +59,7 @@ export default function HomeScreen() {
             <p className="text-[13px] font-semibold text-[#6C7A90]">Good Morning,</p>
             <h1 className="mt-0.5 text-[22px] font-extrabold uppercase tracking-tight text-[#101A2E]">Welcome Back</h1>
           </div>
-          <button
-            onClick={() => navigate('/notifications')}
-            aria-label="View notifications"
-            className="relative grid h-11 w-11 min-h-[44px] min-w-[44px] shrink-0 place-items-center rounded-xl border border-[#E6ECF3] bg-white text-[#101A2E] shadow-sm transition hover:bg-[#F4F7FA] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16A794] active:scale-95"
-          >
-            <Bell size={18} />
-            <span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-[#E8455F]" />
-          </button>
+          <button onClick={() => navigate('/app/profile')} aria-label="View account" className="h-11 w-11 rounded-xl border bg-white"><User2 size={20} className="mx-auto" /></button>
         </div>
 
         <div className="relative mt-2">
@@ -104,7 +97,7 @@ export default function HomeScreen() {
           <Button
             size="sm"
             className="mt-4 h-11 min-h-[44px] bg-white font-bold text-[#0E8B7C] hover:bg-[#ECFDF9] focus-visible:ring-2 focus-visible:ring-white"
-            onClick={() => navigate('/patient/departments')}
+            onClick={() => navigate('/app/departments')}
           >
             View Departments
           </Button>
@@ -129,7 +122,7 @@ export default function HomeScreen() {
         <div className="mt-7 flex items-center justify-between">
           <h2 className="text-[16px] font-extrabold tracking-tight text-[#101A2E]">Nearby Specialties</h2>
           <button
-            onClick={() => navigate('/patient/departments')}
+            onClick={() => navigate('/app/departments')}
             className="inline-flex min-h-[44px] items-center px-2 text-[12.5px] font-bold text-[#0E8B7C] hover:text-[#0C6F64] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16A794] rounded-lg"
           >
             View All
@@ -180,7 +173,7 @@ export default function HomeScreen() {
               <button
                 key={department.id}
                 onClick={() =>
-                  navigate(`/patient/doctors?departmentId=${department.id}&name=${encodeURIComponent(department.name)}`)
+                  navigate(`/app/doctors?departmentId=${department.id}&name=${encodeURIComponent(department.name)}`)
                 }
                 aria-label={`Department: ${department.name}`}
                 className="flex min-h-[80px] flex-col items-center gap-2 rounded-2xl border border-[#E6ECF3] bg-white px-2 py-4 text-center shadow-sm transition hover:border-[#A7EADD] hover:shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16A794] active:scale-[0.97]"
@@ -197,7 +190,7 @@ export default function HomeScreen() {
 
         <div className="mt-6 flex items-center justify-center gap-2 text-[11.5px] text-[#6C7A90]">
           <Badge variant="secondary" className="border-[#2FBF71]/30 bg-[#E8F9F0] text-[#2FBF71]">
-            Live updates on
+            Live directory
           </Badge>
           <span>·</span>
           <span>Patient Home</span>

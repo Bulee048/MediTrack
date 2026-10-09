@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { useSyncExternalStore } from 'react';
+import { clearAuthToken, getAuthToken } from '@/features/auth/auth.storage';
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
 
@@ -17,8 +18,10 @@ export function useAuthSession(): number {
   return useSyncExternalStore(subscribeToAuthSession, () => authSessionVersion, () => 0);
 }
 
-// Shared contract for the future login/logout UI. No client auth store exists yet.
+// Shared contract for login/logout UI
 export function getAccessToken(): string | null {
+  const token = getAuthToken();
+  if (token) return token;
   return typeof window === 'undefined' ? null : window.sessionStorage.getItem(ACCESS_TOKEN_KEY);
 }
 
@@ -43,8 +46,21 @@ export const apiClient = axios.create({
   withCredentials: true,
 });
 
-apiClient.interceptors.request.use(config => {
+apiClient.interceptors.request.use((config) => {
   const token = getAccessToken();
-  if (token) config.headers.set('Authorization', `Bearer ${token}`);
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
   return config;
 });
+
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error?.response?.status === 401) {
+      clearAuthToken();
+    }
+    if (typeof error?.response?.data?.message === 'string') error.message = error.response.data.message;
+    return Promise.reject(error);
+  },
+);

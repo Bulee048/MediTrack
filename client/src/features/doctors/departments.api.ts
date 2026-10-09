@@ -1,16 +1,9 @@
+import { z } from 'zod';
 import { apiClient } from '@/config/api';
-import type { DoctorDepartment } from './types';
-
-type DepartmentsResponse = {
-  success: boolean;
-  message: string;
-  data: { departments: (Omit<DoctorDepartment, 'id'> & { _id: string })[] };
-};
 
 export async function getDepartments(search?: string) {
-  const { data } = await apiClient.get<DepartmentsResponse>('/departments', {
-    params: search ? { search } : undefined,
-  });
-
-  return data.data.departments.map(({ _id, ...department }) => ({ ...department, id: _id }));
+  const { data } = await apiClient.get('/departments', { params: search ? { search } : undefined });
+  return z.array(z.object({ _id: z.string(), name: z.string(), code: z.string(),
+    description: z.string().optional(), roomNumber: z.string().optional(), isActive: z.boolean()
+  })).parse(data.data.departments).map(({ _id, ...department }) => ({ id: _id, ...department }));
 }

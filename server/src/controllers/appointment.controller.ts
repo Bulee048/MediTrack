@@ -135,3 +135,6 @@ export class AppointmentController {
     }
   }
 }
+
+export const getMyAppointments = AppointmentController.getMyAppointments;
+export const getAppointmentById = AppointmentController.getAppointmentById;

@@ -8,7 +8,7 @@ import type {
   DoctorsResult,
 } from './types';
 
-const useMockData = import.meta.env.VITE_USE_FEATURE_MOCKS === 'true';
+const useMockData = import.meta.env.DEV && import.meta.env.VITE_USE_FEATURE_MOCKS === 'true';
 
 export async function fetchDoctors(filters: DoctorListFilters = {}): Promise<DoctorsResult> {
   if (useMockData) {
@@ -48,7 +48,7 @@ export async function fetchDoctorAvailability(id: string, date: string): Promise
     return acc;
   }, {});
 
-  const days = Object.entries(grouped).map(([day, slots]) => {
+  const days = Object.entries(grouped).sort(([a], [b]) => a.localeCompare(b)).map(([day, slots]) => {
     const convertedSlots = slots.map((slot) => ({
       id: `${slot.date}-${slot.startTime}-${slot.endTime}`,
       label: `${slot.startTime} - ${slot.endTime}`,
@@ -56,7 +56,7 @@ export async function fetchDoctorAvailability(id: string, date: string): Promise
       endTime: slot.endTime,
       capacity: slot.capacity,
       bookedCount: slot.bookedCount,
-      available: slot.bookedCount < slot.capacity,
+      available: slot.bookedCount < slot.capacity && data.availabilityStatus !== 'UNAVAILABLE' && day >= new Date().toISOString().slice(0, 10),
     }));
     const totalCapacity = convertedSlots.reduce((sum, slot) => sum + slot.capacity, 0);
     const bookedCount = convertedSlots.reduce((sum, slot) => sum + slot.bookedCount, 0);
