@@ -140,7 +140,7 @@ export default function SelectDateScreen() {
             {doctor.title || 'Specialist'} · {doctor.experienceYears ? `${doctor.experienceYears} Yrs Exp` : 'Experience not listed'}
           </p>
           <p className="mt-1 inline-flex items-center gap-1 text-[12.5px] font-bold text-slate-700">
-            <Star size={13} className="fill-amber-500 text-amber-500" /> {doctor.rating?.toFixed?.(1) ?? '0.0'}
+            <Star size={13} className="fill-amber-500 text-amber-500" /> {doctor.availabilityStatus ?? 'AVAILABLE'}
           </p>
         </div>
 

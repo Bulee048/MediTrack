@@ -34,7 +34,7 @@ export default function SelectTimeScreen() {
   const [doctorResult, setDoctorResult] = useState<DoctorProfileResult | null>(null);
   const [availability, setAvailability] = useState<DoctorAvailabilityView | null>(null);
   const [loading, setLoading] = useState(true);
-  const [selectedSlotId, setSelectedSlotId] = useState(state.slotId ?? '');
+  const [selectedSlotId, setSelectedSlotId] = useState('slotId' in state ? state.slotId ?? '' : '');
   const [error, setError] = useState('');
 
   const doctor = doctorResult?.doctor ?? state.doctor ?? null;
@@ -68,6 +68,18 @@ export default function SelectTimeScreen() {
   }, [id, selectedDate]);
 
   const topDay = useMemo(() => availability?.days.find((day) => day.date === selectedDate) ?? availability?.days[0] ?? null, [availability, selectedDate]);
+
+  const groupedSlots = useMemo(() => {
+    if (!topDay) return [];
+
+    const periods = ['Morning', 'Afternoon', 'Evening'] as const;
+    return periods
+      .map((period) => ({
+        period,
+        slots: topDay.slots.filter((slot) => slotPeriod(slot.startTime) === period),
+      }))
+      .filter((group) => group.slots.length > 0);
+  }, [topDay]);
 
   const selectedSlot = useMemo(() => topDay?.slots.find((slot) => slot.id === selectedSlotId) ?? null, [selectedSlotId, topDay]);
 
@@ -131,7 +143,7 @@ export default function SelectTimeScreen() {
             {doctor.title || 'Specialist'} · {doctor.experienceYears ? `${doctor.experienceYears} Yrs Exp` : 'Experience not listed'}
           </p>
           <p className="mt-1 inline-flex items-center gap-1 text-[12.5px] font-bold text-slate-700">
-            <Star size={13} className="fill-amber-500 text-amber-500" /> {doctor.rating?.toFixed?.(1) ?? '0.0'}
+            <Star size={13} className="fill-amber-500 text-amber-500" /> {doctor.availabilityStatus ?? 'AVAILABLE'}
           </p>
         </div>
 
@@ -139,6 +151,12 @@ export default function SelectTimeScreen() {
           <CalendarDays size={17} className="mr-2 inline-block align-text-bottom" />
           {selectedDate ? formatLongDate(selectedDate) : 'Select a date first'}
         </div>
+
+        {error ? (
+          <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-[13px] font-semibold text-red-700">
+            {error}
+          </div>
+        ) : null}
 
         {topDay ? (
           <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -150,25 +168,32 @@ export default function SelectTimeScreen() {
               <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-700">{topDay.totalCapacity} total</span>
             </div>
 
-            <div className="mt-4 grid grid-cols-2 gap-2.5">
-              {topDay.slots.map((slot) => (
-                <button
-                  key={slot.id}
-                  disabled={!slot.available}
-                  onClick={() => setSelectedSlotId(slot.id)}
-                  className={`rounded-xl border px-3 py-3 text-left transition ${
-                    !slot.available
-                      ? 'cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400 line-through'
-                      : selectedSlotId === slot.id
-                        ? 'border-blue-600 bg-blue-600 text-white'
-                        : 'border-slate-200 bg-white text-slate-700 hover:border-blue-200'
-                  }`}
-                >
-                  <span className="block text-[12.5px] font-bold">{slot.label}</span>
-                  <span className={`mt-1 block text-[11px] ${slot.available ? (selectedSlotId === slot.id ? 'text-white/80' : 'text-slate-400') : 'text-slate-500'}`}>
-                    {slot.available ? `${slot.capacity - slot.bookedCount} slots left` : 'Fully booked'}
-                  </span>
-                </button>
+            <div className="mt-4 space-y-4">
+              {groupedSlots.map((group) => (
+                <div key={group.period}>
+                  <p className="mb-2 text-[11.5px] font-bold uppercase tracking-wide text-slate-400">{group.period}</p>
+                  <div className="grid grid-cols-2 gap-2.5">
+                    {group.slots.map((slot) => (
+                      <button
+                        key={slot.id}
+                        disabled={!slot.available}
+                        onClick={() => setSelectedSlotId(slot.id)}
+                        className={`rounded-xl border px-3 py-3 text-left transition ${
+                          !slot.available
+                            ? 'cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400 line-through'
+                            : selectedSlotId === slot.id
+                              ? 'border-blue-600 bg-blue-600 text-white'
+                              : 'border-slate-200 bg-white text-slate-700 hover:border-blue-200'
+                        }`}
+                      >
+                        <span className="block text-[12.5px] font-bold">{slot.label}</span>
+                        <span className={`mt-1 block text-[11px] ${slot.available ? (selectedSlotId === slot.id ? 'text-white/80' : 'text-slate-400') : 'text-slate-500'}`}>
+                          {slot.available ? `${slot.capacity - slot.bookedCount} slots left` : 'Fully booked'}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
               ))}
             </div>
           </div>
