@@ -99,6 +99,18 @@ export default function App() {
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<LoginScreen />} />
           <Route path="/register" element={<RegisterScreen />} />
+
+          {/* Primary Integration Routes for Shared PatientShell */}
+          <Route path="/app/home" element={<HomeScreen />} />
+          <Route path="/app/departments" element={<DepartmentsScreen />} />
+          <Route path="/app/doctors" element={<DoctorListScreen />} />
+          <Route path="/app/doctor/:id" element={<DoctorProfileScreen />} />
+          <Route path="/app/book/date/:doctorId" element={<SelectDateScreen />} />
+          <Route path="/app/book/time/:doctorId" element={<SelectTimeScreen />} />
+          <Route path="/app/book/review" element={<ReviewAppointmentScreen />} />
+          <Route path="/app/book/done/:id" element={<BookingConfirmedScreen />} />
+
+          {/* Feature Route Aliases */}
           <Route path="/patient/home" element={<HomeScreen />} />
           <Route path="/patient/departments" element={<DepartmentsScreen />} />
           <Route path="/patient/doctors" element={<DoctorListScreen />} />
@@ -107,7 +119,7 @@ export default function App() {
           <Route path="/patient/doctors/:id/date" element={<SelectDateScreen />} />
           <Route path="/patient/doctors/:id/time" element={<SelectTimeScreen />} />
           <Route path="/patient/doctors/:id/review" element={<ReviewAppointmentScreen />} />
-          <Route path="/patient/doctors/:id/confirmed" element={<BookingConfirmedScreen />} /> {/* NEW */}
+          <Route path="/patient/doctors/:id/confirmed" element={<BookingConfirmedScreen />} />
         </Routes>
       </BrowserRouter>
       <Toaster />

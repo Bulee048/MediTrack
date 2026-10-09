@@ -4,7 +4,7 @@ import type { AuthLoginResponse, AuthOtpConfig, AuthOtpRequest, AuthOtpVerificat
 import { clearAuthToken, getAuthToken, setAuthToken } from './auth.storage';
 import { getLoginPayload } from './auth.utils';
 
-const useMockData = import.meta.env.VITE_USE_FEATURE_MOCKS !== 'false';
+const useMockData = import.meta.env.VITE_USE_FEATURE_MOCKS === 'true';
 
 export async function getAuthOtpConfig(): Promise<AuthOtpConfig> {
   return useMockData ? mockGetOtpConfig() : getOtpConfigApi();
