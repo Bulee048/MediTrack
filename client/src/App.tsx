@@ -5,6 +5,7 @@ import LoginScreen from '@/features/auth/LoginScreen';
 import RegisterScreen from '@/features/auth/RegisterScreen';
 import HomeScreen from '@/features/booking/HomeScreen';
 import DepartmentsScreen from '@/features/doctors/DepartmentsScreen';
+import DoctorListScreen from '@/features/doctors/DoctorListScreen';
 import { Activity, Hospital, UserCheck, Clock } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -94,6 +95,7 @@ export default function App() {
           <Route path="/register" element={<RegisterScreen />} />
           <Route path="/patient/home" element={<HomeScreen />} />
           <Route path="/patient/departments" element={<DepartmentsScreen />} />
+          <Route path="/patient/doctors" element={<DoctorListScreen />} />
         </Routes>
       </BrowserRouter>
       <Toaster />
