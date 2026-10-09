@@ -37,15 +37,15 @@ export function PatientShell({
   const showHeader = Boolean(title || back);
 
   return (
-    <div className="relative mx-auto flex min-h-screen w-full flex-col bg-canvas md:min-h-0 md:h-[860px] md:max-h-[94vh] md:w-[404px] md:overflow-hidden md:rounded-[2.4rem] md:device-shadow">
+    <div className="relative mx-auto flex h-dvh min-h-0 w-full min-w-0 flex-col overflow-hidden bg-canvas md:h-[860px] md:max-h-[94vh] md:w-[404px] md:rounded-[2.4rem] md:device-shadow">
       <StatusBar />
-      <div className="flex-1 overflow-y-auto hide-scrollbar">
+      <main className="min-h-0 min-w-0 flex-1 overflow-y-auto hide-scrollbar">
         {showHeader && (
           <header className="sticky top-0 z-30 flex items-center gap-3 bg-canvas/95 px-5 py-4 backdrop-blur">
             {back && (
               <button
                 onClick={goBack}
-                className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-line bg-white text-ink shadow-soft transition hover:bg-brand-50 hover:text-brand-700"
+                className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-line bg-white text-ink shadow-soft transition hover:bg-brand-50 hover:text-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-700 focus-visible:ring-offset-2 motion-reduce:transition-none"
                 aria-label="Go back"
               >
                 <ChevronLeft size={19} />
@@ -55,8 +55,8 @@ export function PatientShell({
             {action}
           </header>
         )}
-        <div className={cn('px-5 pb-6', showHeader ? 'pt-0' : 'pt-5', fullBleed && 'px-0')}>{children}</div>
-      </div>
+        <div className={cn('min-w-0 px-4 pb-6 min-[360px]:px-5', showHeader ? 'pt-0' : 'pt-5', fullBleed && 'px-0 min-[360px]:px-0')}>{children}</div>
+      </main>
       {!hideTabs && <BottomBar pathname={pathname} />}
       <HomeIndicator />
     </div>
@@ -65,7 +65,7 @@ export function PatientShell({
 
 function BottomBar({ pathname }: { pathname: string }) {
   return (
-    <nav className="sticky bottom-0 z-30 border-t border-line bg-white/95 pb-1 pt-1.5 backdrop-blur md:pb-0">
+    <nav aria-label="Patient navigation" className="z-30 shrink-0 border-t border-line bg-white/95 pb-[max(0.25rem,env(safe-area-inset-bottom))] pt-1.5 backdrop-blur md:pb-0">
       <div className="grid grid-cols-5">
         {TABS.map((t) => {
           const active = pathname === t.to || pathname.startsWith(`${t.to}/`);
@@ -75,8 +75,8 @@ function BottomBar({ pathname }: { pathname: string }) {
               key={t.to}
               to={t.to}
               className={cn(
-                'relative flex flex-col items-center gap-1 py-1.5 text-[10px] font-semibold transition',
-                active ? 'text-brand-600' : 'text-ink-faint',
+                'relative flex min-w-0 flex-col items-center gap-1 py-1.5 text-[9px] font-semibold transition min-[360px]:text-[10px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-700 motion-reduce:transition-none',
+                active ? 'text-brand-700' : 'text-ink-soft',
               )}
             >
               <span className="relative">

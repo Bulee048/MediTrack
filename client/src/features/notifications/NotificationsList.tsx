@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { NotificationApiService, type NotificationData } from '@/services/notificationApi';
 import { getAuthErrorStatus, useAuthSession } from '@/config/api';
 import { Link, useLocation } from 'react-router-dom';
+import { PatientShell } from '@/components/layout/PatientShell';
 
 type Filter = 'all' | 'queue' | 'appointment' | 'system';
 const filters: { value: Filter; label: string }[] = [
@@ -21,7 +22,7 @@ const categories = {
   APPOINTMENT_CANCELLED: { group: 'appointment', label: 'Appointment cancelled', icon: CalendarDays, tone: 'bg-slate-100 text-slate-700' },
   SYSTEM: { group: 'system', label: 'System', icon: Info, tone: 'bg-slate-100 text-slate-700' },
 } as const;
-const cardStyle = 'min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_2px_12px_-6px_rgba(16,26,46,0.15)]';
+const cardStyle = 'min-w-0 rounded-2xl border border-line bg-white p-4 shadow-card';
 
 /** Uses the notification's actual timestamp; older items retain local date and time. */
 export function notificationTime(createdAt: string, now: number): string {
@@ -81,29 +82,27 @@ export function NotificationsList() {
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   return (
-    <div className="mx-auto w-full min-w-0 max-w-md space-y-4 text-slate-900">
-      <header>
-        <h1 className="text-xl font-extrabold tracking-tight">Notifications</h1>
-        <div className="mt-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-          <p className="text-sm font-semibold text-slate-600">{isLoading ? 'Checking for updates…' : isError && (authError || !notifications.length) ? 'Updates unavailable' : `${unread} unread`}</p>
+    <PatientShell title="Notifications" back>
+    <div className="w-full min-w-0 space-y-3 text-ink">
+        <div className="-mt-1 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+          <p className="text-[13px] font-semibold text-ink-soft" role="status" aria-live="polite">{isLoading ? 'Checking for updates…' : isError && (authError || !notifications.length) ? 'Updates unavailable' : `${unread} unread`}</p>
           <Button variant="ghost" disabled={!unread || pending || isLoading || Boolean(authError)} onClick={() => markAll.mutate()}
-            className="min-h-11 whitespace-normal px-2 text-xs font-bold text-teal-700 hover:bg-teal-50 hover:text-teal-800 focus-visible:ring-teal-700">
+            className="min-h-11 whitespace-normal px-2 text-[12.5px] font-bold text-brand-700 hover:bg-brand-50 hover:text-brand-800 focus-visible:ring-brand-700">
             <CheckCheck aria-hidden="true" className="mr-1.5 h-4 w-4 shrink-0" />
             {markAll.isPending ? 'Marking all…' : 'Mark all read'}
           </Button>
         </div>
-      </header>
-      <div role="group" aria-label="Filter notifications" className="flex flex-wrap gap-2">
+      <div role="group" aria-label="Filter notifications" className="flex min-w-0 flex-wrap gap-2 pb-1">
         {filters.map(item => (
           <button key={item.value} type="button" aria-pressed={filter === item.value} onClick={() => setFilter(item.value)}
-            className={`min-h-11 rounded-full border px-3.5 py-2 text-xs font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-700 focus-visible:ring-offset-2 ${filter === item.value ? 'border-teal-700 bg-teal-700 text-white' : 'border-slate-300 bg-white text-slate-700 hover:bg-teal-50'}`}>
+            className={`min-h-11 rounded-full border px-3 py-2 text-xs font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-700 focus-visible:ring-offset-2 ${filter === item.value ? 'border-brand-700 bg-brand-700 text-white' : 'border-line bg-white text-ink-soft hover:bg-brand-50'}`}>
             {item.label}
           </button>
         ))}
       </div>
-      <div role="status" aria-live="polite" aria-atomic="true">
+      {feedback && <div role="status" aria-live="polite" aria-atomic="true">
         {feedback && <p className={`rounded-xl border p-3 text-sm ${feedback.error ? 'border-rose-200 bg-rose-50 text-rose-900' : 'border-teal-200 bg-teal-50 text-teal-900'}`}>{feedback.message}</p>}
-      </div>
+      </div>}
       {isError && (
         <section role="alert" className={`${cardStyle} border-rose-200 text-center`}>
           <AlertCircle aria-hidden="true" className="mx-auto h-8 w-8 text-rose-700" />
@@ -139,6 +138,7 @@ export function NotificationsList() {
         </section>
       )}
     </div>
+    </PatientShell>
   );
 }
 
@@ -149,20 +149,20 @@ function NotificationCard({ notification: item, now, disabled, pending, onRead }
   const Icon = category.icon;
   const validTime = !Number.isNaN(new Date(item.createdAt).getTime());
   return (
-    <article aria-busy={pending} className={`${cardStyle} ${item.isRead ? '' : 'border-teal-300 ring-1 ring-teal-100'}`}>
+    <article aria-busy={pending} className={`${cardStyle} ${item.isRead ? '' : 'border-brand-300 ring-1 ring-brand-100'}`}>
       <div className="flex min-w-0 items-start gap-3">
         <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${category.tone}`}>
           <Icon aria-hidden="true" className="h-5 w-5" />
         </span>
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
-            <h2 className="break-words text-sm font-extrabold leading-snug">{item.title}</h2>
-            {!item.isRead && <span aria-hidden="true" className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-teal-700" />}
+            <h2 className="break-words text-[13.5px] font-extrabold leading-snug text-ink [overflow-wrap:anywhere]">{item.title}</h2>
+            {!item.isRead && <span aria-hidden="true" className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-brand-700" />}
           </div>
-          <p className="mt-1 break-words text-sm leading-relaxed text-slate-600 [overflow-wrap:anywhere]">{item.message}</p>
-          <p className="mt-2 break-words text-xs font-semibold text-slate-600">{category.label} · {item.isRead ? 'Read' : 'Unread'}</p>
+          <p className="mt-1 break-words text-[12.5px] leading-relaxed text-ink-soft [overflow-wrap:anywhere]">{item.message}</p>
+          <p className="mt-2 break-words text-[11px] font-semibold text-ink-soft">{category.label} · {item.isRead ? 'Read' : 'Unread'}</p>
           <time dateTime={validTime ? item.createdAt : undefined} title={validTime ? new Date(item.createdAt).toLocaleString() : undefined}
-            className="mt-1 block text-xs leading-relaxed text-slate-600">{notificationTime(item.createdAt, now)}</time>
+            className="mt-1 block text-[11px] leading-relaxed text-ink-soft">{notificationTime(item.createdAt, now)}</time>
           {!item.isRead && (
             <button type="button" disabled={disabled} onClick={onRead} aria-label={`Mark notification as read: ${item.title}`}
               className="mt-2 min-h-11 rounded-lg px-2 py-2 text-xs font-bold text-teal-700 hover:bg-teal-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-700 disabled:cursor-wait disabled:opacity-60">

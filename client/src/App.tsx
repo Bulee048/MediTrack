@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from '@/components/ui/sonner';
 import { PatientLiveQueue } from '@/features/queue/PatientLiveQueue';
 import { NotificationsList } from '@/features/notifications/NotificationsList';
@@ -31,12 +31,12 @@ export default function App() {
 
           {/* Patient App screens */}
           <Route path="/app/home" element={<Home />} />
-          <Route path="/app/queue" element={<main className="min-h-screen bg-slate-50 p-6"><PatientLiveQueue /></main>} />
-          <Route path="/app/notifications" element={<main className="min-h-screen bg-slate-50 p-6"><NotificationsList /></main>} />
+          <Route path="/app/queue" element={<PatientLiveQueue />} />
+          <Route path="/app/notifications" element={<NotificationsList />} />
 
           {/* Legacy route aliases to preserve existing working behavior */}
-          <Route path="/queue" element={<main className="min-h-screen bg-slate-50 p-6"><PatientLiveQueue /></main>} />
-          <Route path="/notifications" element={<main className="min-h-screen bg-slate-50 p-6"><NotificationsList /></main>} />
+          <Route path="/queue" element={<Navigate to="/app/queue" replace />} />
+          <Route path="/notifications" element={<Navigate to="/app/notifications" replace />} />
         </Routes>
       </BrowserRouter>
       <Toaster />

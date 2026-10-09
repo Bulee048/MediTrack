@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { isAxiosError } from 'axios';
-import { Bell, CheckCircle2, Clock, Hospital, Pause, RefreshCw, XCircle } from 'lucide-react';
+import { Bell, CheckCircle2, Clock, Hospital, Pause, RefreshCw, SkipForward, XCircle } from 'lucide-react';
+import { PatientShell } from '@/components/layout/PatientShell';
 import { Button } from '@/components/ui/button';
 import { QueueApiService, type QueueTicketData } from '@/services/queueApi';
 import { QueueStatusProgress } from './components/QueueStatusProgress';
@@ -10,8 +11,8 @@ import { Link, useLocation } from 'react-router-dom';
 
 type QueueStatus = QueueTicketData['status'];
 
-const cardStyle = 'min-w-0 rounded-2xl border border-slate-200 bg-white shadow-[0_1px_2px_rgba(16,26,46,0.04),0_8px_24px_-12px_rgba(16,26,46,0.12)]';
-const labelStyle = 'text-xs font-semibold uppercase tracking-wide text-slate-600';
+const cardStyle = 'min-w-0 rounded-2xl border border-line bg-white shadow-card';
+const labelStyle = 'text-[10px] font-bold uppercase tracking-wide text-ink-soft';
 const statusLabels: Record<QueueStatus, string> = {
   WAITING: 'Waiting',
   ALMOST_TURN: 'Almost your turn',
@@ -46,20 +47,19 @@ export function PatientLiveQueue() {
   const updated = formatTime(ticket?.lastUpdated);
 
   return (
-    <div className="mx-auto w-full min-w-0 max-w-md space-y-4 text-slate-900">
-      <header className="flex min-w-0 items-center justify-between gap-3 pb-1">
-        <h1 className="min-w-0 text-xl font-extrabold tracking-tight">Live OPD Ticket</h1>
+    <PatientShell title="Live OPD Ticket" back action={
         <Button
           variant="outline"
           size="icon"
           aria-label="Refresh queue status"
           disabled={isFetching}
           onClick={() => void refetch()}
-          className="shrink-0 rounded-xl border-slate-200 bg-white text-teal-700 hover:bg-teal-50 focus-visible:ring-teal-700"
+          className="h-11 w-11 shrink-0 rounded-xl border-line bg-white text-brand-700 shadow-soft hover:bg-brand-50 focus-visible:ring-brand-700"
         >
           <RefreshCw aria-hidden="true" className={`h-4 w-4 ${isFetching ? 'motion-safe:animate-spin' : ''}`} />
         </Button>
-      </header>
+    }>
+    <div className="w-full min-w-0 space-y-4 text-ink">
 
       {isLoading ? (
         <section className={`${cardStyle} px-5 py-10 text-center`} role="status" aria-live="polite" aria-busy="true">
@@ -97,47 +97,48 @@ export function PatientLiveQueue() {
               Updates are temporarily unavailable. Your last queue information is shown; use Refresh to try again.
             </p>
           )}
-          <section className={`${cardStyle} px-5 py-6 sm:px-6`} aria-labelledby="queue-number-label">
+          <section className={`${cardStyle} p-4 min-[360px]:p-5`} aria-labelledby="queue-number-label">
             <div className="text-center">
               <h2 id="queue-number-label" className={labelStyle}>Your queue number</h2>
-              <div className="relative mx-auto mt-4 grid min-h-40 w-40 place-items-center rounded-full border-[6px] border-teal-700 bg-teal-50/40 p-2 ring-4 ring-teal-100/60">
-                <p className="max-w-full break-all text-[28px] font-extrabold leading-tight tracking-tight text-teal-700">
+              <div className="relative mx-auto mt-4 grid h-36 w-36 place-items-center rounded-full border-[6px] border-brand-600 bg-white p-2">
+                <p className={`max-w-full break-all font-extrabold leading-tight tracking-tight text-brand-700 ${ticket.ticketNumber.length > 10 ? 'text-[20px]' : ticket.ticketNumber.length > 7 ? 'text-[24px]' : 'text-[30px]'}`}>
                   {ticket.ticketNumber}
                 </p>
               </div>
-              <p className="mt-5 break-words text-lg font-extrabold tracking-tight">
+              <p className="mt-5 break-words text-[17px] font-extrabold tracking-tight">
                 {ticket.department?.name || 'OPD'}{room ? ` — Room ${room}` : ''}
               </p>
-              {ticket.doctor?.name && <p className="mt-1 break-words text-sm text-slate-600">{ticket.doctor.name}</p>}
+              {ticket.doctor?.name && <p className="mt-1 break-words text-[12.5px] text-ink-soft">{ticket.doctor.name}</p>}
             </div>
 
-            <dl className="mt-6">
-              <div className="flex min-w-0 items-center justify-between gap-4 rounded-xl border border-teal-200 bg-teal-50 px-4 py-4">
-                <dt className="text-sm font-bold text-teal-900">Current position</dt>
-                <dd className="shrink-0 text-2xl font-extrabold leading-none text-teal-800">
-                  {isWaiting ? ticket.currentPosition : <span className="text-sm font-semibold">Not waiting</span>}
+            <dl className="mt-5">
+              <div className="flex min-w-0 flex-wrap items-center justify-between gap-2 rounded-xl border border-brand-200 bg-brand-50 px-3 py-3">
+                <dt className="text-[13px] font-bold text-brand-900">Current position</dt>
+                <dd className="text-2xl font-extrabold leading-none text-brand-800">
+                  {isWaiting ? ticket.currentPosition : <span className="text-[12px] font-semibold">Not waiting</span>}
                 </dd>
               </div>
-              <div className="mt-5 grid grid-cols-2 gap-4 border-b border-slate-200 pb-5">
+              <div className="mt-4 grid grid-cols-2 gap-3 border-t border-line pt-4">
                 <div className="min-w-0">
                   <dt className={labelStyle}>Now serving</dt>
-                  <dd className="mt-1 break-all text-xl font-extrabold text-teal-700">{ticket.nowServing || '—'}</dd>
+                  <dd className="mt-1 break-all text-[19px] font-extrabold text-brand-700">{ticket.nowServing || '—'}</dd>
                 </div>
                 <div className="min-w-0 text-right">
                   <dt className={labelStyle}>Estimated wait</dt>
-                  <dd className="mt-1 break-words text-xl font-extrabold text-rose-700">
+                  <dd className="mt-1 break-words text-[19px] font-extrabold text-danger-600">
                     {isWaiting ? `~${ticket.estimatedWaitMins} mins` : '—'}
                   </dd>
                 </div>
               </div>
             </dl>
-            <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-xs font-semibold">
-              <span className="rounded-full bg-teal-50 px-3 py-1.5 text-teal-800">{statusLabels[ticket.status]}</span>
-              {checkedIn && <span className="rounded-full bg-slate-100 px-3 py-1.5 text-slate-700">Checked in {checkedIn}</span>}
+            {isWaiting && <p className="mt-3 text-left text-[11.5px] font-medium text-ink-soft">{ticket.patientsAhead} patient{ticket.patientsAhead === 1 ? '' : 's'} ahead of you</p>}
+            <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-[11px] font-semibold">
+              <span className="rounded-full bg-brand-50 px-3 py-1.5 text-brand-800">{statusLabels[ticket.status]}</span>
+              {checkedIn && <span className="rounded-full bg-canvas px-3 py-1.5 text-ink-soft">Checked in {checkedIn}</span>}
             </div>
           </section>
 
-          <QueueStatusCard status={ticket.status} room={room} position={ticket.currentPosition} />
+          <QueueStatusCard status={ticket.status} room={room} doctorName={ticket.doctor?.name} position={ticket.currentPosition} />
           <QueueStatusProgress status={ticket.status} />
           {['COMPLETED', 'CANCELLED', 'SKIPPED'].includes(ticket.status) && <section className={`${cardStyle} p-5`}><PatientCheckIn key={authSession} authSession={authSession} /></section>}
 
@@ -151,6 +152,7 @@ export function PatientLiveQueue() {
         </>
       )}
     </div>
+    </PatientShell>
   );
 }
 
@@ -210,11 +212,20 @@ function PatientCheckIn({ authSession }: { authSession: number }) {
   </div>;
 }
 
-function QueueStatusCard({ status, room, position }: { status: QueueStatus; room?: string; position: number }) {
+function QueueStatusCard({ status, room, doctorName, position }: { status: QueueStatus; room?: string; doctorName?: string; position: number }) {
   const calling = status === 'CALLING';
   const almost = status === 'ALMOST_TURN';
-  const exceptional = ['HELD', 'SKIPPED', 'CANCELLED'].includes(status);
-  const Icon = calling || status === 'COMPLETED' ? CheckCircle2 : almost ? Bell : exceptional ? Pause : Clock;
+  const Icon = calling || status === 'COMPLETED' ? CheckCircle2 : almost ? Bell : status === 'HELD' ? Pause : status === 'SKIPPED' ? SkipForward : status === 'CANCELLED' ? XCircle : status === 'IN_CONSULTATION' ? Hospital : Clock;
+  const tones: Record<QueueStatus, string> = {
+    WAITING: 'border-brand-200 bg-brand-50/60 text-brand-900',
+    ALMOST_TURN: 'border-rose-200 bg-danger-soft text-rose-900',
+    CALLING: 'border-brand-700 bg-gradient-to-b from-brand-700 to-brand-800 text-white shadow-card',
+    IN_CONSULTATION: 'border-sky-200 bg-info-soft text-sky-900',
+    HELD: 'border-amber-200 bg-warn-soft text-amber-950',
+    SKIPPED: 'border-rose-200 bg-danger-soft text-rose-900',
+    COMPLETED: 'border-brand-200 bg-brand-50 text-brand-900',
+    CANCELLED: 'border-line bg-canvas text-ink-soft',
+  };
   const description: Record<QueueStatus, string> = {
     WAITING: position === 1 ? 'You are at the front of the waiting queue. Please wait until your ticket is called.' : 'Please wait for your ticket to be called. Your position updates as the queue moves.',
     ALMOST_TURN: `Please be ready near ${room ? `Room ${room}` : 'the OPD room'}. Wait for your ticket to be called before entering.`,
@@ -230,17 +241,21 @@ function QueueStatusCard({ status, room, position }: { status: QueueStatus; room
       role="status"
       aria-live={calling ? 'assertive' : 'polite'}
       aria-atomic="true"
-      className={`rounded-2xl p-5 ${calling ? 'bg-gradient-to-b from-teal-700 to-teal-900 text-white shadow-lg' : almost ? 'border border-amber-200 bg-amber-50 text-amber-950' : exceptional ? 'border border-slate-300 bg-slate-100 text-slate-900' : 'border border-teal-200 bg-teal-50/60 text-teal-900'}`}
+      className={`min-w-0 rounded-2xl border p-5 ${tones[status]}`}
     >
-      <div className="flex items-start gap-3">
-        <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-full ${calling ? 'bg-white/15' : 'bg-white/80'}`}>
-          <Icon aria-hidden="true" className="h-5 w-5" />
+      <div className={calling || almost ? 'flex flex-col items-center text-center' : 'flex items-start gap-3'}>
+        <span className={`grid shrink-0 place-items-center rounded-full ${calling ? 'h-20 w-20 bg-white/10 ring-2 ring-white/25' : almost ? 'h-16 w-16 bg-rose-100 text-rose-700' : 'h-10 w-10 bg-white/80'}`}>
+          <Icon aria-hidden="true" className={calling || almost ? 'h-8 w-8' : 'h-5 w-5'} />
         </span>
         <div className="min-w-0">
-          <h2 className={`font-extrabold tracking-tight ${calling ? 'text-2xl' : 'text-lg'}`}>{statusLabels[status]}</h2>
-          <p className={`mt-2 break-words text-sm leading-relaxed ${calling ? 'text-white' : ''}`}>{description[status]}</p>
+          <h2 className={`font-extrabold tracking-tight ${calling ? 'mt-5 text-[26px]' : almost ? 'mt-4 text-[22px]' : 'text-[15px]'}`}>{statusLabels[status]}</h2>
+          <p className="mt-2 break-words text-[12.5px] leading-relaxed">{description[status]}</p>
         </div>
       </div>
+      {calling && <div className="mt-5 rounded-xl bg-white p-4 text-center text-ink shadow-soft">
+        <p className="break-words text-[24px] font-extrabold text-brand-700">{room ? `Room ${room}` : 'Consultation room'}</p>
+        {doctorName && <p className="mt-2 border-t border-line pt-3 text-[13px] font-bold">{doctorName}</p>}
+      </div>}
     </section>
   );
 }
