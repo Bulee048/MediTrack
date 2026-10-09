@@ -3,6 +3,7 @@ import { env } from '../config/env.js';
 import authRoutes from './auth.routes.js';
 import departmentRoutes from './department.routes.js';
 import doctorRoutes from './doctor.routes.js';
+import appointmentRoutes from './appointment.routes.js';
 
 const router = Router();
 
@@ -23,5 +24,6 @@ router.get('/health', (_req: Request, res: Response) => {
 router.use('/auth', authRoutes);
 router.use('/departments', departmentRoutes);
 router.use('/doctors', doctorRoutes);
+router.use('/appointments', appointmentRoutes);
 
 export default router;
