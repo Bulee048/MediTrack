@@ -46,8 +46,65 @@ export interface DoctorListFilters {
 
 export type DoctorsSource = 'api' | 'mock';
 
+export type DoctorAvailabilityStatus = 'AVAILABLE' | 'LIMITED' | 'UNAVAILABLE';
+
 export interface DoctorsResult {
   doctors: DoctorSummary[];
+  source: DoctorsSource;
+  fallbackReason?: string;
+}
+
+export interface DoctorProfileResult {
+  doctor: DoctorSummary | null;
+  source: DoctorsSource;
+  fallbackReason?: string;
+}
+
+export interface DoctorAvailabilityApiSlot {
+  date: string;
+  startTime: string;
+  endTime: string;
+  capacity: number;
+  bookedCount: number;
+}
+
+export interface DoctorAvailabilityApiResult {
+  doctorId: string;
+  doctorName: string;
+  availabilityStatus: DoctorAvailabilityStatus;
+  slots: DoctorAvailabilityApiSlot[];
+}
+
+export interface DoctorAvailabilitySlotView {
+  id: string;
+  label: string;
+  startTime: string;
+  endTime: string;
+  capacity: number;
+  bookedCount: number;
+  available: boolean;
+}
+
+export interface DoctorAvailabilityDayView {
+  date: string;
+  label: string;
+  capacityLeft: number;
+  totalCapacity: number;
+  available: boolean;
+  slots: DoctorAvailabilitySlotView[];
+}
+
+export interface DoctorAvailabilityView {
+  doctorId: string;
+  doctorName: string;
+  availabilityStatus: DoctorAvailabilityStatus;
+  source: DoctorsSource;
+  fallbackReason?: string;
+  days: DoctorAvailabilityDayView[];
+}
+
+export interface DoctorAvailabilityResult {
+  view: DoctorAvailabilityView | null;
   source: DoctorsSource;
   fallbackReason?: string;
 }

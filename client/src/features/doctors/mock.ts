@@ -1,4 +1,13 @@
-import type { DoctorAvailability, DoctorAvailabilityGroup, DoctorAvailabilitySlot, DoctorDepartment, DoctorDetails, DoctorListFilters } from './types';
+import type {
+  DoctorAvailability,
+  DoctorAvailabilityDayView,
+  DoctorAvailabilityGroup,
+  DoctorAvailabilitySlot,
+  DoctorAvailabilityView,
+  DoctorDepartment,
+  DoctorDetails,
+  DoctorListFilters,
+} from './types';
 
 export const doctorMockDepartments: DoctorDepartment[] = [
   { id: 'dept-cardiology', name: 'Cardiology', code: 'CARD', icon: 'heart-pulse', description: 'Heart and vascular care', roomNumber: 'C-12', doctorCount: 6, isActive: true },
@@ -90,6 +99,49 @@ export function filterDoctors(filters: DoctorListFilters = {}) {
 
 export function getDoctorById(id: string) {
   return doctorMockData.find((doctor) => doctor.id === id) ?? null;
+}
+
+export function buildMockAvailabilityView(id: string): DoctorAvailabilityView | null {
+  const doctor = getDoctorById(id);
+  if (!doctor) return null;
+
+  const days: DoctorAvailabilityDayView[] = Array.from({ length: 7 }).map((_, index) => {
+    const date = new Date();
+    date.setDate(date.getDate() + index);
+    const iso = date.toISOString().split('T')[0];
+    const dayAvailability = buildDoctorAvailability(id, iso);
+    const slots = dayAvailability.groups.flatMap((group) =>
+      group.slots.map((slot) => ({
+        id: slot.id,
+        label: slot.label,
+        startTime: slot.label,
+        endTime: slot.label,
+        capacity: slot.enabled ? 20 : 20,
+        bookedCount: slot.enabled ? 4 : 20,
+        available: slot.enabled,
+      })),
+    );
+
+    const totalCapacity = slots.reduce((sum, slot) => sum + slot.capacity, 0);
+    const bookedCount = slots.reduce((sum, slot) => sum + slot.bookedCount, 0);
+
+    return {
+      date: iso,
+      label: date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
+      capacityLeft: Math.max(0, totalCapacity - bookedCount),
+      totalCapacity,
+      available: dayAvailability.available,
+      slots,
+    };
+  });
+
+  return {
+    doctorId: doctor.id,
+    doctorName: doctor.name,
+    availabilityStatus: doctor.availabilityStatus ?? 'AVAILABLE',
+    source: 'mock' as const,
+    days,
+  };
 }
 
 export function buildDoctorAvailability(id: string, date: string): DoctorAvailability {

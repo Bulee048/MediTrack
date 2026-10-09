@@ -1,5 +1,5 @@
 import { apiClient } from '@/config/api';
-import type { DoctorAvailability, DoctorListFilters, DoctorSummary } from './types';
+import type { DoctorAvailabilityApiResult, DoctorListFilters, DoctorSummary } from './types';
 
 export async function listDoctors(filters: DoctorListFilters = {}) {
   const params: Record<string, string> = {};
@@ -20,6 +20,8 @@ export async function getDoctor(id: string) {
 }
 
 export async function getDoctorAvailability(id: string, date: string) {
-  const { data } = await apiClient.get<DoctorAvailability>(`/doctors/${id}/availability`, { params: { date } });
-  return data;
+  const { data } = await apiClient.get<{ success: boolean; message: string; data: DoctorAvailabilityApiResult }>(`/doctors/${id}/availability`, {
+    params: { date },
+  });
+  return data.data;
 }
