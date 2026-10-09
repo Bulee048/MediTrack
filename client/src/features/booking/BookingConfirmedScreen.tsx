@@ -42,18 +42,29 @@ export default function BookingConfirmedScreen() {
     return (
       <main className="min-h-screen bg-slate-50 px-4 py-6 sm:px-6">
         <div className="mx-auto flex w-full max-w-md flex-col gap-4">
-          <button onClick={() => navigate(-1)} className="grid h-10 w-10 place-items-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm">
-            <MoveLeft size={18} />
+          <button
+            onClick={() => navigate(-1)}
+            aria-label="Go back"
+            className="grid h-11 w-11 min-h-[44px] min-w-[44px] place-items-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 active:scale-95"
+          >
+            <MoveLeft size={20} />
           </button>
-          <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-5 text-amber-800">
-            <p className="text-[15px] font-extrabold">Confirmation unavailable</p>
+          <div role="alert" className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-amber-800">
+            <h1 className="text-[15px] font-extrabold">Confirmation unavailable</h1>
             <p className="mt-1 text-[12.5px] font-medium">We could not find the booking details for this appointment.</p>
           </div>
           <div className="flex gap-3">
-            <Button variant="outline" className="h-12 flex-1 border-slate-200 text-slate-700 hover:bg-slate-50" onClick={() => navigate(`/patient/doctors/${id}/review`)}>
+            <Button
+              variant="outline"
+              className="h-12 min-h-[44px] flex-1 border-slate-200 text-slate-700 hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-blue-600 font-bold"
+              onClick={() => navigate(`/patient/doctors/${id}/review`)}
+            >
               Back to Review
             </Button>
-            <Button className="h-12 flex-1 bg-blue-600 text-white hover:bg-blue-700" onClick={() => navigate('/patient/home')}>
+            <Button
+              className="h-12 min-h-[44px] flex-1 bg-blue-600 font-bold text-white hover:bg-blue-700 focus-visible:ring-2 focus-visible:ring-blue-600"
+              onClick={() => navigate('/patient/home')}
+            >
               Back to Home
             </Button>
           </div>
@@ -70,20 +81,24 @@ export default function BookingConfirmedScreen() {
             <p className="text-[13px] font-semibold text-slate-500">Booking</p>
             <h1 className="mt-0.5 text-[22px] font-extrabold uppercase tracking-tight text-slate-900">Booking Confirmed</h1>
           </div>
-          <button onClick={() => navigate('/patient/home')} className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm">
-            <MoveLeft size={18} />
+          <button
+            onClick={() => navigate('/patient/home')}
+            aria-label="Return to patient home"
+            className="grid h-11 w-11 min-h-[44px] min-w-[44px] shrink-0 place-items-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 active:scale-95"
+          >
+            <MoveLeft size={20} />
           </button>
         </div>
 
-        <div className="mt-2 rounded-3xl border border-emerald-200 bg-emerald-50 px-5 py-6 text-center shadow-sm">
+        <div role="status" className="mt-2 rounded-3xl border border-emerald-200 bg-emerald-50 px-5 py-6 text-center shadow-sm">
           <span className="mx-auto grid h-20 w-20 place-items-center rounded-full border-4 border-emerald-200 bg-emerald-600 text-white shadow-sm">
             <Check size={36} strokeWidth={3} />
           </span>
           <h2 className="mt-5 text-[24px] font-extrabold tracking-tight text-slate-900">Appointment Confirmed</h2>
           <p className="mt-1.5 text-[13px] text-slate-600">Your appointment has been saved successfully.</p>
           {appointmentIdentifier ? (
-            <p className="mt-2 inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-white px-3 py-1.5 text-[12.5px] font-bold text-emerald-700">
-              <Ticket size={14} /> Reference {appointmentIdentifier}
+            <p className="mt-3 inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-white px-3.5 py-1.5 text-[12.5px] font-bold text-emerald-700 shadow-sm">
+              <Ticket size={15} /> Reference: {appointmentIdentifier}
             </p>
           ) : null}
         </div>
@@ -91,7 +106,7 @@ export default function BookingConfirmedScreen() {
         <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <p className="text-[12px] font-semibold uppercase tracking-wide text-slate-400">Appointment Details</p>
 
-          <div className="mt-4 space-y-4">
+          <div className="mt-4 space-y-3.5">
             <DetailRow label="Doctor" value={doctor?.name ?? appointment.doctorName} />
             <DetailRow label="Department" value={department} />
             <DetailRow label="Date" value={selectedDate ? formatLongDate(selectedDate) : 'Date not listed'} />
@@ -99,9 +114,9 @@ export default function BookingConfirmedScreen() {
             <DetailRow label="Location" value={roomLabel} />
           </div>
 
-          <div className="mt-5 rounded-2xl bg-slate-50 px-4 py-3">
+          <div className="mt-5 rounded-2xl bg-slate-50 p-4 border border-slate-100">
             <p className="text-[11.5px] font-semibold uppercase tracking-wide text-slate-400">Queue reference</p>
-            <p className="mt-1 text-[15px] font-extrabold text-slate-900">{appointmentIdentifier || 'Pending'}</p>
+            <p className="mt-1 text-[16px] font-extrabold text-slate-900">{appointmentIdentifier || 'Pending'}</p>
           </div>
         </div>
 
@@ -112,21 +127,31 @@ export default function BookingConfirmedScreen() {
             </span>
             <div>
               <p className="text-[14px] font-extrabold text-slate-900">Keep this confirmation</p>
-              <p className="mt-0.5 text-[12.5px] text-slate-600">Show it at the counter if needed.</p>
+              <p className="mt-0.5 text-[12.5px] text-slate-600">Show this ticket at the counter upon arrival.</p>
             </div>
           </div>
         </div>
 
         <div className="mt-6 flex gap-3">
-          <Button variant="outline" className="h-12 flex-1 border-slate-200 text-slate-700 hover:bg-slate-50" onClick={() => navigate('/patient/home')}>
+          <Button
+            variant="outline"
+            className="h-12 min-h-[44px] flex-1 border-slate-200 text-slate-700 hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-blue-600 font-bold"
+            onClick={() => navigate('/patient/home')}
+          >
             Back to Home
           </Button>
-          <Button className="h-12 flex-1 bg-blue-600 text-white hover:bg-blue-700" onClick={() => navigate('/patient/appointments')}>
-            View Appointments
+          <Button
+            className="h-12 min-h-[44px] flex-1 bg-blue-600 font-bold text-white hover:bg-blue-700 focus-visible:ring-2 focus-visible:ring-blue-600"
+            onClick={() => navigate('/patient/home')}
+          >
+            Done
           </Button>
         </div>
 
-        <button onClick={() => navigate(`/patient/doctors/${id}/review`, { replace: true })} className="mt-4 w-full py-2 text-[13.5px] font-bold text-slate-500">
+        <button
+          onClick={() => navigate(`/patient/doctors/${id}/review`, { replace: true })}
+          className="mt-4 flex min-h-[44px] w-full items-center justify-center py-2 text-[13.5px] font-bold text-slate-500 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 rounded-lg"
+        >
           Edit booking
         </button>
       </div>

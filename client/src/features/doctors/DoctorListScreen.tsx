@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Search, Star, X, ChevronLeft, Building2, MapPin, Stethoscope } from 'lucide-react';
+import { Search, Star, X, ChevronLeft, Building2, MapPin, Stethoscope, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -91,55 +91,70 @@ export default function DoctorListScreen() {
           </div>
           <button
             onClick={() => navigate(-1)}
-            className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm"
+            aria-label="Go back"
+            className="grid h-11 w-11 min-h-[44px] min-w-[44px] shrink-0 place-items-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 active:scale-95"
           >
-            <ChevronLeft size={18} />
+            <ChevronLeft size={20} />
           </button>
         </div>
 
         <div className="flex gap-2.5">
           <div className="relative flex-1">
             <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-slate-400">
-              <Search size={17} />
+              <Search size={18} />
             </span>
             <Input
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="Search doctor…"
-              className="h-12 pl-10"
+              aria-label="Search doctor by name or specialty"
+              className="h-12 min-h-[44px] pl-10 pr-10 focus-visible:ring-2 focus-visible:ring-blue-600"
             />
+            {q ? (
+              <button
+                type="button"
+                onClick={() => setQ('')}
+                aria-label="Clear doctor search"
+                className="absolute inset-y-0 right-0 flex min-h-[44px] min-w-[44px] items-center justify-center text-slate-400 hover:text-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 rounded-r-md"
+              >
+                <X size={16} />
+              </button>
+            ) : null}
           </div>
 
           {minRating !== null ? (
             <button
               onClick={() => setMinRating(null)}
-              className="flex h-12 shrink-0 items-center gap-1.5 rounded-xl border border-blue-200 bg-blue-50 px-3.5 text-[12.5px] font-bold text-blue-700"
+              aria-label={`Clear rating filter ${minRating} stars`}
+              className="flex h-12 min-h-[44px] shrink-0 items-center gap-1.5 rounded-xl border border-blue-200 bg-blue-50 px-3.5 text-[12.5px] font-bold text-blue-700 hover:bg-blue-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
             >
-              <Star size={13} /> {minRating}+ <X size={13} />
+              <Star size={13} className="fill-blue-600 text-blue-600" /> {minRating}+ <X size={13} />
             </button>
           ) : null}
         </div>
 
-        <div className="mt-3 flex items-center gap-2 overflow-x-auto pb-1">
+        <div className="mt-3 flex items-center gap-2 overflow-x-auto pb-1" role="toolbar" aria-label="Doctor filters">
           {[4.5, 4.7, 4.9].map((rating) => (
             <button
               key={rating}
               onClick={() => setMinRating(minRating === rating ? null : rating)}
-              className={`shrink-0 rounded-full border px-3.5 py-2 text-[12.5px] font-bold transition ${
+              aria-pressed={minRating === rating}
+              className={`min-h-[44px] shrink-0 rounded-full border px-3.5 py-2.5 text-[12.5px] font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 ${
                 minRating === rating
                   ? 'border-blue-600 bg-blue-600 text-white'
                   : 'border-slate-200 bg-white text-slate-700 hover:border-blue-200'
               }`}
             >
               <span className="inline-flex items-center gap-1">
-                <Star size={12} className={minRating === rating ? 'fill-white text-white' : 'text-amber-500'} /> {rating}+
+                <Star size={12} className={minRating === rating ? 'fill-white text-white' : 'text-amber-500 fill-amber-500'} /> {rating}+
               </span>
             </button>
           ))}
 
           <button
             onClick={() => setAvailableOnly((value) => !value)}
-            className={`shrink-0 rounded-full border px-3.5 py-2 text-[12.5px] font-bold transition ${
+            aria-pressed={availableOnly}
+            className={`min-h-[44px] shrink-0 rounded-full border px-3.5 py-2.5 text-[12.5px] font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 ${
               availableOnly
                 ? 'border-blue-600 bg-blue-600 text-white'
                 : 'border-slate-200 bg-white text-slate-700 hover:border-blue-200'
@@ -148,18 +163,21 @@ export default function DoctorListScreen() {
             {availableOnly ? 'Available only' : 'Any status'}
           </button>
 
-          <button
-            onClick={resetFilters}
-            className="shrink-0 rounded-full border border-slate-200 bg-white px-3.5 py-2 text-[12.5px] font-bold text-slate-700 hover:border-blue-200"
-          >
-            Reset
-          </button>
+          {(q || minRating !== null || availableOnly) ? (
+            <button
+              onClick={resetFilters}
+              aria-label="Reset all filters"
+              className="min-h-[44px] shrink-0 rounded-full border border-slate-200 bg-white px-3.5 py-2.5 text-[12.5px] font-bold text-slate-700 hover:border-blue-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+            >
+              Reset
+            </button>
+          ) : null}
         </div>
 
-        <div className="mt-5 rounded-2xl bg-blue-700 p-4 text-white shadow-lg shadow-blue-900/10">
+        <div className="mt-5 rounded-2xl bg-blue-700 p-4 text-white shadow-md">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[10.5px] font-extrabold uppercase tracking-wider">Doctors</p>
+              <p className="text-[10.5px] font-extrabold uppercase tracking-wider text-blue-200">Doctors</p>
               <p className="mt-1 text-[15px] font-extrabold">Find the right specialist for your visit</p>
             </div>
             <Stethoscope size={20} className="opacity-90" />
@@ -170,19 +188,19 @@ export default function DoctorListScreen() {
         </div>
 
         {usingTemporaryData ? (
-          <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-[12.5px] font-semibold text-amber-800">
-            Live doctor data is temporarily unavailable. Showing demo doctors instead.
+          <div role="note" className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-[12.5px] font-semibold text-amber-800">
+            [Temporary demo data] Live doctor data is temporarily unavailable. Showing demo doctors instead.
           </div>
         ) : null}
 
         {result.fallbackReason ? (
-          <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-[12.5px] font-semibold text-amber-800">
+          <div role="note" className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-[12.5px] font-semibold text-amber-800">
             {result.fallbackReason}
           </div>
         ) : null}
 
         {loading ? (
-          <div className="mt-5 space-y-3.5">
+          <div role="status" aria-label="Loading doctors" className="mt-5 space-y-3.5">
             {Array.from({ length: 3 }).map((_, index) => (
               <div key={index} className="rounded-2xl border border-slate-200 bg-white shadow-sm">
                 <div className="p-4">
@@ -201,25 +219,34 @@ export default function DoctorListScreen() {
                       <Skeleton className="h-3.5 w-20" />
                       <Skeleton className="h-4 w-32" />
                     </div>
-                    <Skeleton className="h-10 w-24 rounded-xl" />
+                    <Skeleton className="h-11 w-24 rounded-xl" />
                   </div>
                 </div>
               </div>
             ))}
           </div>
         ) : error ? (
-          <div className="mt-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-5 text-red-700">
+          <div role="alert" className="mt-5 rounded-2xl border border-red-200 bg-red-50 p-5 text-red-700">
             <p className="text-[14px] font-extrabold">Could not load doctors</p>
             <p className="mt-1 text-[12.5px] font-medium">{error}</p>
-            <Button size="sm" variant="outline" className="mt-3 border-red-200 text-red-700 hover:bg-red-100" onClick={loadDoctors}>
-              Try Again
+            <Button
+              size="sm"
+              variant="outline"
+              className="mt-3 h-11 min-h-[44px] border-red-300 text-red-700 hover:bg-red-100 focus-visible:ring-2 focus-visible:ring-red-600 font-semibold"
+              onClick={loadDoctors}
+            >
+              <RotateCcw className="mr-2 h-4 w-4" /> Try Again
             </Button>
           </div>
         ) : doctors.length === 0 ? (
           <div className="mt-5 rounded-2xl border border-dashed border-slate-200 bg-white/70 p-6 text-center">
-            <p className="text-[13.5px] font-bold text-slate-900">No doctors match your search.</p>
+            <p className="text-[14px] font-bold text-slate-900">No doctors match your search.</p>
             <p className="mt-1 text-[12.5px] text-slate-500">Try a different name, rating, or department filter.</p>
-            <Button size="sm" className="mt-4 bg-blue-600 text-white hover:bg-blue-700" onClick={resetFilters}>
+            <Button
+              size="sm"
+              className="mt-4 h-11 min-h-[44px] bg-blue-600 text-white hover:bg-blue-700 focus-visible:ring-2 focus-visible:ring-blue-600 font-bold"
+              onClick={resetFilters}
+            >
               Clear Filters
             </Button>
           </div>
@@ -229,16 +256,17 @@ export default function DoctorListScreen() {
               const status = doctor.availabilityStatus ?? (doctor.nextSlot ? 'AVAILABLE' : 'UNAVAILABLE');
 
               return (
-                <div key={doctor.id} className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-                  <button onClick={() => navigate(`/patient/doctor/${doctor.id}`)} className="w-full px-4 pt-4 text-left">
+                <div key={doctor.id} className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md">
+                  <button
+                    onClick={() => navigate(`/patient/doctors/${doctor.id}`)}
+                    aria-label={`View profile of ${doctor.name}, ${doctor.title || 'Specialist'}`}
+                    className="w-full px-4 pt-4 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 rounded-t-2xl"
+                  >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <p className="text-[15.5px] font-extrabold tracking-tight text-slate-900">{doctor.name}</p>
                         <p className="mt-0.5 text-[12.5px] text-slate-500">
                           {doctor.title || 'Specialist'} · {doctor.department}
-                        </p>
-                        <p className="mt-1 text-[13px] font-bold text-blue-700">
-                          {doctor.department}
                         </p>
                       </div>
                       <div className="shrink-0 text-right">
@@ -274,8 +302,8 @@ export default function DoctorListScreen() {
                     <Button
                       size="sm"
                       disabled={status === 'UNAVAILABLE'}
-                      className="shrink-0 bg-blue-600 px-6 text-white hover:bg-blue-700 disabled:bg-slate-300 disabled:text-slate-600"
-                      onClick={() => navigate(`/patient/book/date/${doctor.id}`)}
+                      className="h-11 min-h-[44px] shrink-0 bg-blue-600 px-6 font-bold text-white hover:bg-blue-700 disabled:bg-slate-300 disabled:text-slate-500 focus-visible:ring-2 focus-visible:ring-blue-600"
+                      onClick={() => navigate(`/patient/doctors/${doctor.id}/date`)}
                     >
                       Book OPD
                     </Button>
