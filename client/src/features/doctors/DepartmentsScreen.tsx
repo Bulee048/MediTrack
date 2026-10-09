@@ -59,24 +59,24 @@ export default function DepartmentsScreen() {
   }, [data, query]);
 
   return (
-    <main className="min-h-screen bg-slate-50 px-4 py-6 sm:px-6">
+    <main className="min-h-screen bg-[#F4F7FA] px-4 py-6 sm:px-6">
       <div className="mx-auto w-full max-w-md space-y-0">
         <div className="flex items-center justify-between pb-3">
           <div>
-            <p className="text-[13px] font-semibold text-slate-500">Browse</p>
-            <h1 className="mt-0.5 text-[22px] font-extrabold uppercase tracking-tight text-slate-900">Departments</h1>
+            <p className="text-[13px] font-semibold text-[#6C7A90]">Browse</p>
+            <h1 className="mt-0.5 text-[22px] font-extrabold uppercase tracking-tight text-[#101A2E]">Departments</h1>
           </div>
           <button
             onClick={() => navigate(-1)}
             aria-label="Go back"
-            className="grid h-11 w-11 min-h-[44px] min-w-[44px] shrink-0 place-items-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 active:scale-95"
+            className="grid h-11 w-11 min-h-[44px] min-w-[44px] shrink-0 place-items-center rounded-xl border border-[#E6ECF3] bg-white text-[#101A2E] shadow-sm transition hover:bg-[#F4F7FA] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16A794] active:scale-95"
           >
             <ChevronLeft size={20} />
           </button>
         </div>
 
         <div className="relative mt-2">
-          <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-slate-400">
+          <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-[#6C7A90]">
             <Search size={18} />
           </span>
           <Input
@@ -84,14 +84,14 @@ export default function DepartmentsScreen() {
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search departments…"
             aria-label="Search departments"
-            className="h-12 min-h-[44px] pl-10 pr-10 focus-visible:ring-2 focus-visible:ring-blue-600"
+            className="h-12 min-h-[44px] border-[#E6ECF3] bg-white pl-10 pr-10 text-[#101A2E] placeholder:text-[#6C7A90] focus-visible:ring-2 focus-visible:ring-[#16A794]"
           />
           {query ? (
             <button
               type="button"
               onClick={() => setQuery('')}
               aria-label="Clear search"
-              className="absolute inset-y-0 right-0 flex min-h-[44px] min-w-[44px] items-center justify-center text-slate-400 hover:text-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 rounded-r-md"
+              className="absolute inset-y-0 right-0 flex min-h-[44px] min-w-[44px] items-center justify-center text-[#6C7A90] hover:text-[#101A2E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16A794] rounded-r-md"
             >
               <X size={16} />
             </button>
@@ -101,32 +101,32 @@ export default function DepartmentsScreen() {
         {isLoading ? (
           <div role="status" aria-label="Loading departments" className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
             {Array.from({ length: 6 }).map((_, index) => (
-              <div key={index} className="rounded-2xl border border-slate-200 bg-white px-2 py-4 shadow-sm">
+              <div key={index} className="rounded-2xl border border-[#E6ECF3] bg-white px-2 py-4 shadow-sm">
                 <div className="flex flex-col items-center gap-2">
-                  <Skeleton className="h-11 w-11 rounded-xl" />
-                  <Skeleton className="h-3.5 w-20" />
-                  <Skeleton className="h-2.5 w-10" />
+                  <Skeleton className="h-11 w-11 rounded-xl bg-[#E6ECF3]" />
+                  <Skeleton className="h-3.5 w-20 bg-[#E6ECF3]" />
+                  <Skeleton className="h-2.5 w-10 bg-[#E6ECF3]" />
                 </div>
               </div>
             ))}
           </div>
         ) : isError ? (
-          <div role="alert" className="mt-5 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          <div role="alert" className="mt-5 rounded-2xl border border-[#E8455F]/30 bg-[#FDECEF] p-4 text-sm text-[#E8455F]">
             <p className="font-bold">Could not load departments.</p>
             <p className="mt-1 text-xs">{error?.message || 'Network error occurred'}</p>
             <Button
               size="sm"
               variant="outline"
-              className="mt-3 h-11 min-h-[44px] border-red-300 text-red-700 hover:bg-red-100 focus-visible:ring-2 focus-visible:ring-red-600 font-semibold"
+              className="mt-3 h-11 min-h-[44px] border-[#E8455F]/40 text-[#E8455F] hover:bg-[#FDECEF] focus-visible:ring-2 focus-visible:ring-[#E8455F] font-semibold"
               onClick={() => refetch()}
             >
               <RotateCcw className="mr-2 h-4 w-4" /> Try Again
             </Button>
           </div>
         ) : filtered.length === 0 ? (
-          <div className="mt-5 rounded-2xl border border-dashed border-slate-200 bg-white/70 p-6 text-center">
-            <p className="text-[14px] font-bold text-slate-900">No departments found</p>
-            <p className="mt-1 text-[12.5px] text-slate-500">
+          <div className="mt-5 rounded-2xl border border-dashed border-[#E6ECF3] bg-white/70 p-6 text-center">
+            <p className="text-[14px] font-bold text-[#101A2E]">No departments found</p>
+            <p className="mt-1 text-[12.5px] text-[#6C7A90]">
               {query ? `No department matches “${query}”.` : 'Try a different department name or code.'}
             </p>
             {query ? (
@@ -134,7 +134,7 @@ export default function DepartmentsScreen() {
                 size="sm"
                 variant="outline"
                 onClick={() => setQuery('')}
-                className="mt-3 h-11 min-h-[44px] focus-visible:ring-2 focus-visible:ring-blue-600"
+                className="mt-3 h-11 min-h-[44px] border-[#E6ECF3] text-[#3A465C] hover:bg-[#F4F7FA] focus-visible:ring-2 focus-visible:ring-[#16A794]"
               >
                 Clear Search
               </Button>
@@ -154,13 +154,13 @@ export default function DepartmentsScreen() {
                     )
                   }
                   aria-label={`Department: ${department.name}, ${department.doctorCount ? `${department.doctorCount} Doctors` : department.code}`}
-                  className="flex min-h-[88px] flex-col items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-2 py-4 text-center shadow-sm transition hover:border-blue-300 hover:shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 active:scale-[0.97]"
+                  className="flex min-h-[88px] flex-col items-center justify-center gap-2 rounded-2xl border border-[#E6ECF3] bg-white px-2 py-4 text-center shadow-sm transition hover:border-[#A7EADD] hover:shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16A794] active:scale-[0.97]"
                 >
-                  <span className="grid h-11 w-11 place-items-center rounded-xl bg-blue-50 text-blue-600">
+                  <span className="grid h-11 w-11 place-items-center rounded-xl bg-[#ECFDF9] text-[#0E8B7C]">
                     <Icon size={20} />
                   </span>
-                  <span className="text-[12px] font-bold leading-tight text-slate-900">{department.name}</span>
-                  <span className="text-[10.5px] font-medium text-slate-500">
+                  <span className="text-[12px] font-bold leading-tight text-[#101A2E]">{department.name}</span>
+                  <span className="text-[10.5px] font-medium text-[#6C7A90]">
                     {department.doctorCount ? `${department.doctorCount} Doctors` : department.code}
                   </span>
                 </button>

@@ -50,7 +50,7 @@ export default function LoginScreen() {
           New here?{' '}
           <a
             href="/register"
-            className="font-semibold text-brand-600 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 rounded-sm"
+            className="font-semibold text-[#0E8B7C] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16A794] rounded-sm"
           >
             Register
           </a>
@@ -59,32 +59,32 @@ export default function LoginScreen() {
     >
       <form className="space-y-4" onSubmit={handleSubmit(submit)} noValidate>
         <div className="space-y-2">
-          <Label htmlFor="identifier">Email or Phone</Label>
+          <Label htmlFor="identifier" className="text-[#101A2E]">Email or Phone</Label>
           <div className="relative">
-            <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-slate-400">
+            <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-[#6C7A90]">
               <Mail className="h-4 w-4" />
             </span>
             <Input
               id="identifier"
               {...register('identifier')}
               placeholder="you@email.com or 0771234567"
-              className="h-12 min-h-[44px] pl-10 focus-visible:ring-2 focus-visible:ring-blue-600"
+              className="h-12 min-h-[44px] border-[#E6ECF3] bg-white pl-10 text-[#101A2E] placeholder:text-[#6C7A90] focus-visible:ring-2 focus-visible:ring-[#16A794]"
               autoComplete="username"
               aria-invalid={Boolean(errors.identifier)}
               aria-describedby={errors.identifier ? 'identifier-error' : undefined}
             />
           </div>
           {errors.identifier ? (
-            <p id="identifier-error" role="alert" className="text-xs font-medium text-red-600">
+            <p id="identifier-error" role="alert" className="text-xs font-medium text-[#E8455F]">
               {errors.identifier.message}
             </p>
           ) : null}
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="password">Password</Label>
+          <Label htmlFor="password" className="text-[#101A2E]">Password</Label>
           <div className="relative">
-            <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-slate-400">
+            <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-[#6C7A90]">
               <Lock className="h-4 w-4" />
             </span>
             <Input
@@ -92,7 +92,7 @@ export default function LoginScreen() {
               {...register('password')}
               type={showPassword ? 'text' : 'password'}
               placeholder="Enter your password"
-              className="h-12 min-h-[44px] pl-10 pr-12 focus-visible:ring-2 focus-visible:ring-blue-600"
+              className="h-12 min-h-[44px] border-[#E6ECF3] bg-white pl-10 pr-12 text-[#101A2E] placeholder:text-[#6C7A90] focus-visible:ring-2 focus-visible:ring-[#16A794]"
               autoComplete="current-password"
               aria-invalid={Boolean(errors.password)}
               aria-describedby={errors.password ? 'password-error' : undefined}
@@ -100,28 +100,28 @@ export default function LoginScreen() {
             <button
               type="button"
               onClick={() => setShowPassword((value) => !value)}
-              className="absolute inset-y-0 right-0 flex min-h-[44px] min-w-[44px] items-center justify-center text-slate-500 hover:text-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 rounded-r-xl"
+              className="absolute inset-y-0 right-0 flex min-h-[44px] min-w-[44px] items-center justify-center text-[#6C7A90] hover:text-[#101A2E] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#16A794] rounded-r-xl"
               aria-label={showPassword ? 'Hide password' : 'Show password'}
             >
               {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>
           </div>
           {errors.password ? (
-            <p id="password-error" role="alert" className="text-xs font-medium text-red-600">
+            <p id="password-error" role="alert" className="text-xs font-medium text-[#E8455F]">
               {errors.password.message}
             </p>
           ) : null}
         </div>
 
         {errors.root ? (
-          <p role="alert" className="rounded-xl bg-red-50 px-3 py-2 text-sm font-medium text-red-700">
+          <p role="alert" className="rounded-xl border border-[#E8455F]/30 bg-[#FDECEF] px-3 py-2 text-sm font-medium text-[#E8455F]">
             {errors.root.message}
           </p>
         ) : null}
 
         <Button
           type="submit"
-          className="h-12 min-h-[44px] w-full focus-visible:ring-2 focus-visible:ring-blue-600"
+          className="h-12 min-h-[44px] w-full bg-[#0E8B7C] font-bold text-white hover:bg-[#0C6F64] focus-visible:ring-2 focus-visible:ring-[#16A794]"
           disabled={isSubmitting || login.isPending}
         >
           {isSubmitting || login.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
@@ -130,12 +130,12 @@ export default function LoginScreen() {
       </form>
 
       <div className="flex items-center gap-4 pt-1">
-        <span className="h-px flex-1 bg-slate-200" />
-        <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">Account access</span>
-        <span className="h-px flex-1 bg-slate-200" />
+        <span className="h-px flex-1 bg-[#E6ECF3]" />
+        <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#6C7A90]">Account access</span>
+        <span className="h-px flex-1 bg-[#E6ECF3]" />
       </div>
 
-      <div className="rounded-2xl border border-dashed border-brand-200 bg-brand-50/60 px-4 py-3 text-sm text-brand-800">
+      <div className="rounded-2xl border border-dashed border-[#A7EADD] bg-[#ECFDF9] px-4 py-3 text-sm text-[#0C6F64]">
         Use the same credentials you registered with. Email or phone are both supported.
       </div>
     </AuthShell>

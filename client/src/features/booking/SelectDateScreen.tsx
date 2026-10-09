@@ -112,12 +112,12 @@ export default function SelectDateScreen() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-slate-50 px-4 py-6 sm:px-6">
+      <main className="min-h-screen bg-[#F4F7FA] px-4 py-6 sm:px-6">
         <div role="status" aria-label="Loading calendar dates" className="mx-auto w-full max-w-md space-y-4">
-          <Skeleton className="h-11 w-28 rounded-xl" />
-          <Skeleton className="h-24 rounded-2xl" />
-          <Skeleton className="h-72 rounded-2xl" />
-          <Skeleton className="h-16 rounded-2xl" />
+          <Skeleton className="h-11 w-28 rounded-xl bg-[#E6ECF3]" />
+          <Skeleton className="h-24 rounded-2xl bg-[#E6ECF3]" />
+          <Skeleton className="h-72 rounded-2xl bg-[#E6ECF3]" />
+          <Skeleton className="h-16 rounded-2xl bg-[#E6ECF3]" />
         </div>
       </main>
     );
@@ -125,28 +125,28 @@ export default function SelectDateScreen() {
 
   if (!doctor) {
     return (
-      <main className="min-h-screen bg-slate-50 px-4 py-6 sm:px-6">
+      <main className="min-h-screen bg-[#F4F7FA] px-4 py-6 sm:px-6">
         <div className="mx-auto w-full max-w-md">
           <button
             onClick={() => navigate(-1)}
             aria-label="Go back"
-            className="grid h-11 w-11 min-h-[44px] min-w-[44px] place-items-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 active:scale-95"
+            className="grid h-11 w-11 min-h-[44px] min-w-[44px] place-items-center rounded-xl border border-[#E6ECF3] bg-white text-[#101A2E] shadow-sm transition hover:bg-[#F4F7FA] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16A794] active:scale-95"
           >
             <ChevronLeft size={20} />
           </button>
-          <div role="alert" className="mt-4 rounded-2xl border border-red-200 bg-red-50 p-5 text-red-700">
+          <div role="alert" className="mt-4 rounded-2xl border border-[#E8455F]/30 bg-[#FDECEF] p-5 text-[#E8455F]">
             <p className="text-[15px] font-extrabold">Doctor unavailable</p>
             <p className="mt-1 text-[12.5px] font-medium">{error || 'We could not load the selected doctor.'}</p>
             <div className="mt-4 flex gap-3">
               <Button
                 variant="outline"
-                className="h-11 min-h-[44px] flex-1 border-red-300 text-red-700 hover:bg-red-100 focus-visible:ring-2 focus-visible:ring-red-600 font-semibold"
+                className="h-11 min-h-[44px] flex-1 border-[#E8455F]/40 text-[#E8455F] hover:bg-[#FDECEF] focus-visible:ring-2 focus-visible:ring-[#E8455F] font-semibold"
                 onClick={() => navigate('/patient/doctors')}
               >
                 All Doctors
               </Button>
               <Button
-                className="h-11 min-h-[44px] flex-1 bg-red-600 text-white hover:bg-red-700 focus-visible:ring-2 focus-visible:ring-red-600 font-semibold"
+                className="h-11 min-h-[44px] flex-1 bg-[#E8455F] text-white hover:bg-[#D3304A] focus-visible:ring-2 focus-visible:ring-[#E8455F] font-semibold"
                 onClick={loadData}
               >
                 <RotateCcw className="mr-2 h-4 w-4" /> Try Again
@@ -159,35 +159,35 @@ export default function SelectDateScreen() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50 px-4 py-6 sm:px-6">
+    <main className="min-h-screen bg-[#F4F7FA] px-4 py-6 sm:px-6">
       <div className="mx-auto w-full max-w-md space-y-0">
         <div className="flex items-center justify-between pb-3">
           <div>
-            <p className="text-[13px] font-semibold text-slate-500">Booking</p>
-            <h1 className="mt-0.5 text-[22px] font-extrabold uppercase tracking-tight text-slate-900">Select Date</h1>
+            <p className="text-[13px] font-semibold text-[#6C7A90]">Booking</p>
+            <h1 className="mt-0.5 text-[22px] font-extrabold uppercase tracking-tight text-[#101A2E]">Select Date</h1>
           </div>
           <button
             onClick={() => navigate(-1)}
             aria-label="Go back"
-            className="grid h-11 w-11 min-h-[44px] min-w-[44px] shrink-0 place-items-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 active:scale-95"
+            className="grid h-11 w-11 min-h-[44px] min-w-[44px] shrink-0 place-items-center rounded-xl border border-[#E6ECF3] bg-white text-[#101A2E] shadow-sm transition hover:bg-[#F4F7FA] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16A794] active:scale-95"
           >
             <ChevronLeft size={20} />
           </button>
         </div>
 
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 text-center shadow-sm">
-          <p className="text-[15px] font-extrabold text-slate-900">{doctor.name}</p>
-          <p className="mt-0.5 text-[12.5px] text-slate-500">
+        <div className="rounded-2xl border border-[#E6ECF3] bg-white p-4 text-center shadow-sm">
+          <p className="text-[15px] font-extrabold text-[#101A2E]">{doctor.name}</p>
+          <p className="mt-0.5 text-[12.5px] text-[#6C7A90]">
             {doctor.title || 'Specialist'} · {doctor.experienceYears ? `${doctor.experienceYears} Yrs Exp` : 'Experience not listed'}
           </p>
-          <p className="mt-1 inline-flex items-center gap-1 text-[12.5px] font-bold text-slate-700">
-            <Star size={13} className="fill-amber-500 text-amber-500" /> {doctor.availabilityStatus ?? 'AVAILABLE'}
+          <p className="mt-1 inline-flex items-center gap-1 text-[12.5px] font-bold text-[#101A2E]">
+            <Star size={13} className="fill-[#F5A623] text-[#F5A623]" /> {doctor.availabilityStatus ?? 'AVAILABLE'}
           </p>
         </div>
 
-        <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="mt-4 rounded-2xl border border-[#E6ECF3] bg-white p-4 shadow-sm">
           <div className="flex items-center justify-between">
-            <p className="text-[15px] font-extrabold text-slate-900">
+            <p className="text-[15px] font-extrabold text-[#101A2E]">
               {monthDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
             </p>
             <div className="flex gap-2">
@@ -195,7 +195,7 @@ export default function SelectDateScreen() {
                 onClick={() => setMonthOffset((value) => value - 1)}
                 disabled={monthOffset === 0}
                 aria-label="Previous month"
-                className="grid h-11 w-11 min-h-[44px] min-w-[44px] place-items-center rounded-xl border border-slate-200 text-slate-700 transition hover:bg-slate-50 disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+                className="grid h-11 w-11 min-h-[44px] min-w-[44px] place-items-center rounded-xl border border-[#E6ECF3] text-[#3A465C] transition hover:bg-[#F4F7FA] disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16A794]"
               >
                 <ChevronLeft size={18} />
               </button>
@@ -203,7 +203,7 @@ export default function SelectDateScreen() {
                 onClick={() => setMonthOffset((value) => Math.min(2, value + 1))}
                 disabled={monthOffset >= 2}
                 aria-label="Next month"
-                className="grid h-11 w-11 min-h-[44px] min-w-[44px] place-items-center rounded-xl border border-slate-200 text-slate-700 transition hover:bg-slate-50 disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+                className="grid h-11 w-11 min-h-[44px] min-w-[44px] place-items-center rounded-xl border border-[#E6ECF3] text-[#3A465C] transition hover:bg-[#F4F7FA] disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16A794]"
               >
                 <ChevronRight size={18} />
               </button>
@@ -212,7 +212,7 @@ export default function SelectDateScreen() {
 
           <div className="mt-4 grid grid-cols-7 gap-1 text-center" role="grid" aria-label="Month calendar">
             {['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'].map((day) => (
-              <span key={day} className="pb-1 text-[11.5px] font-bold text-slate-400">
+              <span key={day} className="pb-1 text-[11.5px] font-bold text-[#6C7A90]">
                 {day}
               </span>
             ))}
@@ -230,50 +230,50 @@ export default function SelectDateScreen() {
                   onClick={() => setSelectedDate(cell.iso)}
                   aria-pressed={isSelected}
                   aria-label={`${cell.day} ${formatLongDate(cell.iso)}, ${available ? 'Available' : 'Unavailable'}`}
-                  className={`relative mx-auto grid h-11 w-11 min-h-[44px] min-w-[44px] place-items-center rounded-full text-[13px] font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 ${
+                  className={`relative mx-auto grid h-11 w-11 min-h-[44px] min-w-[44px] place-items-center rounded-full text-[13px] font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16A794] ${
                     isSelected
-                      ? 'bg-blue-600 text-white shadow-sm font-bold'
+                      ? 'bg-[#0E8B7C] text-white shadow-sm font-bold'
                       : available
-                        ? 'text-slate-900 hover:bg-blue-50 font-semibold'
-                        : 'cursor-not-allowed text-slate-300'
+                        ? 'text-[#101A2E] hover:bg-[#ECFDF9] font-semibold'
+                        : 'cursor-not-allowed text-[#6C7A90]/40'
                   }`}
                 >
                   {cell.day}
                   {available && !isSelected ? (
-                    <span className="absolute bottom-1.5 h-1.5 w-1.5 rounded-full bg-blue-600" />
+                    <span className="absolute bottom-1.5 h-1.5 w-1.5 rounded-full bg-[#0E8B7C]" />
                   ) : null}
                 </button>
               );
             })}
           </div>
 
-          <div className="mt-4 flex flex-wrap items-center gap-4 border-t border-slate-200 pt-3 text-[11px] font-semibold text-slate-500">
+          <div className="mt-4 flex flex-wrap items-center gap-4 border-t border-[#E6ECF3] pt-3 text-[11px] font-semibold text-[#6C7A90]">
             <span className="flex items-center gap-1.5">
-              <span className="h-2.5 w-2.5 rounded-full bg-blue-600" /> Selected
+              <span className="h-2.5 w-2.5 rounded-full bg-[#0E8B7C]" /> Selected
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="h-2.5 w-2.5 rounded-full bg-slate-700" /> Available
+              <span className="h-2.5 w-2.5 rounded-full bg-[#101A2E]/70" /> Available
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="h-2.5 w-2.5 rounded-full bg-slate-200" /> Unavailable
+              <span className="h-2.5 w-2.5 rounded-full bg-[#101A2E]/15" /> Unavailable
             </span>
           </div>
         </div>
 
         {selectedDate ? (
-          <p className="mt-4 text-center text-[13.5px] font-bold text-blue-700">{formatLongDate(selectedDate)}</p>
+          <p className="mt-4 text-center text-[13.5px] font-bold text-[#0C6F64]">{formatLongDate(selectedDate)}</p>
         ) : null}
 
         <div className="mt-6 flex gap-3">
           <Button
             variant="outline"
-            className="h-12 min-h-[44px] flex-1 border-slate-200 text-slate-700 hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-blue-600 font-bold"
+            className="h-12 min-h-[44px] flex-1 border-[#E6ECF3] bg-white text-[#3A465C] hover:bg-[#F4F7FA] focus-visible:ring-2 focus-visible:ring-[#16A794] font-bold"
             onClick={() => navigate(-1)}
           >
             Back
           </Button>
           <Button
-            className="h-12 min-h-[44px] flex-1 bg-blue-600 font-bold text-white hover:bg-blue-700 disabled:bg-slate-300 disabled:text-slate-500 focus-visible:ring-2 focus-visible:ring-blue-600"
+            className="h-12 min-h-[44px] flex-1 bg-[#0E8B7C] font-bold text-white hover:bg-[#0C6F64] disabled:bg-[#E6ECF3] disabled:text-[#6C7A90] focus-visible:ring-2 focus-visible:ring-[#16A794]"
             disabled={!selectedDate}
             onClick={confirm}
           >
