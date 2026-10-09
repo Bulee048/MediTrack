@@ -32,6 +32,8 @@ export interface StaffQueueTicket {
   status: StaffQueueStatus;
   checkedInAt?: string;
   calledAt?: string;
+  arrivedAt?: string;
+  resumeHistory: { at: string; by: string }[];
   consultationStartedAt?: string;
   completedAt?: string;
   createdAt: string;
@@ -56,6 +58,10 @@ interface StaffQueueResponse<T> {
 }
 
 export class StaffQueueApiService {
+  static async resume(ticketId: string): Promise<StaffQueueTicket> {
+    const response = await apiClient.patch<StaffQueueResponse<{ ticket: StaffQueueTicket }>>(`/queue/${ticketId}/resume`);
+    return response.data.data.ticket;
+  }
   static async getAllForStaff(params?: {
     departmentId?: string;
     doctorId?: string;

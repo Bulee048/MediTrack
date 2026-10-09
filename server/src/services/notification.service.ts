@@ -1,6 +1,7 @@
 import { Notification, INotification, NotificationCategory } from '../models/Notification.js';
 import { validateObjectId } from '../utils/objectId.js';
 import { AppError } from '../utils/AppError.js';
+import { ClientSession } from 'mongoose';
 
 export class NotificationService {
   /**
@@ -13,7 +14,7 @@ export class NotificationService {
     category: NotificationCategory;
     queueTicketId?: string;
     appointmentId?: string;
-  }): Promise<INotification> {
+  }, session?: ClientSession): Promise<INotification> {
     validateObjectId(data.userId, 'user ID');
 
     if (data.queueTicketId) validateObjectId(data.queueTicketId, 'queue ticket ID');
@@ -51,7 +52,7 @@ export class NotificationService {
       }
     }
 
-    return await new Notification(fields).save();
+    return await new Notification(fields).save({ session });
   }
 
   /**

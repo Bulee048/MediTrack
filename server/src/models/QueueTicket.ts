@@ -22,6 +22,8 @@ export interface IQueueTicket extends Document {
   status: QueueTicketStatus;
   checkedInAt?: Date;
   calledAt?: Date;
+  arrivedAt?: Date;
+  resumeHistory: { at: Date; by: Types.ObjectId }[];
   consultationStartedAt?: Date;
   completedAt?: Date;
   createdAt: Date;
@@ -98,6 +100,9 @@ const queueTicketSchema = new Schema<IQueueTicket>(
     calledAt: {
       type: Date,
     },
+    // Arrival acknowledges presence; it never starts consultation or changes order.
+    arrivedAt: { type: Date },
+    resumeHistory: [{ at: { type: Date, required: true }, by: { type: Schema.Types.ObjectId, ref: 'User', required: true }, _id: false }],
     consultationStartedAt: {
       type: Date,
     },

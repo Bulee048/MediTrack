@@ -139,7 +139,9 @@ export function PatientLiveQueue() {
           </section>
 
           <QueueStatusCard status={ticket.status} room={room} doctorName={ticket.doctor?.name} position={ticket.currentPosition} />
-          <QueueStatusProgress status={ticket.status} />
+          {ticket.status === 'CALLING' && <PatientArrival key={`${authSession}:${ticket.ticketId}`} ticket={ticket} />}
+          <QueueAhead ticket={ticket} />
+          <QueueStatusProgress status={ticket.status} times={ticket} />
           {['COMPLETED', 'CANCELLED', 'SKIPPED'].includes(ticket.status) && <section className={`${cardStyle} p-5`}><PatientCheckIn key={authSession} authSession={authSession} /></section>}
 
           {isWaiting && (
@@ -154,6 +156,48 @@ export function PatientLiveQueue() {
     </div>
     </PatientShell>
   );
+}
+
+function QueueAhead({ ticket }: { ticket: QueueTicketData }) {
+  const waiting = ticket.status === 'WAITING' || ticket.status === 'ALMOST_TURN';
+  return <section className={`${cardStyle} p-4 min-[360px]:p-5`} aria-labelledby="queue-ahead-heading">
+    <h2 id="queue-ahead-heading" className="text-[15px] font-extrabold">Ahead of you</h2>
+    {waiting ? <>
+      <p className="mt-1 text-[12.5px] leading-relaxed text-ink-soft">Position {ticket.currentPosition} · {ticket.patientsAhead} patient{ticket.patientsAhead === 1 ? '' : 's'} ahead · ~{ticket.estimatedWaitMins} mins</p>
+      <p className="mt-3 rounded-xl bg-brand-50 p-3 text-[12px] text-brand-900">Now serving: <strong className="break-all">{ticket.nowServing ?? 'No ticket is being called'}</strong></p>
+      {ticket.aheadTickets.length ? <ol aria-label="Waiting tickets ahead, in queue order" className="mt-3 space-y-2">
+        {ticket.aheadTickets.map((entry, index) => <li key={`${entry.ticketNumber}:${index}`} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-line px-3 py-3 text-[12px]">
+          <span className="break-all font-extrabold text-brand-800">{entry.ticketNumber}</span>
+          <span className="text-ink-soft">{entry.status === 'ALMOST_TURN' ? 'Almost turn' : 'Waiting'}</span>
+        </li>)}
+      </ol> : <p className="mt-3 text-[12.5px] text-ink-soft">You are at the front of the waiting queue. Wait until your ticket is called.</p>}
+      {ticket.patientsAhead > ticket.aheadTickets.length && <p className="mt-2 text-xs text-ink-soft">Showing the first {ticket.aheadTickets.length} of {ticket.patientsAhead} waiting tickets ahead.</p>}
+      <p className="mt-3 text-[11px] leading-relaxed text-ink-soft">Only queue numbers are shown. Patient identities stay private. Waiting-time estimates update with the queue.</p>
+    </> : <p className="mt-2 text-[12.5px] leading-relaxed text-ink-soft">This ticket is outside the waiting queue. Its status and next steps are shown above.</p>}
+  </section>;
+}
+
+function PatientArrival({ ticket }: { ticket: QueueTicketData }) {
+  const location = useLocation();
+  const queryClient = useQueryClient();
+  const arrival = useMutation({
+    mutationFn: () => QueueApiService.markArrived(ticket.ticketId),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['myActiveQueueTicket'] }),
+    onError: error => {
+      if (isAxiosError(error) && error.response?.status === 409) void queryClient.invalidateQueries({ queryKey: ['myActiveQueueTicket'] });
+    },
+  });
+  const authError = getAuthErrorStatus(arrival.error);
+  const conflict = isAxiosError(arrival.error) && arrival.error.response?.status === 409;
+  const arrivedAt = ticket.arrivedAt ?? arrival.data?.arrivedAt;
+  return <section className={`${cardStyle} p-5`} aria-labelledby="arrival-heading">
+    <h2 id="arrival-heading" className="text-[15px] font-extrabold">At the consultation room?</h2>
+    <p className="mt-2 text-[12.5px] leading-relaxed text-ink-soft">Confirm when you are waiting outside. Staff will start your consultation.</p>
+    {arrivedAt ? <p role="status" aria-live="polite" className="mt-3 rounded-xl bg-brand-50 p-3 text-sm font-semibold text-brand-900">Arrival recorded at {formatTime(arrivedAt)}. Please wait for staff guidance.</p> : <Button disabled={arrival.isPending || Boolean(authError)} onClick={() => arrival.mutate()} className="mt-4 h-auto w-full whitespace-normal rounded-xl bg-brand-700 px-4 py-3 text-white hover:bg-brand-800 focus-visible:ring-brand-700 motion-reduce:transition-none">{arrival.isPending ? 'Recording arrival…' : 'I’m waiting outside'}</Button>}
+    {arrival.error && <p role="alert" className="mt-3 text-[12.5px] text-rose-800">{authError === 401 ? 'Please sign in again to confirm arrival.' : authError === 403 ? 'You can only confirm arrival for your own ticket.' : conflict ? 'Your ticket status has changed. The queue has been refreshed.' : 'Arrival could not be recorded. Please try again.'}</p>}
+    {authError === 401 && <Link to="/login" state={{ from: location.pathname }} className="mt-2 inline-flex items-center text-sm font-bold text-brand-800 underline">Sign in</Link>}
+    <p className="mt-4 border-t border-line pt-3 text-[12px] leading-relaxed text-ink-soft">Need more time? Contact reception for guidance. Holds and resumes are managed by staff; confirming arrival does not change your place.</p>
+  </section>;
 }
 
 function PatientCheckIn({ authSession }: { authSession: number }) {

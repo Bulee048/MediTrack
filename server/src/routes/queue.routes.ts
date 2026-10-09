@@ -11,6 +11,7 @@ router.use(authenticate);
 // Patient queue routes
 router.get('/me', authorizeRoles('PATIENT'), QueueController.getMyActiveTicket);
 router.post('/check-in', authorizeRoles('PATIENT'), QueueController.checkIn);
+router.patch('/:id/arrival', authorizeRoles('PATIENT'), QueueController.markArrived);
 
 // Staff/Admin queue routes
 router.get('/', authorizeRoles('STAFF', 'ADMIN'), QueueController.getAllForStaff);
@@ -19,6 +20,7 @@ router.patch('/:id/start-consultation', authorizeRoles('STAFF', 'ADMIN'), QueueC
 router.patch('/:id/complete', authorizeRoles('STAFF', 'ADMIN'), QueueController.completeConsultation);
 router.patch('/:id/hold', authorizeRoles('STAFF', 'ADMIN'), QueueController.hold);
 router.patch('/:id/skip', authorizeRoles('STAFF', 'ADMIN'), QueueController.skip);
+router.patch('/:id/resume', authorizeRoles('STAFF', 'ADMIN'), QueueController.resume);
 
 export default router;
 

@@ -2,10 +2,11 @@ import { QueueTicket, IQueueTicket, QueueTicketStatus } from '../models/QueueTic
 import { Appointment } from '../models/Appointment.js';
 import { Department } from '../models/Department.js';
 import { User } from '../models/User.js';
-import { QueueCalculationService } from './queueCalculation.service.js';
+import { QueueCalculationService, LiveQueueCalculationResult } from './queueCalculation.service.js';
 import { NotificationService } from './notification.service.js';
 import { AppError } from '../utils/AppError.js';
 import { validateObjectId } from '../utils/objectId.js';
+import mongoose from 'mongoose';
 
 const transitionSources: Partial<Record<QueueTicketStatus, QueueTicketStatus[]>> = {
   CALLING: ['WAITING', 'ALMOST_TURN'],
@@ -25,11 +26,16 @@ export class QueueService {
     sequenceNumber: number;
     currentPosition: number;
     patientsAhead: number;
+    aheadTickets: LiveQueueCalculationResult['aheadTickets'];
     nowServing: string | null;
     nowServingStatus: QueueTicketStatus | null;
     estimatedWaitMins: number;
     status: QueueTicketStatus;
     checkedInAt: Date | undefined;
+    arrivedAt: Date | undefined;
+    calledAt: Date | undefined;
+    consultationStartedAt: Date | undefined;
+    completedAt: Date | undefined;
     department: IQueueTicket['department'];
     doctor: IQueueTicket['doctor'];
     appointment: IQueueTicket['appointment'];
@@ -106,11 +112,16 @@ export class QueueService {
       sequenceNumber: ticket.sequenceNumber,
       currentPosition: liveState.currentPosition,
       patientsAhead: liveState.patientsAhead,
+      aheadTickets: liveState.aheadTickets,
       nowServing: liveState.nowServingTicket,
       nowServingStatus: liveState.nowServingStatus,
       estimatedWaitMins: liveState.estimatedWaitMins,
       status: liveState.status,
       checkedInAt: ticket.checkedInAt,
+      arrivedAt: ticket.arrivedAt,
+      calledAt: ticket.calledAt,
+      consultationStartedAt: ticket.consultationStartedAt,
+      completedAt: ticket.completedAt,
       department: ticket.department,
       doctor: ticket.doctor,
       appointment: ticket.appointment,
@@ -347,6 +358,57 @@ export class QueueService {
       title,
       message,
     });
+  }
+
+  static async markArrived(ticketId: string, patientId: string): Promise<{ ticketId: string; arrivedAt: Date }> {
+    validateObjectId(ticketId, 'queue ticket ID');
+    validateObjectId(patientId, 'patient ID');
+    const filter = { _id: ticketId, patient: patientId, status: 'CALLING', createdAt: QueueCalculationService.getQueueDayRange() };
+    const ticket = await QueueTicket.findOneAndUpdate(
+      { ...filter, arrivedAt: { $exists: false } },
+      { $set: { arrivedAt: new Date() } },
+      { new: true }
+    ) ?? await QueueTicket.findOne(filter);
+    if (ticket?.arrivedAt) return { ticketId: ticket._id.toString(), arrivedAt: ticket.arrivedAt };
+    const existing = await QueueTicket.findById(ticketId);
+    if (!existing) throw new AppError('Queue ticket not found', 404);
+    if (existing.patient.toString() !== patientId) throw new AppError('You can only confirm arrival for your own ticket', 403);
+    throw new AppError('Arrival can only be confirmed for a ticket being called today', 409);
+  }
+
+  static async resume(ticketId: string, staffId: string): Promise<IQueueTicket> {
+    validateObjectId(ticketId, 'queue ticket ID');
+    validateObjectId(staffId, 'staff ID');
+    const session = await mongoose.startSession();
+    try {
+      const resumed = await session.withTransaction(async () => {
+        const ticket = await QueueTicket.findOneAndUpdate(
+          { _id: ticketId, status: 'HELD', createdAt: QueueCalculationService.getQueueDayRange() },
+          { $set: { status: 'WAITING' }, $push: { resumeHistory: { at: new Date(), by: staffId } } },
+          { new: true, session }
+        );
+        if (!ticket) {
+          const existing = await QueueTicket.findById(ticketId).session(session);
+          if (!existing) throw new AppError('Queue ticket not found', 404);
+          throw new AppError('Only a held ticket from today can be resumed', 409);
+        }
+        // Retain the issued sequence and number; waiting positions follow current state.
+        await QueueCalculationService.recalculateWaitingPositions(ticket, session);
+        await NotificationService.createNotification({
+          userId: ticket.patient.toString(), queueTicketId: ticket._id.toString(),
+          appointmentId: ticket.appointment.toString(), category: 'QUEUE_UPDATE',
+          title: 'Queue Ticket Resumed',
+          message: `Your ticket ${ticket.ticketNumber} has returned to the waiting queue. Please wait until it is called.`,
+        }, session);
+        return QueueTicket.findById(ticket._id).session(session)
+          .populate('patient', 'name email phone').populate('doctor', 'name title roomNumber')
+          .populate('department', 'name code roomNumber');
+      });
+      if (!resumed) throw new AppError('Unable to resume queue ticket', 409);
+      return resumed;
+    } finally {
+      await session.endSession();
+    }
   }
 
   private static async transitionTicket(

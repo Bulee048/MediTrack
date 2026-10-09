@@ -19,7 +19,7 @@ const exceptionDescriptions = {
 };
 
 /** A status journey, not a percentage or a history of other patients. */
-export function QueueStatusProgress({ status }: { status: QueueStatus }) {
+export function QueueStatusProgress({ status, times }: { status: QueueStatus; times?: Pick<QueueTicketData, 'checkedInAt' | 'calledAt' | 'consultationStartedAt' | 'completedAt'> }) {
   const exceptional = status === 'HELD' || status === 'SKIPPED' || status === 'CANCELLED';
   const current = steps.findIndex(step => 'status' in step && step.status === status);
 
@@ -38,6 +38,7 @@ export function QueueStatusProgress({ status }: { status: QueueStatus }) {
               const active = index === current;
               // Earlier steps show ordering only; no unreported event times or history are inferred.
               const earlier = index < current;
+              const eventTime = index === 0 ? times?.checkedInAt : step.label === 'Called' ? times?.calledAt : step.label === 'In consultation' ? times?.consultationStartedAt : step.label === 'Completed' ? times?.completedAt : undefined;
               return (
                 <li key={step.label} aria-current={active ? 'step' : undefined} className="flex min-w-0 gap-3">
                   <div aria-hidden="true" className="flex w-7 shrink-0 flex-col items-center">
@@ -48,6 +49,7 @@ export function QueueStatusProgress({ status }: { status: QueueStatus }) {
                   </div>
                   <div className={`mb-2 flex min-w-0 flex-1 flex-wrap items-center justify-between gap-1.5 rounded-xl border px-3 py-2.5 ${active ? 'border-brand-300 bg-brand-50' : 'border-line bg-white shadow-soft'}`}>
                     <span className={`text-[12.5px] ${active ? 'font-bold text-brand-900' : 'font-medium text-ink-soft'}`}>{step.label}</span>
+                    {eventTime && <time dateTime={eventTime} className="text-[10px] text-ink-soft">{new Date(eventTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</time>}
                     {active && <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-bold text-brand-800">Current stage</span>}
                   </div>
                 </li>

@@ -6,6 +6,7 @@ import { getQueueDayKey, getQueueDayRange } from '../utils/queueDay.js';
 export interface LiveQueueCalculationResult {
   currentPosition: number; // Patients ahead + 1 for waiting tickets; otherwise 0
   patientsAhead: number;   // Patients strictly ahead in active waiting states
+  aheadTickets: { ticketNumber: string; status: 'WAITING' | 'ALMOST_TURN' }[];
   nowServingTicket: string | null;
   nowServingStatus: QueueTicketStatus | null;
   estimatedWaitMins: number; // Patients ahead * 6 mins
@@ -63,6 +64,7 @@ export class QueueCalculationService {
       return {
         currentPosition: 0,
         patientsAhead: 0,
+        aheadTickets: [],
         nowServingTicket: null,
         nowServingStatus: null,
         estimatedWaitMins: 0,
@@ -92,6 +94,12 @@ export class QueueCalculationService {
     }) : 0;
 
     const currentPosition = isWaiting ? activeAheadCount + 1 : 0;
+    // Return public tokens only, never identities or populated patient documents.
+    const ahead = isWaiting ? await QueueTicket.find({
+      ...context,
+      status: { $in: ['WAITING', 'ALMOST_TURN'] },
+      sequenceNumber: { $lt: ticket.sequenceNumber },
+    }).select('ticketNumber status -_id').sort({ sequenceNumber: 1 }).limit(10).lean() : [];
     let computedStatus = ticket.status;
 
     if (ticket.status === 'WAITING' && currentPosition <= 2) {
@@ -105,6 +113,7 @@ export class QueueCalculationService {
     return {
       currentPosition,
       patientsAhead: activeAheadCount,
+      aheadTickets: ahead.map(entry => ({ ticketNumber: entry.ticketNumber, status: entry.status === 'ALMOST_TURN' ? 'ALMOST_TURN' : 'WAITING' })),
       nowServingTicket: nowServing ? nowServing.ticketNumber : null,
       nowServingStatus: nowServing ? nowServing.status : null,
       estimatedWaitMins,

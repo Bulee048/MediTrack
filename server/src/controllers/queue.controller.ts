@@ -3,6 +3,19 @@ import { QueueService } from '../services/queue.service.js';
 import { checkInSchema } from '../validators/queue.validator.js';
 
 export class QueueController {
+  static async markArrived(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const arrival = await QueueService.markArrived(req.params.id as string, req.user!.id);
+      res.status(200).json({ success: true, message: 'Arrival recorded', data: arrival });
+    } catch (error) { next(error); }
+  }
+
+  static async resume(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const ticket = await QueueService.resume(req.params.id as string, req.user!.id);
+      res.status(200).json({ success: true, message: 'Queue ticket resumed', data: { ticket } });
+    } catch (error) { next(error); }
+  }
   static async getMyActiveTicket(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const patientId = req.user!.id;

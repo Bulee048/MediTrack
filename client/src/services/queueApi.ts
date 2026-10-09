@@ -6,11 +6,16 @@ export interface QueueTicketData {
   sequenceNumber: number;
   currentPosition: number;
   patientsAhead: number;
+  aheadTickets: { ticketNumber: string; status: 'WAITING' | 'ALMOST_TURN' }[];
   nowServing: string | null;
   nowServingStatus: string | null;
   estimatedWaitMins: number;
   status: 'WAITING' | 'ALMOST_TURN' | 'CALLING' | 'IN_CONSULTATION' | 'HELD' | 'SKIPPED' | 'COMPLETED' | 'CANCELLED';
   checkedInAt: string;
+  arrivedAt?: string;
+  calledAt?: string;
+  consultationStartedAt?: string;
+  completedAt?: string;
   department: {
     _id: string;
     name: string;
@@ -57,6 +62,8 @@ export interface CheckInQueueTicket {
   status: QueueTicketData['status'];
   checkedInAt?: string;
   calledAt?: string;
+  arrivedAt?: string;
+  resumeHistory: { at: string; by: string }[];
   consultationStartedAt?: string;
   completedAt?: string;
   createdAt: string;
@@ -79,6 +86,10 @@ export interface PatientQueueAppointment {
 }
 
 export class QueueApiService {
+  static async markArrived(ticketId: string): Promise<{ ticketId: string; arrivedAt: string }> {
+    const response = await apiClient.patch<{ data: { ticketId: string; arrivedAt: string } }>(`/queue/${ticketId}/arrival`);
+    return response.data.data;
+  }
   static async getMyActiveTicket(): Promise<QueueTicketData | null> {
     try {
       const response = await apiClient.get<QueueApiResponse>('/queue/me');
