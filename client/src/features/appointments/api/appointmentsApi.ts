@@ -1,204 +1,77 @@
 import { apiClient } from '@/config/api';
-import { type Appointment, type Slot, INITIAL_APPOINTMENTS } from '../types';
-
-const APPOINTMENTS_KEY = 'meditrack_user_appointments';
-
-function getStoredAppointments(): Appointment[] {
-  const stored = localStorage.getItem(APPOINTMENTS_KEY);
-  if (stored) {
-    try {
-      return JSON.parse(stored);
-    } catch {
-      // parse fallback
-    }
-  }
-  localStorage.setItem(APPOINTMENTS_KEY, JSON.stringify(INITIAL_APPOINTMENTS));
-  return INITIAL_APPOINTMENTS;
+import type { Appointment, AppointmentStatus, Slot } from '../types';
+type Person = string | { _id: string; name: string };
+interface BackendAppointment {
+  _id: string; patient: Person; familyMember?: Person;
+  doctor: string | { _id: string; name: string; roomNumber?: string; consultationFee?: number;
+    department: { _id: string; name: string } };
+  appointmentDate: string; timeSlot: string;
+  status: 'BOOKED' | 'RESCHEDULED' | 'CANCELLED' | 'COMPLETED';
+  queueTicket?: string; reason?: string; createdAt: string; updatedAt: string;
 }
-
-function saveAppointments(items: Appointment[]) {
-  localStorage.setItem(APPOINTMENTS_KEY, JSON.stringify(items));
+interface Envelope<T> { success: boolean; data: T }
+interface AvailabilitySlot { date: string; startTime: string; endTime: string; capacity: number; bookedCount: number }
+const statuses: Record<BackendAppointment['status'], AppointmentStatus> = {
+  BOOKED: 'confirmed', RESCHEDULED: 'rescheduled', CANCELLED: 'cancelled', COMPLETED: 'completed',
+};
+const personId = (p: Person) => typeof p === 'string' ? p : p._id;
+const personName = (p: Person) => typeof p === 'string' ? '' : p.name;
+// Payment and live queue data are not supplied by the appointment contract.
+function mapAppointment(a: BackendAppointment): Appointment {
+  if (!a?._id || !statuses[a.status] || typeof a.doctor !== 'object' || !a.doctor?._id) throw new Error('Invalid appointment response');
+  return {
+    id: a._id, ref: a._id, patientId: personId(a.patient), patientName: personName(a.patient),
+    patientIdRef: personId(a.patient), bookedForSelf: !a.familyMember,
+    familyMemberId: a.familyMember ? personId(a.familyMember) : undefined,
+    familyMemberName: a.familyMember ? personName(a.familyMember) : undefined,
+    doctorId: a.doctor._id, doctorName: a.doctor.name,
+    departmentId: a.doctor.department._id, department: a.doctor.department.name,
+    room: a.doctor.roomNumber ?? 'Not provided', date: a.appointmentDate.slice(0, 10),
+    time: a.timeSlot, slotId: a.timeSlot, status: statuses[a.status],
+    checkedIn: Boolean(a.queueTicket),
+    paymentStatus: 'unknown', amount: a.doctor.consultationFee ?? 0,
+    reason: a.reason, createdAt: a.createdAt, updatedAt: a.updatedAt,
+  };
 }
-
 export const appointmentsApi = {
   list: async (tab: 'upcoming' | 'past' | 'cancelled' = 'upcoming'): Promise<Appointment[]> => {
-    // Attempt backend call if available
-    try {
-      const res = await apiClient.get<{ success: boolean; data: Appointment[] }>(
-        `/appointments?tab=${tab}`
-      );
-      if (res.data?.data) {
-        return res.data.data;
-      }
-    } catch {
-      // Backend appointments endpoint is under development, use persistent isolated mock
-    }
-
-    const all = getStoredAppointments();
-    const today = new Date().toISOString().slice(0, 10);
-
-    if (tab === 'upcoming') {
-      return all.filter(
-        (a) => a.status === 'confirmed' || (a.status === 'rescheduled' && a.date >= today)
-      );
-    }
-    if (tab === 'past') {
-      return all.filter((a) => a.status === 'completed' || (a.date < today && a.status !== 'cancelled'));
-    }
-    if (tab === 'cancelled') {
-      return all.filter((a) => a.status === 'cancelled');
-    }
-    return all;
+    const params = tab === 'cancelled' ? { status: 'CANCELLED' } : { [tab]: 'true' };
+    const res = await apiClient.get<Envelope<{ appointments: BackendAppointment[] }>>('/appointments/my', { params });
+    if (!res.data.success || !Array.isArray(res.data.data?.appointments)) throw new Error('Invalid appointments response');
+    const items = res.data.data.appointments.map(mapAppointment);
+    return tab === 'upcoming' ? items.filter(a => a.status === 'confirmed' || a.status === 'rescheduled') : tab === 'past' ? items.filter(a => a.status !== 'cancelled') : items;
   },
-
   detail: async (id: string): Promise<Appointment> => {
-    try {
-      const res = await apiClient.get<{ success: boolean; data: Appointment }>(
-        `/appointments/${id}`
-      );
-      if (res.data?.data) {
-        return res.data.data;
-      }
-    } catch {
-      // Backend fallback
-    }
-
-    const all = getStoredAppointments();
-    const found = all.find((a) => a.id === id);
-    if (!found) {
-      throw new Error('Appointment not found');
-    }
-    return found;
+    const res = await apiClient.get<Envelope<{ appointment: BackendAppointment }>>(`/appointments/${encodeURIComponent(id)}`);
+    if (!res.data.success) throw new Error('Could not load appointment');
+    return mapAppointment(res.data.data.appointment);
   },
-
-  reschedule: async (
-    id: string,
-    body: { date: string; slotId: string; timeLabel?: string; reason?: string }
-  ): Promise<Appointment> => {
-    try {
-      const res = await apiClient.post<{ success: boolean; data: Appointment }>(
-        `/appointments/${id}/reschedule`,
-        body
-      );
-      if (res.data?.data) {
-        return res.data.data;
-      }
-    } catch {
-      // Backend fallback
-    }
-
-    const all = getStoredAppointments();
-    const index = all.findIndex((a) => a.id === id);
-    if (index === -1) {
-      throw new Error('Appointment not found');
-    }
-
-    const updated: Appointment = {
-      ...all[index],
-      date: body.date,
-      slotId: body.slotId,
-      time: body.timeLabel || all[index].time,
-      status: 'confirmed',
-      reason: body.reason ? `Rescheduled: ${body.reason}` : all[index].reason,
-      updatedAt: new Date().toISOString(),
-    };
-
-    all[index] = updated;
-    saveAppointments(all);
-    return updated;
+  reschedule: async (id: string, body: { date: string; slotId: string; timeLabel?: string; reason?: string }): Promise<Appointment> => {
+    const appointment = await appointmentsApi.detail(id);
+    const slots = await appointmentsApi.getAvailableSlots(appointment.doctorId, body.date);
+    const slot = slots.find(s => s.id === body.slotId && s.enabled);
+    if (!slot) throw new Error('The selected slot is no longer available');
+    const res = await apiClient.patch<Envelope<{ appointment: BackendAppointment }>>(
+      `/appointments/${encodeURIComponent(id)}/reschedule`, { date: body.date, time: slot.id });
+    if (!res.data.success) throw new Error('Could not reschedule appointment');
+    return mapAppointment(res.data.data.appointment);
   },
-
-  cancel: async (
-    id: string,
-    reason: string
-  ): Promise<{ appointment: Appointment; refund: number }> => {
-    try {
-      const res = await apiClient.post<{ success: boolean; data: { appointment: Appointment; refund: number } }>(
-        `/appointments/${id}/cancel`,
-        { reason }
-      );
-      if (res.data?.data) {
-        return res.data.data;
-      }
-    } catch {
-      // Backend fallback
-    }
-
-    const all = getStoredAppointments();
-    const index = all.findIndex((a) => a.id === id);
-    if (index === -1) {
-      throw new Error('Appointment not found');
-    }
-
-    const refund = all[index].paymentStatus === 'paid' ? all[index].amount : 0;
-    const updated: Appointment = {
-      ...all[index],
-      status: 'cancelled',
-      cancelReason: reason,
-      paymentStatus: refund > 0 ? 'refunded' : all[index].paymentStatus,
-      updatedAt: new Date().toISOString(),
-    };
-
-    all[index] = updated;
-    saveAppointments(all);
-    return { appointment: updated, refund };
+  cancel: async (id: string): Promise<{ appointment: Appointment }> => {
+    const current = await appointmentsApi.detail(id);
+    const res = await apiClient.patch<Envelope<{ appointment: BackendAppointment }>>(`/appointments/${encodeURIComponent(id)}/cancel`);
+    if (!res.data.success) throw new Error('Could not cancel appointment');
+    const cancelled = res.data.data?.appointment;
+    if (cancelled?._id !== id || cancelled.status !== 'CANCELLED') throw new Error('Invalid cancellation response');
+    // Cancellation returns an unpopulated document; preserve the previously fetched display data.
+    return { appointment: { ...current, status: 'cancelled', updatedAt: cancelled.updatedAt } };
   },
-
-  checkIn: async (id: string): Promise<Appointment> => {
-    const all = getStoredAppointments();
-    const index = all.findIndex((a) => a.id === id);
-    if (index === -1) throw new Error('Appointment not found');
-
-    const updated: Appointment = {
-      ...all[index],
-      queueEntry: {
-        id: `q_${Date.now()}`,
-        token: `Q-${Math.floor(10 + Math.random() * 89)}`,
-        status: 'waiting',
-        nowServing: 'Q-08',
-        position: 4,
-        estWaitMins: 24,
-        patientsAhead: 3,
-      },
-    };
-    all[index] = updated;
-    saveAppointments(all);
-    return updated;
-  },
-
-  getAvailableSlots: async (doctorId: string, _date: string): Promise<Slot[]> => {
-    // Try official doctor availability route: GET /doctors/:id/availability
-    try {
-      const res = await apiClient.get<{ success: boolean; data: any }>(
-        `/doctors/${doctorId}/availability`
-      );
-      if (res.data?.data?.slots && Array.isArray(res.data.data.slots)) {
-        const slots: Slot[] = res.data.data.slots.map((s: any, idx: number) => ({
-          id: s._id || `slot_${idx}`,
-          label: `${s.startTime} - ${s.endTime}`,
-          period: 'morning',
-          enabled: (s.bookedCount || 0) < (s.capacity || 10),
-        }));
-        if (slots.length > 0) return slots;
-      }
-    } catch {
-      // Fallback
-    }
-
-    // Default realistic clinical time slots
-    return [
-      { id: 's_0900', label: '09:00 AM', period: 'morning', enabled: true },
-      { id: 's_0930', label: '09:30 AM', period: 'morning', enabled: true },
-      { id: 's_1000', label: '10:00 AM', period: 'morning', enabled: true },
-      { id: 's_1030', label: '10:30 AM', period: 'morning', enabled: false },
-      { id: 's_1100', label: '11:00 AM', period: 'morning', enabled: true },
-      { id: 's_1130', label: '11:30 AM', period: 'morning', enabled: true },
-      { id: 's_1400', label: '02:00 PM', period: 'afternoon', enabled: true },
-      { id: 's_1430', label: '02:30 PM', period: 'afternoon', enabled: true },
-      { id: 's_1500', label: '03:00 PM', period: 'afternoon', enabled: true },
-      { id: 's_1600', label: '04:00 PM', period: 'afternoon', enabled: true },
-      { id: 's_1730', label: '05:30 PM', period: 'evening', enabled: true },
-      { id: 's_1800', label: '06:00 PM', period: 'evening', enabled: true },
-    ];
+  getAvailableSlots: async (doctorId: string, date: string): Promise<Slot[]> => {
+    const res = await apiClient.get<Envelope<{ slots: AvailabilitySlot[] }>>(`/doctors/${encodeURIComponent(doctorId)}/availability`);
+    if (!res.data.success || !Array.isArray(res.data.data?.slots)) throw new Error('Invalid availability response');
+    return res.data.data.slots.filter(s => s.date.slice(0, 10) === date).map(s => ({
+      id: s.startTime, label: `${s.startTime} - ${s.endTime}`,
+      period: Number(s.startTime.slice(0, 2)) < 12 ? 'morning' : Number(s.startTime.slice(0, 2)) < 17 ? 'afternoon' : 'evening',
+      enabled: s.bookedCount < s.capacity,
+    }));
   },
 };

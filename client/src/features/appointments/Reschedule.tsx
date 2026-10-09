@@ -2,9 +2,8 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Calendar, Clock, ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
-import { PhoneShell } from '@/components/PhoneShell';
+import { FeaturePageContent } from '@/components/FeaturePageContent';
 import { Button } from '@/components/ui/button';
-import { Select } from '@/components/ui/select';
 import { appointmentsApi } from './api/appointmentsApi';
 import type { Appointment, Slot } from './types';
 import {
@@ -16,48 +15,49 @@ import {
 } from '@/lib/formatters';
 import { cn } from '@/lib/utils';
 
-const REASONS = [
-  'Change of plans / Personal emergency',
-  'Doctor unavailable',
-  'Feeling better / symptoms resolved',
-  'Found another doctor',
-  'Scheduling conflict',
-  'Other',
-];
-
 export default function Reschedule() {
   const { id = '' } = useParams();
   const navigate = useNavigate();
 
   const [appt, setAppt] = useState<Appointment | null>(null);
+  const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [monthOffset, setMonthOffset] = useState(0);
   const [date, setDate] = useState('');
   const [slots, setSlots] = useState<Slot[]>([]);
   const [slotId, setSlotId] = useState('');
-  const [reason, setReason] = useState(REASONS[0]);
+  const [slotError, setSlotError] = useState('');
+  const [slotsLoading, setSlotsLoading] = useState(false);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
+    let active = true;
+    setAppt(null); setError('');
+    setLoading(true);
     appointmentsApi
       .detail(id)
-      .then(setAppt)
-      .catch(() => navigate('/app/appointments', { replace: true }))
-      .finally(() => setLoading(false));
-  }, [id, navigate]);
+      .then((appointment) => { if (active) setAppt(appointment); })
+      .catch((e) => { if (active) setError((e as Error).message); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [id]);
 
   useEffect(() => {
     if (!appt || !date) {
       setSlots([]);
       return;
     }
+    let active = true;
+    setSlots([]); setSlotId(''); setSlotError(''); setSlotsLoading(true);
     appointmentsApi
       .getAvailableSlots(appt.doctorId, date)
       .then((s) => {
+        if (!active) return;
         setSlots(s);
         setSlotId('');
       })
-      .catch(() => setSlots([]));
+      .catch((e) => { if (active) { setSlots([]); setSlotError((e as Error).message); } }).finally(() => { if (active) setSlotsLoading(false); });
+    return () => { active = false; };
   }, [appt, date]);
 
   const monthDate = new Date(
@@ -76,7 +76,6 @@ export default function Reschedule() {
         date,
         slotId,
         timeLabel: selectedSlot?.label,
-        reason,
       });
       toast.success('Appointment rescheduled successfully', {
         description: `New slot: ${fmtMediumDate(date)} at ${selectedSlot?.label}.`,
@@ -89,19 +88,22 @@ export default function Reschedule() {
     }
   };
 
+  if (error) return <FeaturePageContent title="Reschedule OPD" back><p role="alert" className="rounded-xl border border-danger/20 bg-danger-soft p-4 text-sm">{error}</p></FeaturePageContent>;
+
   if (loading || !appt) {
     return (
-      <PhoneShell title="Reschedule OPD" back>
+      <FeaturePageContent title="Reschedule OPD" back>
         <div className="flex min-h-[300px] flex-col items-center justify-center gap-3 text-ink-muted">
           <div className="h-6 w-6 animate-spin rounded-full border-2 border-brand-600 border-t-transparent" />
           <p className="text-[13px] font-medium">Loading details…</p>
         </div>
-      </PhoneShell>
+      </FeaturePageContent>
     );
   }
 
   return (
-    <PhoneShell title="Reschedule OPD" back>
+    <FeaturePageContent title="Reschedule OPD" back>
+      {slotError && <p role="alert" className="mb-4 text-sm text-danger-600">{slotError}</p>}
       {/* 1. CURRENT APPOINTMENT (Clearly Shown) */}
       <div className="rounded-2xl border border-line bg-white p-4 shadow-card">
         <p className="label">Current Appointment</p>
@@ -124,7 +126,7 @@ export default function Reschedule() {
             </div>
           </div>
           <span className="rounded-lg bg-brand-50 border border-brand-200 px-2.5 py-1 text-[12px] font-extrabold text-brand-700">
-            {appt.queueEntry?.token ?? 'Q-Slot'}
+            {appt.queueEntry?.token ?? appt.ref}
           </span>
         </div>
       </div>
@@ -173,6 +175,8 @@ export default function Reschedule() {
               <button
                 key={cell.iso}
                 type="button"
+                aria-label={fmtMediumDate(cell.iso)}
+                aria-pressed={isSelected}
                 disabled={!enabled}
                 onClick={() => setDate(cell.iso)}
                 className={cn(
@@ -200,13 +204,14 @@ export default function Reschedule() {
           </p>
         )}
         {date && slots.length === 0 && (
-          <p className="text-[12.5px] text-ink-muted">Loading available slots for {fmtMediumDate(date)}…</p>
+          <p className="text-[12.5px] text-ink-muted">{slotsLoading ? `Loading available slots for ${fmtMediumDate(date)}…` : slotError ? 'Slots could not be loaded.' : 'No slots available for this date.'}</p>
         )}
         {date &&
           slots.map((s) => (
             <button
               key={s.id}
               type="button"
+              aria-pressed={slotId === s.id}
               disabled={!s.enabled}
               onClick={() => setSlotId(s.id)}
               className={cn(
@@ -247,35 +252,17 @@ export default function Reschedule() {
         </div>
       )}
 
-      {/* 5. REASON DROPDOWN */}
-      <div className="mt-5">
-        <label className="mb-1.5 block text-[13px] font-semibold text-ink">
-          Reason for Rescheduling
-        </label>
-        <Select value={reason} onChange={(e) => setReason(e.target.value)}>
-          {REASONS.map((r) => (
-            <option key={r} value={r}>
-              {r}
-            </option>
-          ))}
-        </Select>
-      </div>
-
-      <p className="mt-4 text-center text-[11.5px] text-ink-muted">
-        *Rescheduling is free up to 2 hours before the scheduled appointment.
-      </p>
-
       {/* 6. CONFIRM RESCHEDULE BUTTON */}
       <div className="mt-5">
         <Button
           size="lg"
           className="w-full bg-brand-600 text-white hover:bg-brand-700 font-bold"
-          disabled={!date || !slotId || busy}
+          disabled={!date || !slotId || busy || appt.checkedIn || !['confirmed', 'rescheduled'].includes(appt.status)}
           onClick={confirm}
         >
           {busy ? 'Rescheduling…' : 'Confirm Reschedule'}
         </Button>
       </div>
-    </PhoneShell>
+    </FeaturePageContent>
   );
 }

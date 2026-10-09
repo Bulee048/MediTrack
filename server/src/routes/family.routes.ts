@@ -1,0 +1,13 @@
+import { Router } from 'express';
+import { authenticate } from '../middleware/auth.middleware.js';
+import { authorizeRoles } from '../middleware/role.middleware.js';
+import { validateBody } from '../middleware/validate.middleware.js';
+import { createFamilyMemberSchema, updateFamilyMemberSchema } from '../validators/family.validator.js';
+import * as controller from '../controllers/family.controller.js';
+const router = Router();
+router.use(authenticate, authorizeRoles('PATIENT'));
+router.get('/', controller.listFamilyMembers);
+router.post('/', validateBody(createFamilyMemberSchema), controller.createFamilyMember);
+router.patch('/:id', validateBody(updateFamilyMemberSchema), controller.updateFamilyMember);
+router.delete('/:id', controller.deleteFamilyMember);
+export default router;

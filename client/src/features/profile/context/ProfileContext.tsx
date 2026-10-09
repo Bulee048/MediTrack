@@ -1,57 +1,51 @@
-import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
-import { type UserProfile, DEFAULT_PATIENT_PROFILE } from '../types';
+import { getAccessToken, setAccessToken, useAuthSession, getAuthErrorStatus } from '@/config/api';
+import React, { createContext, useContext, useEffect, useState, useCallback, useMemo, useRef } from 'react';
+import type { UserProfile } from '../types';
 import { profileApi } from '../api/profileApi';
-
 interface ProfileContextType {
-  user: UserProfile;
-  loading: boolean;
+  user: UserProfile | null; loading: boolean; error: string;
   updateProfile: (patch: Partial<UserProfile>) => Promise<UserProfile>;
-  refreshProfile: () => Promise<void>;
-  logout: () => void;
+  refreshProfile: () => Promise<void>; logout: () => void;
 }
-
-const ProfileContext = createContext<ProfileContextType>({
-  user: DEFAULT_PATIENT_PROFILE,
-  loading: true,
-  updateProfile: async () => DEFAULT_PATIENT_PROFILE,
-  refreshProfile: async () => {},
-  logout: () => {},
-});
-
-export const useProfile = () => useContext(ProfileContext);
-
+const ProfileContext = createContext<ProfileContextType | undefined>(undefined);
+export const useProfile = () => {
+  const context = useContext(ProfileContext);
+  if (!context) throw new Error('ProfileProvider is required');
+  return context;
+};
 export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<UserProfile>(DEFAULT_PATIENT_PROFILE);
+  const sessionVersion = useAuthSession();
+  const requestVersion = useRef(0);
+  const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
-
+  const [error, setError] = useState('');
   const fetchProfile = useCallback(async () => {
-    try {
-      const u = await profileApi.getProfile();
-      setUser(u);
-    } finally {
-      setLoading(false);
-    }
+    const version = ++requestVersion.current;
+    const token = getAccessToken();
+    const current = () => version === requestVersion.current && token === getAccessToken();
+    setUser(null); setLoading(true); setError('');
+    if (!token) { setLoading(false); return; }
+    try { const profile = await profileApi.getProfile(); if (current()) setUser(profile); }
+    catch (e) {
+      if (current()) {
+        setUser(null); setError((e as Error).message || 'Could not load profile');
+        if (getAuthErrorStatus(e) === 401) setAccessToken(null);
+      }
+    } finally { if (current()) setLoading(false); }
   }, []);
-
   useEffect(() => {
-    fetchProfile();
-  }, [fetchProfile]);
-
+    void fetchProfile();
+    return () => { requestVersion.current++; };
+  }, [fetchProfile, sessionVersion]);
   const updateProfile = useCallback(async (patch: Partial<UserProfile>) => {
     const updated = await profileApi.updateProfile(patch);
-    setUser(updated);
-    return updated;
+    setUser(updated); return updated;
   }, []);
-
   const logout = useCallback(() => {
-    localStorage.removeItem('medqueue.token');
-    localStorage.removeItem('meditrack_auth_token');
+    setAccessToken(null); setUser(null);
+    setError('Your session has ended. Please sign in.');
   }, []);
-
-  const value = useMemo(
-    () => ({ user, loading, updateProfile, refreshProfile: fetchProfile, logout }),
-    [user, loading, updateProfile, fetchProfile, logout]
-  );
-
+  const value = useMemo(() => ({ user, loading, error, updateProfile, refreshProfile: fetchProfile, logout }),
+    [user, loading, error, updateProfile, fetchProfile, logout]);
   return <ProfileContext.Provider value={value}>{children}</ProfileContext.Provider>;
 };

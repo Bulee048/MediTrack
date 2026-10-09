@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Settings, Users } from 'lucide-react';
-import { PhoneShell } from '@/components/PhoneShell';
+import { FeaturePageContent } from '@/components/FeaturePageContent';
 import { Button } from '@/components/ui/button';
 import { useProfile } from './context/ProfileContext';
 import { familyApi } from '@/features/family/api/familyApi';
@@ -10,15 +10,18 @@ import { fmtMediumDate, initials } from '@/lib/formatters';
 
 export default function Profile() {
   const navigate = useNavigate();
-  const { user, logout } = useProfile();
+  const { user, logout, loading, error } = useProfile();
   const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
+  const [familyError, setFamilyError] = useState('');
 
   useEffect(() => {
-    familyApi.getFamilyMembers().then(setFamilyMembers).catch(() => {});
+    familyApi.getFamilyMembers().then(setFamilyMembers).catch((e) => setFamilyError((e as Error).message));
   }, []);
 
+  if (loading || !user) return <FeaturePageContent title="Patient Profile"><p role={loading ? "status" : "alert"}>{loading ? "Loading profile…" : error}</p></FeaturePageContent>;
+
   return (
-    <PhoneShell
+    <FeaturePageContent
       title="Patient Profile"
       action={
         <button
@@ -39,7 +42,7 @@ export default function Profile() {
         <div className="min-w-0">
           <p className="truncate text-[17px] font-extrabold tracking-tight">{user?.name}</p>
           <p className="mt-1 truncate text-[12px] text-white/80 font-medium">
-            ID: {user?.displayId} · Since {user?.memberSince}
+            ID: {user?.displayId}
           </p>
         </div>
       </div>
@@ -69,25 +72,25 @@ export default function Profile() {
       <Section title="Medical Information">
         <Row
           label="Known Allergies"
-          value={user?.allergies?.length ? user.allergies.join(', ') : 'None recorded'}
+          value={user?.allergies?.length ? user.allergies.join(', ') : 'Not provided by the backend'}
           danger={Boolean(user?.allergies?.length)}
         />
         <Row
           label="Chronic Conditions"
-          value={user?.chronic?.length ? user.chronic.join(', ') : 'None recorded'}
+          value={user?.chronic?.length ? user.chronic.join(', ') : 'Not provided by the backend'}
         />
       </Section>
 
       {/* Insurance Details */}
       <Section title="Insurance Details">
-        <Row label="Provider" value={user?.insuranceProvider ?? '—'} />
-        <Row label="Policy Number" value={user?.insurancePolicyNo ?? '—'} />
+        <Row label="Provider" value={user?.insuranceProvider || 'Not provided'} />
+        <Row label="Policy Number" value={user?.insurancePolicyNo || 'Not provided'} />
       </Section>
 
       {/* Family Members Section */}
       <Section title="Family Members">
         {familyMembers.length === 0 ? (
-          <p className="py-2 text-[13px] text-ink-muted">No family members registered yet.</p>
+          <p role={familyError ? "alert" : undefined} className="py-2 text-[13px] text-ink-muted">{familyError || 'No family members registered yet.'}</p>
         ) : (
           familyMembers.map((m) => (
             <Row key={m.id} label={m.name} value={m.relation} />
@@ -124,10 +127,10 @@ export default function Profile() {
       </div>
 
       <p className="mt-6 text-center text-[11.5px] text-ink-muted">
-        {user?.stats?.totalAppointments ?? 0} appointments · {user?.stats?.completedVisits ?? 0} completed visits
+        {user?.stats?.totalAppointments ?? '—'} appointments · {user?.stats?.completedVisits ?? '—'} completed visits
         {user?.memberSince && ` · Registered in ${user.memberSince}`}
       </p>
-    </PhoneShell>
+    </FeaturePageContent>
   );
 }
 

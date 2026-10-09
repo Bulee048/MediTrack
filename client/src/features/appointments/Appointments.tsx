@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { ChevronRight, Clock3, Users } from 'lucide-react';
-import { PhoneShell } from '@/components/PhoneShell';
+import { FeaturePageContent } from '@/components/FeaturePageContent';
 import { appointmentsApi } from './api/appointmentsApi';
 import type { Appointment } from './types';
 import { fmtMediumDate, STATUS_STYLES } from '@/lib/formatters';
@@ -10,25 +10,27 @@ import { cn } from '@/lib/utils';
 type Tab = 'upcoming' | 'past' | 'cancelled';
 
 export default function Appointments() {
-  const navigate = useNavigate();
   const [tab, setTab] = useState<Tab>('upcoming');
   const [items, setItems] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
+    let active = true;
     setLoading(true);
+    setError(''); setItems([]);
     appointmentsApi
       .list(tab)
-      .then(setItems)
-      .catch(() => setItems([]))
-      .finally(() => setLoading(false));
+      .then((items) => { if (active) setItems(items); })
+      .catch((e) => { if (active) setError((e as Error).message); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
   }, [tab]);
 
   return (
-    <PhoneShell title="My Appointments" back>
+    <FeaturePageContent title="My Appointments" back>
       {/* Prominently visible Book for Family banner */}
-      <div
-        onClick={() => navigate('/app/book/family')}
+      <Link to="/app/family"
         className="mb-4 flex items-center justify-between rounded-2xl border border-brand-200 bg-brand-50 p-3.5 transition hover:bg-brand-100/70 cursor-pointer shadow-soft"
       >
         <div className="flex items-center gap-2.5">
@@ -45,7 +47,7 @@ export default function Appointments() {
           </div>
         </div>
         <ChevronRight size={18} className="text-brand-600" />
-      </div>
+      </Link>
 
       {/* Tabs */}
       <div className="flex rounded-full bg-slate-200/70 p-1">
@@ -75,7 +77,8 @@ export default function Appointments() {
           </div>
         )}
 
-        {!loading && items.length === 0 && (
+        {error && <p role="alert" className="rounded-xl border border-danger/20 bg-danger-soft p-4 text-sm">{error}</p>}
+        {!loading && !error && items.length === 0 && (
           <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-line bg-white/60 px-6 py-12 text-center">
             <p className="text-sm font-bold text-ink">No appointments here</p>
             <p className="mt-1.5 max-w-xs text-[12.5px] text-ink-muted">
@@ -92,9 +95,9 @@ export default function Appointments() {
             const live = a.queueEntry && a.queueEntry.status === 'waiting';
 
             return (
-              <div
+              <Link
                 key={a.id}
-                onClick={() => navigate(`/app/appointments/${a.id}`)}
+                to={`/app/appointments/${a.id}`}
                 className="block w-full rounded-2xl border border-line bg-white p-4 text-left shadow-card transition hover:border-brand-300 cursor-pointer"
               >
                 <div className="flex items-center justify-between">
@@ -136,10 +139,10 @@ export default function Appointments() {
                     </span>
                   </div>
                 )}
-              </div>
+              </Link>
             );
           })}
       </div>
-    </PhoneShell>
+    </FeaturePageContent>
   );
 }

@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { PhoneShell } from '@/components/PhoneShell';
+import { FeaturePageContent } from '@/components/FeaturePageContent';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
@@ -14,7 +14,7 @@ const RELATIONS = ['Father', 'Mother', 'Spouse', 'Son', 'Daughter', 'Brother', '
 
 export default function EditProfile() {
   const navigate = useNavigate();
-  const { user, updateProfile } = useProfile();
+  const { user, updateProfile, loading, error } = useProfile();
 
   const [form, setForm] = useState({
     name: user?.name ?? '',
@@ -31,6 +31,14 @@ export default function EditProfile() {
     emergencyPhone: user?.emergencyContact?.phone ?? '',
   });
 
+  useEffect(() => {
+    if (!user) return;
+    setForm({ name: user.name, phone: user.phone, email: user.email, dob: user.dob,
+      gender: user.gender, bloodGroup: user.bloodGroup, insuranceProvider: user.insuranceProvider,
+      insurancePolicyNo: user.insurancePolicyNo, address: user.address,
+      emergencyName: user.emergencyContact?.name ?? '', emergencyRelation: user.emergencyContact?.relationship ?? '',
+      emergencyPhone: user.emergencyContact?.phone ?? '' });
+  }, [user]);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -55,17 +63,7 @@ export default function EditProfile() {
         email: form.email,
         dob: form.dob,
         gender: form.gender as UserProfile['gender'],
-        bloodGroup: form.bloodGroup,
-        insuranceProvider: form.insuranceProvider,
-        insurancePolicyNo: form.insurancePolicyNo,
         address: form.address,
-        emergencyContact: form.emergencyName
-          ? {
-              name: form.emergencyName,
-              relationship: form.emergencyRelation || 'Other',
-              phone: form.emergencyPhone,
-            }
-          : undefined,
       });
       toast.success('Profile updated successfully');
       navigate('/app/profile');
@@ -76,8 +74,11 @@ export default function EditProfile() {
     }
   };
 
+  if (loading || !user) return <FeaturePageContent title="Edit Profile" back><p role={loading ? "status" : "alert"}>{loading ? "Loading profile…" : error}</p></FeaturePageContent>;
+
   return (
-    <PhoneShell title="Edit Profile" back>
+    <FeaturePageContent title="Edit Profile" back>
+      <p role="status" className="mb-4 text-sm text-ink-muted">Medical, insurance and emergency-contact fields are not supported by the profile API and cannot be edited.</p>
       {/* Profile Picture */}
       <div className="flex flex-col items-center pt-2">
         <span className="relative grid h-24 w-24 place-items-center rounded-full bg-brand-50 text-brand-600 border border-brand-200">
@@ -94,33 +95,13 @@ export default function EditProfile() {
             <circle cx="12" cy="9" r="3.6" />
             <path d="M4.5 20a7.5 7.5 0 0 1 15 0" />
           </svg>
-          <span className="absolute -bottom-0.5 -right-0.5 grid h-8 w-8 place-items-center rounded-full bg-brand-600 text-white ring-4 ring-white shadow">
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.4"
-              strokeLinecap="round"
-            >
-              <path d="M12 5v14M5 12h14" />
-            </svg>
-          </span>
         </span>
-        <button
-          type="button"
-          onClick={() => toast.info('Photo upload capability ready in production build')}
-          className="mt-3 text-[13px] font-bold text-brand-600 hover:text-brand-700 min-h-0"
-        >
-          Change Profile Picture
-        </button>
       </div>
 
       <div className="mt-7 space-y-4">
         <div>
-          <label className="mb-1.5 block text-[13px] font-semibold text-ink">Full Name</label>
-          <Input
+          <label htmlFor="profile-full-name" className="mb-1.5 block text-[13px] font-semibold text-ink">Full Name</label>
+          <Input id="profile-full-name"
             value={form.name}
             onChange={(e) => set('name', e.target.value)}
             placeholder="Your full name"
@@ -130,8 +111,8 @@ export default function EditProfile() {
         </div>
 
         <div>
-          <label className="mb-1.5 block text-[13px] font-semibold text-ink">Phone Number</label>
-          <Input
+          <label htmlFor="profile-phone-number" className="mb-1.5 block text-[13px] font-semibold text-ink">Phone Number</label>
+          <Input id="profile-phone-number"
             value={form.phone}
             onChange={(e) => set('phone', e.target.value)}
             placeholder="+94 77 123 4567"
@@ -141,8 +122,8 @@ export default function EditProfile() {
         </div>
 
         <div>
-          <label className="mb-1.5 block text-[13px] font-semibold text-ink">Email Address</label>
-          <Input
+          <label htmlFor="profile-email-address" className="mb-1.5 block text-[13px] font-semibold text-ink">Email Address</label>
+          <Input id="profile-email-address"
             type="email"
             value={form.email}
             onChange={(e) => set('email', e.target.value)}
@@ -154,19 +135,20 @@ export default function EditProfile() {
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="mb-1.5 block text-[13px] font-semibold text-ink">Date of Birth</label>
-            <Input
+            <label htmlFor="profile-date-of-birth" className="mb-1.5 block text-[13px] font-semibold text-ink">Date of Birth</label>
+            <Input id="profile-date-of-birth"
               type="date"
               value={form.dob}
               onChange={(e) => set('dob', e.target.value)}
             />
           </div>
           <div>
-            <label className="mb-1.5 block text-[13px] font-semibold text-ink">Gender</label>
-            <Select
+            <label htmlFor="profile-gender" className="mb-1.5 block text-[13px] font-semibold text-ink">Gender</label>
+            <Select id="profile-gender"
               value={form.gender}
               onChange={(e) => set('gender', e.target.value)}
             >
+              <option value="">Not provided</option>
               <option value="Male">Male</option>
               <option value="Female">Female</option>
               <option value="Other">Other</option>
@@ -176,8 +158,9 @@ export default function EditProfile() {
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="mb-1.5 block text-[13px] font-semibold text-ink">Blood Group</label>
-            <Select
+            <label htmlFor="profile-blood-group" className="mb-1.5 block text-[13px] font-semibold text-ink">Blood Group</label>
+            <Select id="profile-blood-group"
+              disabled
               value={form.bloodGroup}
               onChange={(e) => set('bloodGroup', e.target.value)}
             >
@@ -190,8 +173,9 @@ export default function EditProfile() {
             </Select>
           </div>
           <div>
-            <label className="mb-1.5 block text-[13px] font-semibold text-ink">Insurance Provider</label>
-            <Input
+            <label htmlFor="profile-insurance-provider" className="mb-1.5 block text-[13px] font-semibold text-ink">Insurance Provider</label>
+            <Input id="profile-insurance-provider"
+              disabled
               value={form.insuranceProvider}
               onChange={(e) => set('insuranceProvider', e.target.value)}
               placeholder="E.g. SLIC"
@@ -200,17 +184,18 @@ export default function EditProfile() {
         </div>
 
         <div>
-          <label className="mb-1.5 block text-[13px] font-semibold text-ink">Policy Number</label>
-          <Input
-            value={form.insurancePolicyNo}
+          <label htmlFor="profile-policy-number" className="mb-1.5 block text-[13px] font-semibold text-ink">Policy Number</label>
+          <Input id="profile-policy-number"
+            disabled
+              value={form.insurancePolicyNo}
             onChange={(e) => set('insurancePolicyNo', e.target.value)}
             placeholder="Insurance policy or card number"
           />
         </div>
 
         <div>
-          <label className="mb-1.5 block text-[13px] font-semibold text-ink">Residential Address</label>
-          <Textarea
+          <label htmlFor="profile-residential-address" className="mb-1.5 block text-[13px] font-semibold text-ink">Residential Address</label>
+          <Textarea id="profile-residential-address"
             value={form.address}
             onChange={(e) => set('address', e.target.value)}
             rows={2}
@@ -223,9 +208,10 @@ export default function EditProfile() {
         </p>
 
         <div>
-          <label className="mb-1.5 block text-[13px] font-semibold text-ink">Contact Name</label>
-          <Input
-            value={form.emergencyName}
+          <label htmlFor="profile-contact-name" className="mb-1.5 block text-[13px] font-semibold text-ink">Contact Name</label>
+          <Input id="profile-contact-name"
+            disabled
+              value={form.emergencyName}
             onChange={(e) => set('emergencyName', e.target.value)}
             placeholder="Emergency contact full name"
           />
@@ -233,8 +219,9 @@ export default function EditProfile() {
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="mb-1.5 block text-[13px] font-semibold text-ink">Relationship</label>
-            <Select
+            <label htmlFor="profile-relationship" className="mb-1.5 block text-[13px] font-semibold text-ink">Relationship</label>
+            <Select id="profile-relationship"
+              disabled
               value={form.emergencyRelation}
               onChange={(e) => set('emergencyRelation', e.target.value)}
             >
@@ -247,8 +234,9 @@ export default function EditProfile() {
             </Select>
           </div>
           <div>
-            <label className="mb-1.5 block text-[13px] font-semibold text-ink">Contact Phone</label>
-            <Input
+            <label htmlFor="profile-contact-phone" className="mb-1.5 block text-[13px] font-semibold text-ink">Contact Phone</label>
+            <Input id="profile-contact-phone"
+              disabled
               value={form.emergencyPhone}
               onChange={(e) => set('emergencyPhone', e.target.value)}
               placeholder="+94 7X XXX XXXX"
@@ -275,6 +263,6 @@ export default function EditProfile() {
           Cancel
         </Button>
       </div>
-    </PhoneShell>
+    </FeaturePageContent>
   );
 }

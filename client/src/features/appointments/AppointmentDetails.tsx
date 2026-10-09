@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Building2, Clock3, Timer } from 'lucide-react';
 import { toast } from 'sonner';
-import { PhoneShell } from '@/components/PhoneShell';
+import { FeaturePageContent } from '@/components/FeaturePageContent';
 import { Button } from '@/components/ui/button';
 import { AlertDialog } from '@/components/ui/alert-dialog';
 import { appointmentsApi } from './api/appointmentsApi';
@@ -15,54 +15,47 @@ export default function AppointmentDetails() {
   const navigate = useNavigate();
 
   const [appt, setAppt] = useState<Appointment | null>(null);
+  const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
-  const [checkingIn, setCheckingIn] = useState(false);
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
 
   useEffect(() => {
+    let active = true;
+    setAppt(null); setError('');
+    setLoading(true);
     appointmentsApi
       .detail(id)
-      .then(setAppt)
-      .catch(() => navigate('/app/appointments', { replace: true }))
-      .finally(() => setLoading(false));
-  }, [id, navigate]);
+      .then((appointment) => { if (active) setAppt(appointment); })
+      .catch((e) => { if (active) setError((e as Error).message); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [id]);
+
+  if (error) return <FeaturePageContent title="Appointment Details" back><p role="alert" className="rounded-xl border border-danger/20 bg-danger-soft p-4 text-sm">{error}</p></FeaturePageContent>;
 
   if (loading || !appt) {
     return (
-      <PhoneShell title="Appointment Details" back>
+      <FeaturePageContent title="Appointment Details" back>
         <div className="flex min-h-[300px] flex-col items-center justify-center gap-3 text-ink-muted">
           <div className="h-6 w-6 animate-spin rounded-full border-2 border-brand-600 border-t-transparent" />
           <p className="text-[13px] font-medium">Loading details…</p>
         </div>
-      </PhoneShell>
+      </FeaturePageContent>
     );
   }
 
   const st = STATUS_STYLES[appt.status] ?? STATUS_STYLES.confirmed;
-  const paySt = STATUS_STYLES[appt.paymentStatus] ?? STATUS_STYLES.pending;
+  const paySt = STATUS_STYLES[appt.paymentStatus] ?? { label: 'Not provided', cls: 'bg-slate-100 text-slate-700 border-slate-200' };
   const inQueue = Boolean(appt.queueEntry && appt.queueEntry.status === 'waiting');
   const cancelled = appt.status === 'cancelled';
+  const active = !appt.checkedIn && (appt.status === 'confirmed' || appt.status === 'rescheduled');
 
-  const handleCheckIn = async () => {
-    setCheckingIn(true);
-    try {
-      const updated = await appointmentsApi.checkIn(appt.id);
-      setAppt(updated);
-      toast.success('Checked into OPD Live Queue', {
-        description: `Your token is ${updated.queueEntry?.token}.`,
-      });
-    } catch {
-      toast.error('Check-in failed');
-    } finally {
-      setCheckingIn(false);
-    }
-  };
+  const handleCheckIn = () => navigate('/queue');
 
   const confirmFastCancel = async () => {
     try {
       const { appointment } = await appointmentsApi.cancel(
-        appt.id,
-        'Cancelled by patient directly from details screen'
+        appt.id
       );
       setAppt(appointment);
       toast.success('Appointment cancelled', {
@@ -74,7 +67,7 @@ export default function AppointmentDetails() {
   };
 
   return (
-    <PhoneShell title="Appointment Details" back>
+    <FeaturePageContent title="Appointment Details" back>
       <div className="rounded-2xl border border-line bg-white p-5 shadow-card">
         {/* Status and Reference */}
         <div className="flex items-center justify-between">
@@ -167,7 +160,7 @@ export default function AppointmentDetails() {
                 {paySt.label}
               </span>
             </p>
-            <p className="mt-1 text-[13px] font-bold text-ink">{inr(appt.amount)}</p>
+            <p className="mt-1 text-[13px] font-bold text-ink">{appt.paymentStatus === 'unknown' ? 'Payment information unavailable' : inr(appt.amount)}</p>
           </div>
         </div>
 
@@ -211,15 +204,14 @@ export default function AppointmentDetails() {
             <Button
               size="lg"
               className="w-full bg-brand-600 text-white hover:bg-brand-700 font-bold"
-              disabled={checkingIn}
               onClick={handleCheckIn}
             >
               <Clock3 size={17} className="mr-2" />
-              {checkingIn ? 'Joining Live Queue…' : 'Join OPD Queue (Check In)'}
+              Open OPD Queue
             </Button>
           ))}
 
-        {!cancelled && (
+        {active && (
           <div className="grid grid-cols-2 gap-3">
             <Button
               variant="outline"
@@ -241,6 +233,7 @@ export default function AppointmentDetails() {
         )}
       </div>
 
+      {appt.checkedIn && <p role="status" className="mt-4 text-sm text-ink-muted">Checked-in appointments are managed through the OPD queue.</p>}
       {/* Confirmation AlertDialog for cancellation */}
       <AlertDialog
         open={cancelModalOpen}
@@ -252,6 +245,6 @@ export default function AppointmentDetails() {
         variant="destructive"
         onConfirm={confirmFastCancel}
       />
-    </PhoneShell>
+    </FeaturePageContent>
   );
 }
