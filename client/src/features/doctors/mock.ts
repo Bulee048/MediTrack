@@ -1,9 +1,9 @@
 import type { DoctorAvailability, DoctorAvailabilityGroup, DoctorAvailabilitySlot, DoctorDepartment, DoctorDetails, DoctorListFilters } from './types';
 
 export const doctorMockDepartments: DoctorDepartment[] = [
-  { id: 'dept-cardiology', name: 'Cardiology', description: 'Heart and vascular care', room: 'C-12', floor: '2nd Floor' },
-  { id: 'dept-medicine', name: 'General Medicine', description: 'Primary outpatient consults', room: 'A-04', floor: 'Ground Floor' },
-  { id: 'dept-paediatrics', name: 'Paediatrics', description: 'Child health and follow-up care', room: 'B-07', floor: '1st Floor' },
+  { id: 'dept-cardiology', name: 'Cardiology', code: 'CARD', icon: 'heart-pulse', description: 'Heart and vascular care', roomNumber: 'C-12', doctorCount: 6, isActive: true },
+  { id: 'dept-medicine', name: 'General Medicine', code: 'GEN', icon: 'stethoscope', description: 'Primary outpatient consults', roomNumber: 'A-04', doctorCount: 10, isActive: true },
+  { id: 'dept-paediatrics', name: 'Paediatrics', code: 'PED', icon: 'baby', description: 'Child health and follow-up care', roomNumber: 'B-07', doctorCount: 4, isActive: true },
 ];
 
 export const doctorMockData: DoctorDetails[] = [

@@ -3,9 +3,12 @@ export type DoctorSessionPeriod = 'morning' | 'afternoon' | 'evening';
 export interface DoctorDepartment {
   id: string;
   name: string;
-  description: string;
-  room: string;
-  floor: string;
+  code: string;
+  icon?: string;
+  description?: string;
+  roomNumber?: string;
+  isActive?: boolean;
+  doctorCount?: number;
 }
 
 export interface DoctorSummary {
