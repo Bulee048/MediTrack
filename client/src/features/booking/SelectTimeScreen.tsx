@@ -26,7 +26,8 @@ function slotPeriod(startTime: string) {
 }
 
 export default function SelectTimeScreen() {
-  const { id = '' } = useParams();
+  const params = useParams();
+  const id = params.doctorId ?? params.id ?? '';
   const navigate = useNavigate();
   const location = useLocation();
   const state = (location.state ?? {}) as LocationState;
@@ -79,7 +80,6 @@ export default function SelectTimeScreen() {
   const topDay = useMemo(
     () =>
       availability?.days.find((day) => day.date === selectedDate) ??
-      availability?.days[0] ??
       null,
     [availability, selectedDate]
   );
@@ -102,8 +102,8 @@ export default function SelectTimeScreen() {
   );
 
   const continueTo = () => {
-    if (!doctor || !selectedDate || !selectedSlot) return;
-    navigate(`/patient/doctors/${doctor.id}/review`, {
+    if (!doctor || !selectedDate || !selectedSlot?.available) return;
+    navigate(`/app/book/review`, {
       state: {
         doctor,
         date: selectedDate,
@@ -144,7 +144,7 @@ export default function SelectTimeScreen() {
               <Button
                 variant="outline"
                 className="h-11 min-h-[44px] flex-1 border-[#E8455F]/40 text-[#E8455F] hover:bg-[#FDECEF] focus-visible:ring-2 focus-visible:ring-[#E8455F] font-semibold"
-                onClick={() => navigate('/patient/doctors')}
+                onClick={() => navigate('/app/doctors')}
               >
                 All Doctors
               </Button>
@@ -197,7 +197,7 @@ export default function SelectTimeScreen() {
             size="sm"
             variant="ghost"
             className="h-9 min-h-[36px] font-bold text-[#0C6F64] hover:bg-[#D2F5EE]"
-            onClick={() => navigate(`/patient/doctors/${doctor.id}/date`, { state: { doctor, date: selectedDate } })}
+            onClick={() => navigate(`/app/book/date/${doctor.id}`, { state: { doctor, date: selectedDate } })}
           >
             Change Date
           </Button>
@@ -228,7 +228,7 @@ export default function SelectTimeScreen() {
                 <Button
                   size="sm"
                   className="mt-3 h-11 min-h-[44px] bg-[#0E8B7C] font-bold text-white hover:bg-[#0C6F64]"
-                  onClick={() => navigate(`/patient/doctors/${doctor.id}/date`, { state: { doctor } })}
+                  onClick={() => navigate(`/app/book/date/${doctor.id}`, { state: { doctor } })}
                 >
                   Choose Another Date
                 </Button>
@@ -295,7 +295,7 @@ export default function SelectTimeScreen() {
           </Button>
           <Button
             className="h-12 min-h-[44px] flex-1 bg-[#0E8B7C] font-bold text-white hover:bg-[#0C6F64] disabled:bg-[#E6ECF3] disabled:text-[#6C7A90] focus-visible:ring-2 focus-visible:ring-[#16A794]"
-            disabled={!selectedSlotId}
+            disabled={!selectedSlot?.available}
             onClick={continueTo}
           >
             Continue

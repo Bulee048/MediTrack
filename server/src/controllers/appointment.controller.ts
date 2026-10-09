@@ -29,3 +29,8 @@ export const getMyAppointments = asyncHandler(async (req: Request, res: Response
     data: { appointments },
   });
 });
+
+export const getAppointmentById = asyncHandler(async (req: Request, res: Response) => {
+  const appointment = await AppointmentService.getAppointmentById(req.user!.id, req.params.id as string);
+  res.json({ success: true, message: 'Appointment fetched', data: { appointment } });
+});

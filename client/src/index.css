@@ -79,3 +79,9 @@
     min-height: 44px;
   }
 }
+
+:focus-visible { outline: 3px solid #0e8b7c; outline-offset: 3px; }
+main { overflow-wrap: anywhere; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+}

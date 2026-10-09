@@ -1,3 +1,5 @@
+import PatientAccess from '@/features/auth/PatientAccess';
+import PatientAccountScreen from '@/features/auth/PatientAccountScreen';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Toaster } from '@/components/ui/sonner';
@@ -100,6 +102,10 @@ export default function App() {
           <Route path="/login" element={<LoginScreen />} />
           <Route path="/register" element={<RegisterScreen />} />
 
+          <Route element={<PatientAccess />}>
+          <Route path="/app/profile" element={<PatientAccountScreen />} />
+          <Route path="/app/account" element={<PatientAccountScreen />} />
+          <Route path="/app/doctor/:id/availability" element={<DoctorAvailabilityScreen />} />
           {/* Primary Integration Routes for Shared PatientShell */}
           <Route path="/app/home" element={<HomeScreen />} />
           <Route path="/app/departments" element={<DepartmentsScreen />} />
@@ -120,6 +126,7 @@ export default function App() {
           <Route path="/patient/doctors/:id/time" element={<SelectTimeScreen />} />
           <Route path="/patient/doctors/:id/review" element={<ReviewAppointmentScreen />} />
           <Route path="/patient/doctors/:id/confirmed" element={<BookingConfirmedScreen />} />
+          </Route>
         </Routes>
       </BrowserRouter>
       <Toaster />

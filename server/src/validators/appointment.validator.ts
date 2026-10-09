@@ -4,7 +4,8 @@ import { z } from 'zod';
 const dateString = z
   .string({ required_error: 'Date is required' })
   .trim()
-  .regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format');
+  .regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format')
+  .refine(value => !Number.isNaN(Date.parse(value)) && new Date(value).toISOString().slice(0, 10) === value, 'Invalid calendar date');
 
 export const createAppointmentSchema = z.object({
   doctorId: z
@@ -23,6 +24,6 @@ export const createAppointmentSchema = z.object({
   // Optional family member booking
   familyMemberId: z.string().trim().optional(),
   familyMemberName: z.string().trim().optional(),
-});
+}).strict();
 
 export type CreateAppointmentInput = z.infer<typeof createAppointmentSchema>;

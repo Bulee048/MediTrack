@@ -75,8 +75,8 @@ export default function DoctorAvailabilityScreen() {
   const selectedSlot = selectedDay?.slots.find((s) => s.id === selectedSlotId) ?? null;
 
   const handleContinue = () => {
-    if (!doctor || !selectedDay || !selectedSlot) return;
-    navigate(`/patient/doctors/${doctor.id}/review`, {
+    if (!doctor || !selectedDay || !selectedSlot?.available) return;
+    navigate(`/app/book/review`, {
       state: {
         doctor,
         date: selectedDay.date,
@@ -117,7 +117,7 @@ export default function DoctorAvailabilityScreen() {
               <Button
                 variant="outline"
                 className="h-11 min-h-[44px] flex-1 border-[#E8455F]/40 text-[#E8455F] hover:bg-[#FDECEF] focus-visible:ring-2 focus-visible:ring-[#E8455F] font-semibold"
-                onClick={() => navigate('/patient/doctors')}
+                onClick={() => navigate('/app/doctors')}
               >
                 All Doctors
               </Button>
@@ -167,7 +167,7 @@ export default function DoctorAvailabilityScreen() {
           <p className="text-[16px] font-extrabold text-[#101A2E]">{doctor.name}</p>
           <p className="mt-0.5 text-[12.5px] text-[#6C7A90]">{doctor.title || 'Specialist'}</p>
           <div className="mt-2 flex items-center justify-center gap-1 text-[12.5px] font-bold text-[#101A2E]">
-            <Star size={13} className="fill-[#F5A623] text-[#F5A623]" /> {doctor.rating.toFixed(1)}
+            <Star size={13} className="fill-[#F5A623] text-[#F5A623]" /> {doctor.rating?.toFixed(1) ?? 'Not rated'}
           </div>
           <p className="mt-1 text-[12.5px] font-bold text-[#0E8B7C]">{doctor.department}</p>
         </div>
@@ -201,7 +201,7 @@ export default function DoctorAvailabilityScreen() {
                 {availability.days.length} days
               </span>
               <button
-                onClick={() => navigate(`/patient/doctors/${doctor.id}/date`, { state: { doctor } })}
+                onClick={() => navigate(`/app/book/date/${doctor.id}`, { state: { doctor } })}
                 aria-label="Open full calendar"
                 className="grid h-11 w-11 min-h-[44px] min-w-[44px] place-items-center rounded-xl border border-[#E6ECF3] text-[#3A465C] hover:bg-[#F4F7FA] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16A794]"
               >
@@ -210,12 +210,12 @@ export default function DoctorAvailabilityScreen() {
             </div>
           </div>
 
-          <div className="mt-4 flex gap-2 overflow-x-auto pb-1" role="tablist" aria-label="Available dates">
+          {availability.days.length === 0 && <p role="status" className="mt-4 text-sm">No availability has been published for this doctor.</p>}
+          <div className="mt-4 flex gap-2 overflow-x-auto pb-1" role="group" aria-label="Available dates">
             {availability.days.map((day, index) => (
               <button
                 key={day.date}
-                role="tab"
-                aria-selected={selectedDayIndex === index}
+                aria-pressed={selectedDayIndex === index}
                 onClick={() => {
                   setSelectedDayIndex(index);
                   setSelectedSlotId('');
@@ -254,7 +254,7 @@ export default function DoctorAvailabilityScreen() {
                   size="sm"
                   variant="outline"
                   className="mt-2 h-11 min-h-[44px] border-[#E6ECF3] text-[#3A465C] hover:bg-[#F4F7FA] focus-visible:ring-2 focus-visible:ring-[#16A794]"
-                  onClick={() => navigate(`/patient/doctors/${doctor.id}/date`, { state: { doctor } })}
+                  onClick={() => navigate(`/app/book/date/${doctor.id}`, { state: { doctor } })}
                 >
                   Pick from Calendar
                 </Button>
@@ -312,7 +312,7 @@ export default function DoctorAvailabilityScreen() {
           <Button
             size="lg"
             className="ml-auto h-12 min-h-[44px] flex-1 bg-[#0E8B7C] font-bold text-white hover:bg-[#0C6F64] disabled:bg-[#E6ECF3] disabled:text-[#6C7A90] focus-visible:ring-2 focus-visible:ring-[#16A794]"
-            disabled={!selectedSlotId}
+            disabled={!selectedSlot?.available}
             onClick={handleContinue}
           >
             Continue

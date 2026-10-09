@@ -30,7 +30,7 @@ export default function LoginScreen() {
     mutationFn: loginPatient,
     onSuccess: (response) => {
       setAuthToken(response.token);
-      window.location.assign('/patient/home');
+      window.location.assign('/app/home');
     },
     onError: (error) => {
       setError('root', { message: getAuthErrorMessage(error, 'Unable to sign in') });

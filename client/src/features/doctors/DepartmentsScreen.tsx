@@ -150,7 +150,7 @@ export default function DepartmentsScreen() {
                   key={department.id}
                   onClick={() =>
                     navigate(
-                      `/patient/doctors?departmentId=${department.id}&name=${encodeURIComponent(department.name)}`
+                      `/app/doctors?departmentId=${department.id}&name=${encodeURIComponent(department.name)}`
                     )
                   }
                   aria-label={`Department: ${department.name}, ${department.doctorCount ? `${department.doctorCount} Doctors` : department.code}`}

@@ -25,6 +25,7 @@ apiClient.interceptors.response.use(
     if (error?.response?.status === 401) {
       clearAuthToken();
     }
+    if (typeof error?.response?.data?.message === 'string') error.message = error.response.data.message;
     return Promise.reject(error);
   },
 );

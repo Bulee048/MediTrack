@@ -113,7 +113,7 @@ export default function DoctorProfileScreen() {
               <Button
                 variant="outline"
                 className="h-11 min-h-[44px] flex-1 border-[#E8455F]/40 text-[#E8455F] hover:bg-[#FDECEF] focus-visible:ring-2 focus-visible:ring-[#E8455F] font-semibold"
-                onClick={() => navigate('/patient/doctors')}
+                onClick={() => navigate('/app/doctors')}
               >
                 All Doctors
               </Button>
@@ -172,17 +172,17 @@ export default function DoctorProfileScreen() {
           <div className="mt-4 grid grid-cols-3 divide-x divide-[#E6ECF3] border-t border-[#E6ECF3] pt-4">
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-wide text-[#6C7A90]">Patients</p>
-              <p className="mt-1 text-[15px] font-extrabold text-[#101A2E]">{doctor.patientsTreated}</p>
+              <p className="mt-1 text-[15px] font-extrabold text-[#101A2E]">{doctor.patientsTreated ?? 'Not available'}</p>
             </div>
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-wide text-[#6C7A90]">Rating</p>
               <p className="mt-1 inline-flex items-center gap-1 text-[15px] font-extrabold text-[#101A2E]">
-                <Star size={14} className="fill-[#F5A623] text-[#F5A623]" /> {doctor.rating.toFixed(1)}
+                <Star size={14} className="fill-[#F5A623] text-[#F5A623]" /> {doctor.rating?.toFixed(1) ?? 'Not rated'}
               </p>
             </div>
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-wide text-[#6C7A90]">Reviews</p>
-              <p className="mt-1 text-[15px] font-extrabold text-[#101A2E]">{doctor.reviews}</p>
+              <p className="mt-1 text-[15px] font-extrabold text-[#101A2E]">{doctor.reviews ?? 'Not available'}</p>
             </div>
           </div>
         </div>
@@ -196,7 +196,7 @@ export default function DoctorProfileScreen() {
             <Button
               size="sm"
               className="h-11 min-h-[44px] bg-[#0E8B7C] px-4 font-bold text-white hover:bg-[#0C6F64] focus-visible:ring-2 focus-visible:ring-[#16A794]"
-              onClick={() => navigate(`/patient/doctors/${doctor.id}/availability`)}
+              onClick={() => navigate(`/app/doctor/${doctor.id}/availability`)}
             >
               View Availability
             </Button>
@@ -246,12 +246,12 @@ export default function DoctorProfileScreen() {
         <div className="sticky bottom-2 mt-7 flex items-center gap-3 rounded-2xl border border-[#E6ECF3] bg-white p-4 shadow-lg">
           <div className="min-w-0">
             <p className="text-[11.5px] font-semibold text-[#6C7A90]">Consultation Fee</p>
-            <p className="text-[19px] font-extrabold text-[#0E8B7C]">LKR {doctor.fee ?? 0}</p>
+            <p className="text-[19px] font-extrabold text-[#0E8B7C]">{doctor.fee !== undefined ? `LKR ${doctor.fee}` : 'Fee not listed'}</p>
           </div>
           <Button
             size="lg"
             className="ml-auto h-12 min-h-[44px] flex-1 bg-[#0E8B7C] font-bold text-white hover:bg-[#0C6F64] focus-visible:ring-2 focus-visible:ring-[#16A794]"
-            onClick={() => navigate(`/patient/doctors/${doctor.id}/date`)}
+            onClick={() => navigate(`/app/book/date/${doctor.id}`)}
           >
             Book OPD
           </Button>

@@ -108,6 +108,8 @@ export class AuthService {
       throw new AppError('User not found or inactive', 404);
     }
 
+    if (user.role !== 'PATIENT') throw new AppError('Patient account required', 403);
+
     if (data.email !== undefined && data.email !== '') {
       const normalizedEmail = data.email.toLowerCase();
       const existingEmail = await User.findOne({
@@ -134,7 +136,6 @@ export class AuthService {
     }
 
     if (data.name !== undefined) user.name = data.name;
-    if (data.nic !== undefined) user.nic = data.nic;
     if (data.dateOfBirth !== undefined) {
       user.dateOfBirth = data.dateOfBirth ? new Date(data.dateOfBirth) : undefined;
     }

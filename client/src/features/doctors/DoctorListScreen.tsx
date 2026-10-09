@@ -53,7 +53,7 @@ export default function DoctorListScreen() {
     setError('');
     try {
       const response = await fetchDoctors(filters);
-      const filteredDoctors = response.doctors.filter((doctor) => !minRating || doctor.rating >= minRating);
+      const filteredDoctors = response.doctors.filter((doctor) => !minRating || (doctor.rating !== undefined && doctor.rating >= minRating));
       setResult({
         doctors: filteredDoctors,
         source: response.source,
@@ -133,24 +133,7 @@ export default function DoctorListScreen() {
           ) : null}
         </div>
 
-        <div className="mt-3 flex items-center gap-2 overflow-x-auto pb-1" role="toolbar" aria-label="Doctor filters">
-          {[4.5, 4.7, 4.9].map((rating) => (
-            <button
-              key={rating}
-              onClick={() => setMinRating(minRating === rating ? null : rating)}
-              aria-pressed={minRating === rating}
-              className={`min-h-[44px] shrink-0 rounded-full border px-3.5 py-2.5 text-[12.5px] font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16A794] ${
-                minRating === rating
-                  ? 'border-[#0E8B7C] bg-[#0E8B7C] text-white'
-                  : 'border-[#E6ECF3] bg-white text-[#3A465C] hover:border-[#A7EADD]'
-              }`}
-            >
-              <span className="inline-flex items-center gap-1">
-                <Star size={12} className={minRating === rating ? 'fill-white text-white' : 'text-[#F5A623] fill-[#F5A623]'} /> {rating}+
-              </span>
-            </button>
-          ))}
-
+        <div className="mt-3 flex items-center gap-2 overflow-x-auto pb-1" role="group" aria-label="Doctor filters">
           <button
             onClick={() => setAvailableOnly((value) => !value)}
             aria-pressed={availableOnly}
@@ -183,7 +166,7 @@ export default function DoctorListScreen() {
             <Stethoscope size={20} className="opacity-90" />
           </div>
           <p className="mt-2 text-[12.5px] text-white/80">
-            {departmentId ? 'Filtered by the selected department.' : 'Browse all specialists and refine by rating or availability.'}
+            {departmentId ? 'Filtered by the selected department.' : 'Browse all specialists and refine by availability.'}
           </p>
         </div>
 
@@ -241,7 +224,7 @@ export default function DoctorListScreen() {
         ) : doctors.length === 0 ? (
           <div className="mt-5 rounded-2xl border border-dashed border-[#E6ECF3] bg-white/70 p-6 text-center">
             <p className="text-[14px] font-bold text-[#101A2E]">No doctors match your search.</p>
-            <p className="mt-1 text-[12.5px] text-[#6C7A90]">Try a different name, rating, or department filter.</p>
+            <p className="mt-1 text-[12.5px] text-[#6C7A90]">Try a different name or department filter.</p>
             <Button
               size="sm"
               className="mt-4 h-11 min-h-[44px] bg-[#0E8B7C] font-bold text-white hover:bg-[#0C6F64] focus-visible:ring-2 focus-visible:ring-[#16A794]"
@@ -258,7 +241,7 @@ export default function DoctorListScreen() {
               return (
                 <div key={doctor.id} className="overflow-hidden rounded-2xl border border-[#E6ECF3] bg-white shadow-sm transition hover:shadow-md">
                   <button
-                    onClick={() => navigate(`/patient/doctors/${doctor.id}`)}
+                    onClick={() => navigate(`/app/doctor/${doctor.id}`)}
                     aria-label={`View profile of ${doctor.name}, ${doctor.title || 'Specialist'}`}
                     className="w-full px-4 pt-4 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16A794] rounded-t-2xl"
                   >
@@ -278,7 +261,7 @@ export default function DoctorListScreen() {
                           <Star size={12} className="fill-current" />
                           {AVAILABILITY_LABELS[status] ?? status}
                         </span>
-                        <p className="mt-1 text-[10.5px] font-semibold text-[#6C7A90]">{doctor.reviews} reviews</p>
+                        <p className="mt-1 text-[10.5px] font-semibold text-[#6C7A90]">{doctor.reviews ?? 'Not available'} reviews</p>
                       </div>
                     </div>
 
@@ -303,7 +286,7 @@ export default function DoctorListScreen() {
                       size="sm"
                       disabled={status === 'UNAVAILABLE'}
                       className="h-11 min-h-[44px] shrink-0 bg-[#0E8B7C] px-6 font-bold text-white hover:bg-[#0C6F64] disabled:bg-[#E6ECF3] disabled:text-[#6C7A90] focus-visible:ring-2 focus-visible:ring-[#16A794]"
-                      onClick={() => navigate(`/patient/doctors/${doctor.id}/date`)}
+                      onClick={() => navigate(`/app/book/date/${doctor.id}`)}
                     >
                       Book OPD
                     </Button>
