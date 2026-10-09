@@ -8,6 +8,8 @@ import DepartmentsScreen from '@/features/doctors/DepartmentsScreen';
 import DoctorListScreen from '@/features/doctors/DoctorListScreen';
 import DoctorProfileScreen from '@/features/doctors/DoctorProfileScreen';
 import DoctorAvailabilityScreen from '@/features/doctors/DoctorAvailabilityScreen';
+import SelectDateScreen from '@/features/booking/SelectDateScreen';
+import SelectTimeScreen from '@/features/booking/SelectTimeScreen';
 import { Activity, Hospital, UserCheck, Clock } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -100,6 +102,8 @@ export default function App() {
           <Route path="/patient/doctors" element={<DoctorListScreen />} />
           <Route path="/patient/doctors/:id" element={<DoctorProfileScreen />} />
           <Route path="/patient/doctors/:id/availability" element={<DoctorAvailabilityScreen />} />
+          <Route path="/patient/doctors/:id/date" element={<SelectDateScreen />} />
+          <Route path="/patient/doctors/:id/time" element={<SelectTimeScreen />} />
         </Routes>
       </BrowserRouter>
       <Toaster />
