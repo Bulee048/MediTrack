@@ -6,6 +6,22 @@ const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
 // HH:MM 24-hour format regex
 const timeRegex = /^([01]\d|2[0-3]):[0-5]\d$/;
 
+const dateString = z
+  .string({ required_error: 'Date is required' })
+  .trim()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format')
+  .refine(value => !Number.isNaN(Date.parse(value)) && new Date(value).toISOString().slice(0, 10) === value, 'Invalid calendar date');
+
+export const createAppointmentSchema = z.object({
+  doctorId: z.string({ required_error: 'Doctor ID is required' }).trim().min(1, 'Doctor ID is required'),
+  date: dateString,
+  slotId: z.string({ required_error: 'Slot ID is required' }).trim().min(1, 'Slot ID is required'),
+  slotLabel: z.string().trim().optional(),
+  reason: z.string().trim().optional(),
+  familyMemberId: z.string().trim().optional(),
+  familyMemberName: z.string().trim().optional(),
+});
+
 export const bookAppointmentSchema = z.object({
   doctorId: z
     .string({ required_error: 'Doctor ID is required' })
@@ -14,8 +30,10 @@ export const bookAppointmentSchema = z.object({
     .string({ required_error: 'Appointment date is required' })
     .regex(dateRegex, 'Date must be in YYYY-MM-DD format'),
   time: z
-    .string({ required_error: 'Time slot is required' })
-    .regex(timeRegex, 'Time must be in HH:MM (24-hour) format'),
+    .string()
+    .optional(),
+  slotId: z.string().optional(),
+  slotLabel: z.string().optional(),
   familyMemberId: z
     .string()
     .nullable()
@@ -65,6 +83,7 @@ export const getStaffAppointmentsQuerySchema = z.object({
   status: z.enum(['BOOKED', 'RESCHEDULED', 'CANCELLED', 'COMPLETED']).optional(),
 });
 
+export type CreateAppointmentInput = z.infer<typeof createAppointmentSchema>;
 export type BookAppointmentInput = z.infer<typeof bookAppointmentSchema>;
 export type RescheduleAppointmentInput = z.infer<typeof rescheduleAppointmentSchema>;
 export type UpdateAppointmentStatusInput = z.infer<typeof updateAppointmentStatusSchema>;

@@ -1,17 +1,9 @@
-import { bookingMockSteps, mockCreateBooking, mockGetBookingQuote } from './mock';
-import { createBooking as createBookingApi, getBookingQuote as getBookingQuoteApi } from './booking.api';
-import type { BookingAppointment, BookingDraft, BookingQuote, BookingStep } from './types';
-
-const useMockData = import.meta.env.VITE_USE_FEATURE_MOCKS === 'true';
-
-export async function fetchBookingQuote(doctorId: string, slotId: string): Promise<BookingQuote> {
-  return useMockData ? mockGetBookingQuote() : getBookingQuoteApi(doctorId, slotId);
-}
-
-export async function submitBooking(draft: BookingDraft): Promise<BookingAppointment> {
-  return useMockData ? mockCreateBooking(draft) : createBookingApi(draft);
-}
-
-export function getBookingSteps(): BookingStep[] {
-  return bookingMockSteps;
+export { createAppointmentRequest as submitBooking } from './appointment.api';
+export function getBookingSteps() {
+  return [
+    { key: 'doctor', label: 'Select Doctor', path: '/app/doctors' },
+    { key: 'date', label: 'Choose Date', path: '/app/book/date' },
+    { key: 'time', label: 'Pick Time', path: '/app/book/time' },
+    { key: 'review', label: 'Review', path: '/app/book/review' },
+  ];
 }

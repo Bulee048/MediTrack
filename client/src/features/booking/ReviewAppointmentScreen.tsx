@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { Building2, CalendarDays, ChevronLeft, Clock3, Loader2, MapPin, Pencil, RotateCcw, Star, User2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { fetchCurrentUser } from '@/features/auth/auth.service';
 import { fetchDoctorProfile } from '@/features/doctors/doctors.service';
 import type { BookingTimeSelection } from './types';
-import { createAppointment, getAppointmentQuote } from './appointment.service';
+import { createAppointment } from './appointment.service';
 import type { DoctorProfileResult } from '@/features/doctors/types';
 
 type LocationState = Partial<BookingTimeSelection>;
@@ -33,17 +33,17 @@ export default function ReviewAppointmentScreen() {
   const navigate = useNavigate();
   const location = useLocation();
   const state = (location.state ?? {}) as LocationState;
-  const id = params.id ?? state.doctor?.id ?? '';
+
+  const id = state.doctor?.id ?? params.id ?? '';
 
   const [doctorResult, setDoctorResult] = useState<DoctorProfileResult | null>(null);
   const [patientName, setPatientName] = useState('');
   const [reason, setReason] = useState('');
-  const [quote, setQuote] = useState<{ consultationFee: number; platformFee: number; total: number } | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
-  const doctor = doctorResult?.doctor ?? state.doctor ?? null;
+  const doctor = doctorResult?.doctor ?? null;
   const selectedDate = state.date ?? '';
   const selectedSlotId = state.slotId ?? '';
   const selectedSlotLabel = state.slotLabel ?? '';
@@ -84,45 +84,18 @@ export default function ReviewAppointmentScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, state.doctor]);
 
-  useEffect(() => {
-    if (!doctor || !selectedSlotId) return;
-
-    let active = true;
-
-    getAppointmentQuote({
-      doctorId: doctor.id,
-      slotId: selectedSlotId,
-      consultationFee: doctor.fee ?? 0,
-    })
-      .then((result) => {
-        if (active) {
-          setQuote(result);
-        }
-      })
-      .catch((quoteError: unknown) => {
-        if (active) {
-          setError(quoteError instanceof Error ? quoteError.message : 'Unable to load consultation fee');
-        }
-      });
-
-    return () => {
-      active = false;
-    };
-  }, [doctor, selectedSlotId]);
-
-  const totalAmount = quote?.total ?? doctor?.fee ?? 0;
-  const patientSummary = useMemo(() => patientName || 'Patient', [patientName]);
+  const patientSummary = patientName;
 
   const goToDate = () => {
     if (!doctor) return;
-    navigate(`/patient/doctors/${doctor.id}/date`, {
+    navigate(`/app/book/date/${doctor.id}`, {
       state: { doctor, date: selectedDate },
     });
   };
 
   const goToTime = () => {
     if (!doctor) return;
-    navigate(`/patient/doctors/${doctor.id}/time`, {
+    navigate(`/app/book/time/${doctor.id}`, {
       state: { doctor, date: selectedDate, slotId: selectedSlotId, slotLabel: selectedSlotLabel },
     });
   };
@@ -136,24 +109,13 @@ export default function ReviewAppointmentScreen() {
     try {
       const appointment = await createAppointment({
         doctorId: doctor.id,
-        doctorName: doctor.name,
-        department: doctor.department,
         date: selectedDate,
         slotId: selectedSlotId,
         slotLabel: selectedSlotLabel,
         reason,
-        forSelf: true,
-        familyMemberName: patientSummary,
-        amount: totalAmount,
-        patientName: patientSummary,
       });
 
-      navigate(`/app/book/done/${appointment.id}`, {
-        state: {
-          appointment,
-          doctor,
-        },
-      });
+      navigate(`/app/book/done/${appointment.id}`);
     } catch (submitError: unknown) {
       setError(submitError instanceof Error ? submitError.message : 'Unable to confirm appointment');
     } finally {
@@ -193,7 +155,7 @@ export default function ReviewAppointmentScreen() {
               <Button
                 variant="outline"
                 className="h-11 min-h-[44px] flex-1 border-[#E8455F]/40 text-[#E8455F] hover:bg-[#FDECEF] focus-visible:ring-2 focus-visible:ring-[#E8455F] font-semibold"
-                onClick={() => navigate('/patient/doctors')}
+                onClick={() => navigate('/app/doctors')}
               >
                 All Doctors
               </Button>
@@ -281,18 +243,6 @@ export default function ReviewAppointmentScreen() {
         </SectionCard>
 
         <div className="mt-4 rounded-2xl border border-[#E6ECF3] bg-white p-4 shadow-sm">
-          <p className="text-[12px] font-semibold uppercase tracking-wide text-[#6C7A90]">Fee Breakdown</p>
-          <div className="mt-3 space-y-2 text-[13.5px]">
-            <Row label="OPD Consultation Fee" value={`LKR ${quote?.consultationFee ?? doctor.fee ?? 0}`} />
-            <Row label="Platform Convenience Fee" value={`LKR ${quote?.platformFee ?? 0}`} />
-            <div className="mt-2 flex items-center justify-between border-t border-[#E6ECF3] pt-3">
-              <p className="text-[14px] font-extrabold text-[#101A2E]">Total Amount</p>
-              <p className="text-[18px] font-extrabold text-[#0E8B7C]">LKR {totalAmount}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-4 rounded-2xl border border-[#E6ECF3] bg-white p-4 shadow-sm">
           <Label htmlFor="visit-reason" className="text-[12px] font-semibold uppercase tracking-wide text-[#6C7A90]">
             Reason for visit (optional)
           </Label>
@@ -317,7 +267,7 @@ export default function ReviewAppointmentScreen() {
           </Button>
           <Button
             className="h-12 min-h-[44px] flex-1 bg-[#0E8B7C] font-bold text-white hover:bg-[#0C6F64] disabled:bg-[#E6ECF3] disabled:text-[#6C7A90] focus-visible:ring-2 focus-visible:ring-[#16A794]"
-            disabled={submitting || !selectedDate || !selectedSlotId || !patientName || !quote || Boolean(error)}
+            disabled={submitting || !patientName || !selectedDate || !selectedSlotId}
             onClick={confirm}
           >
             {submitting ? (
@@ -360,15 +310,6 @@ function SectionCard({
         ) : null}
       </div>
       <div className="mt-2">{children}</div>
-    </div>
-  );
-}
-
-function Row({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-center justify-between gap-4">
-      <span className="text-[#6C7A90]">{label}</span>
-      <span className="font-bold text-[#101A2E]">{value}</span>
     </div>
   );
 }

@@ -89,9 +89,9 @@ export function filterDoctors(filters: DoctorListFilters = {}) {
 
   return doctorMockData.filter((doctor) => {
     const matchesDepartment = !filters.departmentId || doctor.departmentId === filters.departmentId;
-    const matchesRating = !filters.minRating || (doctor.rating !== null && doctor.rating >= filters.minRating);
+    const matchesRating = !filters.minRating || (doctor.rating ?? 0) >= filters.minRating;
     const matchesAvailability = !filters.available || doctor.availabilityStatus !== 'UNAVAILABLE';
-    const matchesQuery = !q || [doctor.name, doctor.department, doctor.title, doctor.about].some((value) => value.toLowerCase().includes(q));
+    const matchesQuery = !q || [doctor.name, doctor.department, doctor.title, doctor.about].some((value) => value?.toLowerCase().includes(q));
 
     return matchesDepartment && matchesRating && matchesAvailability && matchesQuery;
   });

@@ -105,8 +105,8 @@ export default function SelectDateScreen() {
   );
 
   const confirm = () => {
-    if (!doctor || !selectedDate) return;
-    navigate(`/patient/doctors/${doctor.id}/time`, {
+    if (!doctor || !selectedDate || !availabilityByDate.get(selectedDate)?.available) return;
+    navigate(`/app/book/time/${doctor.id}`, {
       state: { doctor, date: selectedDate },
     });
   };
@@ -142,7 +142,7 @@ export default function SelectDateScreen() {
               <Button
                 variant="outline"
                 className="h-11 min-h-[44px] flex-1 border-[#E8455F]/40 text-[#E8455F] hover:bg-[#FDECEF] focus-visible:ring-2 focus-visible:ring-[#E8455F] font-semibold"
-                onClick={() => navigate('/patient/doctors')}
+                onClick={() => navigate('/app/doctors')}
               >
                 All Doctors
               </Button>
@@ -211,7 +211,8 @@ export default function SelectDateScreen() {
             </div>
           </div>
 
-          <div className="mt-4 grid grid-cols-7 gap-1 text-center" role="grid" aria-label="Month calendar">
+          {!availability?.days.some(day => day.available) && <p role="status" className="mt-4 text-sm">No dates have available capacity. Choose another doctor or try again later.</p>}
+          <div className="mt-4 grid grid-cols-7 gap-1 text-center" role="group" aria-label="Month calendar">
             {['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'].map((day) => (
               <span key={day} className="pb-1 text-[11.5px] font-bold text-[#6C7A90]">
                 {day}
@@ -231,7 +232,7 @@ export default function SelectDateScreen() {
                   onClick={() => setSelectedDate(cell.iso)}
                   aria-pressed={isSelected}
                   aria-label={`${cell.day} ${formatLongDate(cell.iso)}, ${available ? 'Available' : 'Unavailable'}`}
-                  className={`relative mx-auto grid h-11 w-11 min-h-[44px] min-w-[44px] place-items-center rounded-full text-[13px] font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16A794] ${
+                  className={`relative mx-auto grid h-11 w-full min-w-0 place-items-center rounded-full text-[13px] font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16A794] ${
                     isSelected
                       ? 'bg-[#0E8B7C] text-white shadow-sm font-bold'
                       : available
@@ -275,7 +276,7 @@ export default function SelectDateScreen() {
           </Button>
           <Button
             className="h-12 min-h-[44px] flex-1 bg-[#0E8B7C] font-bold text-white hover:bg-[#0C6F64] disabled:bg-[#E6ECF3] disabled:text-[#6C7A90] focus-visible:ring-2 focus-visible:ring-[#16A794]"
-            disabled={!selectedDate}
+            disabled={!selectedDate || !availabilityByDate.get(selectedDate)?.available}
             onClick={confirm}
           >
             Continue
