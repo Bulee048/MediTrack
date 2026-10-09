@@ -1,4 +1,4 @@
-import type { AuthOtpConfig, AuthOtpRequest, AuthOtpVerification, AuthSession, PatientRegistrationDraft } from './types';
+import type { AuthLoginResponse, AuthMeResponse, AuthOtpConfig, AuthOtpRequest, AuthOtpVerification, AuthSession, LoginInput, PatientRegistrationDraft, RegisterInput } from './types';
 
 const MOCK_PHONE = '+949876543210';
 const MOCK_OTP = '4821';
@@ -65,4 +65,19 @@ export async function mockRegisterPatient(draft: PatientRegistrationDraft) {
 export function maskPhone(phone: string) {
   const digits = phone.replace(/\D/g, '');
   return digits.length >= 6 ? `+${digits.slice(0, 2)} ••••••${digits.slice(-5)}` : phone;
+}
+
+export async function mockRegisterAccount(input: RegisterInput) {
+  return authMockSession(input.phone, input.name);
+}
+
+export async function mockLoginAccount(input: LoginInput): Promise<AuthLoginResponse> {
+  return {
+    token: 'mock-patient-token',
+    user: authMockSession(input.phone ?? input.email ?? MOCK_PHONE).user,
+  };
+}
+
+export async function mockCurrentPatient(): Promise<AuthMeResponse['user']> {
+  return authMockSession(MOCK_PHONE).user;
 }
