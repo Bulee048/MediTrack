@@ -1,150 +1,19 @@
-import mongoose, { ClientSession, Types } from 'mongoose';
+import { hospitalDate } from '../utils/hospitalDate.js';
+import mongoose from 'mongoose';
 import { Appointment, IAppointment, AppointmentStatus } from '../models/Appointment.js';
 import { Doctor } from '../models/Doctor.js';
 import { FamilyMember } from '../models/FamilyMember.js';
 import { User } from '../models/User.js';
 import { AvailabilityService } from './availability.service.js';
+import { NotificationService } from './notification.service.js';
 import { AppError } from '../utils/AppError.js';
 import { validateObjectId } from '../utils/objectId.js';
 import {
   BookAppointmentInput,
-  CreateAppointmentInput,
   RescheduleAppointmentInput,
-  getMyAppointmentsQuerySchema,
-  getStaffAppointmentsQuerySchema,
 } from '../validators/appointment.validator.js';
 
-export interface AppointmentResponse {
-  id: string;
-  ref: string;
-  doctorId: string;
-  doctorName: string;
-  department: string;
-  date: string;
-  slotId: string;
-  slotLabel: string;
-  timeSlot: string;
-  reason?: string;
-  status: string;
-  patientId: string;
-  familyMemberId?: string;
-  createdAt: string;
-}
-
-const dayOf = (date: Date) => date.toISOString().slice(0, 10);
-const refFor = (id: string, date: string) => `OPD-${date.replace(/-/g, '')}-${id.slice(-6).toUpperCase()}`;
-
 export class AppointmentService {
-  /**
-   * Atomic, transaction-safe appointment creation for patient booking flow
-   */
-  static async createAppointment(patientId: string, data: CreateAppointmentInput): Promise<AppointmentResponse> {
-    validateObjectId(data.doctorId, 'doctor ID');
-    if (data.familyMemberId) validateObjectId(data.familyMemberId, 'family member ID');
-
-    return mongoose.connection.transaction(async (session) => {
-      const doctor = await Doctor.findOne({ _id: data.doctorId, isActive: true })
-        .populate<{ department: { name: string } | null }>('department', 'name')
-        .session(session);
-
-      if (!doctor) throw new AppError('Doctor not found or inactive', 404);
-      if (doctor.availabilityStatus === 'UNAVAILABLE') throw new AppError('Doctor is unavailable for bookings', 409);
-
-      const index = doctor.availabilitySlots.findIndex(
-        (slot) => `${dayOf(slot.date)}-${slot.startTime}-${slot.endTime}` === data.slotId && dayOf(slot.date) === data.date
-      );
-
-      if (index < 0) throw new AppError('The requested time slot is not available for this date', 409);
-
-      const slot = doctor.availabilitySlots[index];
-      const label = `${slot.startTime} - ${slot.endTime}`;
-
-      if (data.slotLabel && data.slotLabel.replace(/\s/g, '') !== label.replace(/\s/g, '')) {
-        throw new AppError('Slot label does not match the requested slot', 409);
-      }
-
-      if (data.date < new Date().toISOString().slice(0, 10)) throw new AppError('Cannot book a past date', 409);
-
-      if (data.familyMemberId) {
-        const member = await FamilyMember.findOne({ _id: data.familyMemberId, owner: patientId }).session(session);
-        if (!member) throw new AppError('Family member not found for this account', 404);
-      }
-
-      const requestedDate = new Date(`${data.date}T00:00:00.000Z`);
-      const existing = await Appointment.findOne({
-        patient: patientId,
-        doctor: data.doctorId,
-        appointmentDate: requestedDate,
-        familyMember: data.familyMemberId ?? null,
-        status: { $in: ['BOOKED', 'RESCHEDULED'] },
-      }).session(session);
-
-      if (existing) throw new AppError('This patient already has a booking with this doctor on this date', 409);
-
-      const countPath = `availabilitySlots.${index}.bookedCount`;
-      const updated = await Doctor.updateOne(
-        {
-          _id: doctor._id,
-          isActive: true,
-          availabilityStatus: { $ne: 'UNAVAILABLE' },
-          [`availabilitySlots.${index}.date`]: slot.date,
-          [`availabilitySlots.${index}.startTime`]: slot.startTime,
-          [`availabilitySlots.${index}.endTime`]: slot.endTime,
-          $expr: {
-            $lt: [
-              { $arrayElemAt: ['$availabilitySlots.bookedCount', index] },
-              { $arrayElemAt: ['$availabilitySlots.capacity', index] },
-            ],
-          },
-        },
-        { $inc: { [countPath]: 1 } },
-        { session }
-      );
-
-      if (updated.modifiedCount !== 1) throw new AppError('This time slot is fully booked. Choose another slot.', 409);
-
-      const id = new Types.ObjectId();
-      const ref = refFor(id.toString(), data.date);
-
-      const [appointment] = await Appointment.create(
-        [
-          {
-            _id: id,
-            patient: patientId,
-            doctor: data.doctorId,
-            appointmentDate: requestedDate,
-            timeSlot: label,
-            slotId: data.slotId,
-            slotLabel: label,
-            reason: data.reason,
-            status: 'BOOKED',
-            familyMember: data.familyMemberId,
-            ref,
-            referenceId: ref,
-          },
-        ],
-        { session }
-      );
-
-      return {
-        id: appointment._id.toString(),
-        ref,
-        doctorId: data.doctorId,
-        doctorName: doctor.name,
-        department: doctor.department?.name ?? 'Department not listed',
-        date: data.date,
-        slotId: data.slotId,
-        slotLabel: label,
-        timeSlot: label,
-        reason: appointment.reason,
-        status: appointment.status,
-        patientId,
-        familyMemberId: appointment.familyMember?.toString(),
-        createdAt: appointment.createdAt.toISOString(),
-      };
-    });
-  }
-
   /**
    * Book new appointment for authenticated patient
    */
@@ -155,79 +24,59 @@ export class AppointmentService {
     validateObjectId(patientId, 'patient ID');
     validateObjectId(data.doctorId, 'doctor ID');
 
-    const patientUser = await User.findById(patientId);
-    if (!patientUser || !patientUser.isActive) {
-      throw new AppError('Patient account not found or inactive', 401);
-    }
-
-    let familyMemberObjectId = undefined;
-    if (data.familyMemberId) {
-      validateObjectId(data.familyMemberId, 'family member ID');
-      const familyMember = await FamilyMember.findOne({
-        _id: data.familyMemberId,
-        owner: patientId,
-      });
-
-      if (!familyMember) {
-        throw new AppError('Family member not found or does not belong to patient account', 403);
-      }
-      familyMemberObjectId = familyMember._id;
-    }
-
     const appointmentDate = AvailabilityService.normalizeDate(data.date);
-    const existingBooking = await Appointment.findOne({
-      patient: patientId,
-      doctor: data.doctorId,
-      appointmentDate: appointmentDate,
-      timeSlot: data.time,
-      status: { $in: ['BOOKED', 'RESCHEDULED'] },
-    });
-
-    if (existingBooking) {
-      throw new AppError('You already have an active appointment with this doctor at the selected date and time', 409);
-    }
-
-    let session: ClientSession | undefined = undefined;
-    let createdAppointment: IAppointment;
-
-    try {
-      session = await mongoose.startSession();
-      session.startTransaction();
-
-      if (!data.time) {
-        throw new AppError('Time slot is required', 400);
+    let createdId = '';
+    await mongoose.connection.transaction(async session => {
+      // Serialize bookings for an account so concurrent duplicate checks cannot both pass.
+      const patient = await User.findOneAndUpdate(
+        { _id: patientId, isActive: true, role: 'PATIENT' },
+        { $inc: { __v: 1 } }, { session, new: true, timestamps: false }
+      );
+      if (!patient) throw new AppError('Patient account not found or inactive', 401);
+      if (data.familyMemberId) {
+        validateObjectId(data.familyMemberId, 'family member ID');
+        // A write also coordinates with deletion of an unused family member.
+        const member = await FamilyMember.findOneAndUpdate(
+          { _id: data.familyMemberId, owner: patientId }, { $inc: { __v: 1 } }, { session, timestamps: false }
+        );
+        if (!member) throw new AppError('Family member not found or does not belong to patient account', 403);
       }
-
-      await AvailabilityService.reserveSlotCapacity(data.doctorId, data.date, data.time, session);
-
-      const newAppointment = new Appointment({
-        patient: patientId,
-        familyMember: familyMemberObjectId,
-        doctor: data.doctorId,
-        appointmentDate: appointmentDate,
-        timeSlot: data.time,
-        reason: data.reason,
-        status: 'BOOKED',
+      // Both booking contracts resolve to one canonical HH:MM slot inside the transaction.
+      const doctor = await Doctor.findOne({ _id: data.doctorId, isActive: true }).session(session);
+      if (!doctor) throw new AppError('Doctor not found or inactive', 404);
+      const slot = doctor.availabilitySlots.find(item =>
+        AvailabilityService.isSameDate(item.date, data.date) && (data.slotId
+          ? `${data.date}-${item.startTime}-${item.endTime}` === data.slotId
+          : item.startTime === data.time));
+      if (!slot) throw new AppError('The selected slot is not available', 409);
+      if ((data.time && data.time !== slot.startTime) || (data.slotLabel && data.slotLabel.replace(/\s/g, '') !== `${slot.startTime}-${slot.endTime}`))
+        throw new AppError('Slot details do not match the selected availability', 409);
+      const time = slot.startTime;
+      const label = `${time} - ${slot.endTime}`;
+      const duplicate = await Appointment.exists({
+        patient: patientId, familyMember: data.familyMemberId ?? null,
+        doctor: data.doctorId, appointmentDate, timeSlot: { $in: [time, label] },
+        status: { $in: ['BOOKED', 'RESCHEDULED'] },
+      }).session(session);
+      if (duplicate) throw new AppError('This patient already has an active appointment at the selected slot', 409);
+      await AvailabilityService.reserveSlotCapacity(data.doctorId, data.date, time, session);
+      const appointment = new Appointment({
+        patient: patientId, familyMember: data.familyMemberId ?? undefined,
+        doctor: data.doctorId, appointmentDate, timeSlot: time,
+        slotId: `${data.date}-${time}-${slot.endTime}`, slotLabel: label,
+        reason: data.reason, status: 'BOOKED',
       });
-
-      await newAppointment.save({ session });
-      await session.commitTransaction();
-      createdAppointment = newAppointment;
-    } catch (err: unknown) {
-      if (session && session.inTransaction()) {
-        await session.abortTransaction();
-      }
-      throw err;
-    } finally {
-      if (session) {
-        session.endSession();
-      }
-    }
-
-    return (await Appointment.findById(createdAppointment._id)
-      .populate('doctor', 'name title roomNumber consultationFee availabilityStatus')
+      appointment.ref = `OPD-${data.date.replace(/-/g, '')}-${appointment._id.toString().slice(-6).toUpperCase()}`;
+      appointment.referenceId = appointment.ref;
+      await appointment.save({ session });
+      await NotificationService.createNotification({ userId: patientId, appointmentId: appointment._id.toString(),
+        category: 'APPOINTMENT_CREATED', title: 'Appointment booked', message: `Your appointment is booked for ${data.date} at ${time}.` }, session);
+      createdId = appointment._id.toString();
+    });
+    // Preserve the existing booking response contract (patient ID, populated doctor/family).
+    return (await Appointment.findById(createdId)
       .populate({
-        path: 'doctor',
+        path: 'doctor', select: 'name title roomNumber consultationFee availabilityStatus department',
         populate: { path: 'department', select: 'name code roomNumber' },
       })
       .populate('familyMember', 'name relationship phone')) as IAppointment;
@@ -238,7 +87,7 @@ export class AppointmentService {
    */
   static async getMyAppointments(
     patientId: string,
-    params: { status?: AppointmentStatus; upcoming?: boolean; past?: boolean } = {}
+    params: { status?: AppointmentStatus; upcoming?: boolean; past?: boolean }
   ): Promise<IAppointment[]> {
     validateObjectId(patientId, 'patient ID');
 
@@ -249,13 +98,15 @@ export class AppointmentService {
     }
 
     const now = new Date();
-    const todayStr = now.toISOString().split('T')[0];
+    const todayStr = hospitalDate(now);
     const today = AvailabilityService.normalizeDate(todayStr);
 
     if (params.upcoming) {
       filter.appointmentDate = { $gte: today };
+      filter.status = { $in: ['BOOKED', 'RESCHEDULED'] };
     } else if (params.past) {
-      filter.appointmentDate = { $lt: today };
+      filter.$or = [{ appointmentDate: { $lt: today } }, { status: 'COMPLETED' }];
+      if (!params.status) filter.status = { $ne: 'CANCELLED' };
     }
 
     return Appointment.find(filter)
@@ -265,7 +116,7 @@ export class AppointmentService {
         populate: { path: 'department', select: 'name code roomNumber' },
       })
       .populate('familyMember', 'name relationship phone')
-      .sort({ appointmentDate: -1, timeSlot: 1 });
+      .sort({ appointmentDate: params.upcoming ? 1 : -1, timeSlot: params.upcoming ? 1 : -1 });
   }
 
   /**
@@ -273,7 +124,7 @@ export class AppointmentService {
    */
   static async getAppointmentById(
     appointmentId: string,
-    user: { id: string; role?: string }
+    user: { id: string; role: string }
   ): Promise<IAppointment> {
     validateObjectId(appointmentId, 'appointment ID');
 
@@ -290,7 +141,8 @@ export class AppointmentService {
       throw new AppError('Appointment not found', 404);
     }
 
-    if (user.role === 'PATIENT' && appointment.patient._id.toString() !== user.id) {
+    // Access control check
+    if (user.role === 'PATIENT' && (!appointment.patient || appointment.patient._id.toString() !== user.id)) {
       throw new AppError('Access forbidden: You do not own this appointment', 403);
     }
 
@@ -301,121 +153,60 @@ export class AppointmentService {
    * Reschedule an appointment
    */
   static async rescheduleAppointment(
-    appointmentId: string,
-    patientId: string,
-    data: RescheduleAppointmentInput
+    appointmentId: string, patientId: string, data: RescheduleAppointmentInput
   ): Promise<IAppointment> {
     validateObjectId(appointmentId, 'appointment ID');
-
-    const appointment = await Appointment.findById(appointmentId);
-    if (!appointment) {
-      throw new AppError('Appointment not found', 404);
-    }
-
-    if (appointment.patient.toString() !== patientId) {
-      throw new AppError('Access forbidden: You can only reschedule your own appointments', 403);
-    }
-
-    if (['CANCELLED', 'COMPLETED'].includes(appointment.status)) {
-      throw new AppError(`Cannot reschedule an appointment with status ${appointment.status}`, 400);
-    }
-
-    const oldDateStr = new Date(appointment.appointmentDate).toISOString().split('T')[0];
-    const oldTimeStr = appointment.timeSlot;
-
-    if (oldDateStr === data.date && oldTimeStr === data.time) {
-      throw new AppError('New slot must be different from current slot', 400);
-    }
-
-    const doctorId = appointment.doctor.toString();
-    const newAppointmentDate = AvailabilityService.normalizeDate(data.date);
-
-    let session: ClientSession | undefined = undefined;
-
-    try {
-      session = await mongoose.startSession();
-      session.startTransaction();
-
+    await mongoose.connection.transaction(async session => {
+      const appointment = await Appointment.findById(appointmentId).session(session);
+      if (!appointment) throw new AppError('Appointment not found', 404);
+      if (appointment.patient.toString() !== patientId) throw new AppError('Access forbidden: You can only reschedule your own appointments', 403);
+      if (!['BOOKED', 'RESCHEDULED'].includes(appointment.status)) throw new AppError(`Cannot reschedule an appointment with status ${appointment.status}`, 409);
+      if (appointment.queueTicket) throw new AppError('Checked-in appointments must be managed through the OPD queue', 409);
+      const oldDate = appointment.appointmentDate.toISOString().slice(0, 10);
+      if (oldDate === data.date && appointment.timeSlot.slice(0, 5) === data.time) throw new AppError('New slot must be different from current slot', 409);
+      if (appointment.familyMember && !await FamilyMember.exists({ _id: appointment.familyMember, owner: patientId }).session(session)) {
+        throw new AppError('Family member is no longer authorized for this account', 403);
+      }
+      // The account lock prevents a simultaneous booking/reschedule into the same slot.
+      await User.updateOne({ _id: patientId }, { $inc: { __v: 1 } }, { session, timestamps: false });
+      if (await Appointment.exists({
+        _id: { $ne: appointment._id }, patient: patientId,
+        familyMember: appointment.familyMember ?? null, doctor: appointment.doctor,
+        appointmentDate: AvailabilityService.normalizeDate(data.date), timeSlot: { $regex: `^${data.time}(?:$|\\s*-)` },
+        status: { $in: ['BOOKED', 'RESCHEDULED'] },
+      }).session(session)) throw new AppError('This patient already has an active appointment at the selected slot', 409);
+      const doctorId = appointment.doctor.toString();
       await AvailabilityService.reserveSlotCapacity(doctorId, data.date, data.time, session);
-      await AvailabilityService.releaseSlotCapacity(doctorId, oldDateStr, oldTimeStr, session);
-
-      appointment.appointmentDate = newAppointmentDate;
+      await AvailabilityService.releaseSlotCapacity(doctorId, oldDate, appointment.timeSlot.slice(0, 5), session);
+      appointment.appointmentDate = AvailabilityService.normalizeDate(data.date);
       appointment.timeSlot = data.time;
+      const doctor = await Doctor.findById(doctorId).session(session);
+      const slot = doctor?.availabilitySlots.find(item => AvailabilityService.isSameDate(item.date, data.date) && item.startTime === data.time);
+      appointment.slotId = slot ? `${data.date}-${data.time}-${slot.endTime}` : undefined;
+      appointment.slotLabel = slot ? `${data.time} - ${slot.endTime}` : undefined;
       appointment.status = 'RESCHEDULED';
-
       await appointment.save({ session });
-      await session.commitTransaction();
-    } catch (err: unknown) {
-      if (session && session.inTransaction()) {
-        await session.abortTransaction();
-      }
-      throw err;
-    } finally {
-      if (session) {
-        session.endSession();
-      }
-    }
-
-    return (await Appointment.findById(appointment._id)
-      .populate('patient', 'name email phone')
-      .populate('familyMember', 'name relationship phone')
-      .populate({
-        path: 'doctor',
-        select: 'name title roomNumber consultationFee department',
-        populate: { path: 'department', select: 'name code roomNumber' },
-      })) as IAppointment;
+      await NotificationService.createNotification({ userId: patientId, appointmentId,
+        category: 'APPOINTMENT_UPDATED', title: 'Appointment rescheduled', message: `Your appointment has moved to ${data.date} at ${data.time}.` }, session);
+    });
+    return this.getAppointmentById(appointmentId, { id: patientId, role: 'PATIENT' });
   }
 
-  /**
-   * Cancel an appointment
-   */
   static async cancelAppointment(appointmentId: string, patientId: string): Promise<IAppointment> {
     validateObjectId(appointmentId, 'appointment ID');
-
-    const appointment = await Appointment.findById(appointmentId);
-    if (!appointment) {
-      throw new AppError('Appointment not found', 404);
-    }
-
-    if (appointment.patient.toString() !== patientId) {
-      throw new AppError('Access forbidden: You can only cancel your own appointments', 403);
-    }
-
-    if (appointment.status === 'CANCELLED') {
-      throw new AppError('Appointment is already cancelled', 400);
-    }
-
-    if (appointment.status === 'COMPLETED') {
-      throw new AppError('Completed appointments cannot be cancelled', 400);
-    }
-
-    const dateStr = new Date(appointment.appointmentDate).toISOString().split('T')[0];
-    const timeStr = appointment.timeSlot;
-    const doctorId = appointment.doctor.toString();
-
-    let session: ClientSession | undefined = undefined;
-
-    try {
-      session = await mongoose.startSession();
-      session.startTransaction();
-
-      await AvailabilityService.releaseSlotCapacity(doctorId, dateStr, timeStr, session);
-
+    await mongoose.connection.transaction(async session => {
+      const appointment = await Appointment.findById(appointmentId).session(session);
+      if (!appointment) throw new AppError('Appointment not found', 404);
+      if (appointment.patient.toString() !== patientId) throw new AppError('Access forbidden: You can only cancel your own appointments', 403);
+      if (!['BOOKED', 'RESCHEDULED'].includes(appointment.status)) throw new AppError(`Cannot cancel an appointment with status ${appointment.status}`, 409);
+      if (appointment.queueTicket) throw new AppError('Checked-in appointments must be managed through the OPD queue', 409);
+      await AvailabilityService.releaseSlotCapacity(appointment.doctor.toString(), appointment.appointmentDate.toISOString().slice(0, 10), appointment.timeSlot.slice(0, 5), session);
       appointment.status = 'CANCELLED';
       await appointment.save({ session });
-      await session.commitTransaction();
-    } catch (err: unknown) {
-      if (session && session.inTransaction()) {
-        await session.abortTransaction();
-      }
-      throw err;
-    } finally {
-      if (session) {
-        session.endSession();
-      }
-    }
-
-    return appointment;
+      await NotificationService.createNotification({ userId: patientId, appointmentId,
+        category: 'APPOINTMENT_CANCELLED', title: 'Appointment cancelled', message: 'Your appointment was cancelled and its reserved slot released.' }, session);
+    });
+    return this.getAppointmentById(appointmentId, { id: patientId, role: 'PATIENT' });
   }
 
   /**
@@ -474,6 +265,7 @@ export class AppointmentService {
       throw new AppError('Appointment not found', 404);
     }
 
+    // Check invalid transitions
     if (appointment.status === 'CANCELLED' && newStatus !== 'CANCELLED') {
       throw new AppError('Cannot update status of a cancelled appointment', 400);
     }

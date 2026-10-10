@@ -3,7 +3,6 @@ import * as authController from '../controllers/auth.controller.js';
 import { validateBody } from '../middleware/validate.middleware.js';
 import { registerSchema, loginSchema, updateProfileSchema } from '../validators/auth.validator.js';
 import { authenticate } from '../middleware/auth.middleware.js';
-
 import { authorizeRoles } from '../middleware/role.middleware.js';
 
 const router = Router();

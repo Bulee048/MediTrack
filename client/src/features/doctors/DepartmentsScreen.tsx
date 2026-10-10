@@ -59,12 +59,12 @@ export default function DepartmentsScreen() {
   }, [data, query]);
 
   return (
-    <main className="min-h-screen bg-[#F4F7FA] px-4 py-6 sm:px-6">
+    <main data-feature-accessibility className="min-h-screen bg-[#F4F7FA] px-4 py-6 sm:px-6">
       <div className="mx-auto w-full max-w-md space-y-0">
         <div className="flex items-center justify-between pb-3">
           <div>
-            <p className="text-[13px] font-semibold text-[#6C7A90]">Browse</p>
-            <h1 className="mt-0.5 text-[22px] font-extrabold uppercase tracking-tight text-[#101A2E]">Departments</h1>
+            <p className="text-[0.8125rem] font-semibold text-[#6C7A90]">Browse</p>
+            <h1 className="mt-0.5 text-[1.375rem] font-extrabold uppercase tracking-tight text-[#101A2E]">Departments</h1>
           </div>
           <button
             onClick={() => navigate(-1)}
@@ -125,8 +125,8 @@ export default function DepartmentsScreen() {
           </div>
         ) : filtered.length === 0 ? (
           <div className="mt-5 rounded-2xl border border-dashed border-[#E6ECF3] bg-white/70 p-6 text-center">
-            <p className="text-[14px] font-bold text-[#101A2E]">No departments found</p>
-            <p className="mt-1 text-[12.5px] text-[#6C7A90]">
+            <p className="text-[0.875rem] font-bold text-[#101A2E]">No departments found</p>
+            <p className="mt-1 text-[0.78125rem] text-[#6C7A90]">
               {query ? `No department matches “${query}”.` : 'Try a different department name or code.'}
             </p>
             {query ? (
@@ -159,8 +159,8 @@ export default function DepartmentsScreen() {
                   <span className="grid h-11 w-11 place-items-center rounded-xl bg-[#ECFDF9] text-[#0E8B7C]">
                     <Icon size={20} />
                   </span>
-                  <span className="text-[12px] font-bold leading-tight text-[#101A2E]">{department.name}</span>
-                  <span className="text-[10.5px] font-medium text-[#6C7A90]">
+                  <span className="text-[0.75rem] font-bold leading-tight text-[#101A2E]">{department.name}</span>
+                  <span className="text-[0.65625rem] font-medium text-[#6C7A90]">
                     {department.doctorCount ? `${department.doctorCount} Doctors` : department.code}
                   </span>
                 </button>

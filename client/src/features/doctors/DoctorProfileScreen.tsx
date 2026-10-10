@@ -68,12 +68,11 @@ export default function DoctorProfileScreen() {
   }, [id]);
 
   const doctor = doctorResult?.doctor ?? null;
-  const source = doctorResult?.source ?? null;
   const fallbackReason = doctorResult?.fallbackReason;
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-[#F4F7FA] px-4 py-6 sm:px-6">
+      <main data-feature-accessibility className="min-h-screen bg-[#F4F7FA] px-4 py-6 sm:px-6">
         <div role="status" aria-label="Loading doctor profile" className="mx-auto w-full max-w-md space-y-4">
           <Skeleton className="h-11 w-28 rounded-xl bg-[#E6ECF3]" />
           <div className="rounded-2xl border border-[#E6ECF3] bg-white p-5 shadow-sm">
@@ -97,7 +96,7 @@ export default function DoctorProfileScreen() {
 
   if (!doctor) {
     return (
-      <main className="min-h-screen bg-[#F4F7FA] px-4 py-6 sm:px-6">
+      <main data-feature-accessibility className="min-h-screen bg-[#F4F7FA] px-4 py-6 sm:px-6">
         <div className="mx-auto w-full max-w-md space-y-4">
           <button
             onClick={() => navigate(-1)}
@@ -107,8 +106,8 @@ export default function DoctorProfileScreen() {
             <ChevronLeft size={20} />
           </button>
           <div role="alert" className="rounded-2xl border border-[#E8455F]/30 bg-[#FDECEF] p-5 text-[#E8455F]">
-            <p className="text-[15px] font-extrabold">Doctor profile unavailable</p>
-            <p className="mt-1 text-[12.5px] font-medium">{error || 'We could not find this doctor.'}</p>
+            <p className="text-[0.9375rem] font-extrabold">Doctor profile unavailable</p>
+            <p className="mt-1 text-[0.78125rem] font-medium">{error || 'We could not find this doctor.'}</p>
             <div className="mt-4 flex gap-3">
               <Button
                 variant="outline"
@@ -134,12 +133,12 @@ export default function DoctorProfileScreen() {
   const topDay = availability?.days[0];
 
   return (
-    <main className="min-h-screen bg-[#F4F7FA] px-4 py-6 sm:px-6">
+    <main data-feature-accessibility className="min-h-screen bg-[#F4F7FA] px-4 py-6 sm:px-6">
       <div className="mx-auto w-full max-w-md space-y-0">
         <div className="flex items-center justify-between pb-3">
           <div>
-            <p className="text-[13px] font-semibold text-[#6C7A90]">Profile</p>
-            <h1 className="mt-0.5 text-[22px] font-extrabold uppercase tracking-tight text-[#101A2E]">Doctor Profile</h1>
+            <p className="text-[0.8125rem] font-semibold text-[#6C7A90]">Profile</p>
+            <h1 className="mt-0.5 text-[1.375rem] font-extrabold uppercase tracking-tight text-[#101A2E]">Doctor Profile</h1>
           </div>
           <button
             onClick={() => navigate(-1)}
@@ -150,47 +149,41 @@ export default function DoctorProfileScreen() {
           </button>
         </div>
 
-        {source === 'mock' ? (
-          <div role="note" className="mt-2 rounded-2xl border border-[#F5A623]/30 bg-[#FFF6E6] px-4 py-3 text-[12.5px] font-semibold text-[#F5A623]">
-            [Temporary demo data] Demo doctor profile shown because the live API is unavailable.
-          </div>
-        ) : null}
-
         {fallbackReason ? (
-          <div role="note" className="mt-3 rounded-2xl border border-[#F5A623]/30 bg-[#FFF6E6] px-4 py-3 text-[12.5px] font-semibold text-[#F5A623]">
+          <div role="note" className="mt-3 rounded-2xl border border-[#F5A623]/30 bg-[#FFF6E6] px-4 py-3 text-[0.78125rem] font-semibold text-[#F5A623]">
             {fallbackReason}
           </div>
         ) : null}
 
         <div className="mt-4 rounded-2xl border border-[#E6ECF3] bg-white p-5 text-center shadow-sm">
-          <p className="text-[18px] font-extrabold tracking-tight text-[#101A2E]">{doctor.name}</p>
-          <p className="mt-1 text-[13px] text-[#6C7A90]">{doctor.title || 'Specialist'}</p>
-          <p className="mt-1 text-[13.5px] font-bold text-[#0E8B7C]">
+          <p className="text-[1.125rem] font-extrabold tracking-tight text-[#101A2E]">{doctor.name}</p>
+          <p className="mt-1 text-[0.8125rem] text-[#6C7A90]">{doctor.title || 'Specialist'}</p>
+          <p className="mt-1 text-[0.84375rem] font-bold text-[#0E8B7C]">
             {doctor.experienceYears ? `${doctor.experienceYears} Years Experience` : 'Experience not listed'}
           </p>
 
           <div className="mt-4 grid grid-cols-3 divide-x divide-[#E6ECF3] border-t border-[#E6ECF3] pt-4">
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-[#6C7A90]">Patients</p>
-              <p className="mt-1 text-[15px] font-extrabold text-[#101A2E]">{doctor.patientsTreated ?? 'Not available'}</p>
+              <p className="text-[0.6875rem] font-semibold uppercase tracking-wide text-[#6C7A90]">Patients</p>
+              <p className="mt-1 text-[0.9375rem] font-extrabold text-[#101A2E]">{doctor.patientsTreated ?? 'Not available'}</p>
             </div>
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-[#6C7A90]">Rating</p>
-              <p className="mt-1 inline-flex items-center gap-1 text-[15px] font-extrabold text-[#101A2E]">
+              <p className="text-[0.6875rem] font-semibold uppercase tracking-wide text-[#6C7A90]">Rating</p>
+              <p className="mt-1 inline-flex items-center gap-1 text-[0.9375rem] font-extrabold text-[#101A2E]">
                 <Star size={14} className="fill-[#F5A623] text-[#F5A623]" /> {doctor.rating?.toFixed(1) ?? 'Not rated'}
               </p>
             </div>
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-[#6C7A90]">Reviews</p>
-              <p className="mt-1 text-[15px] font-extrabold text-[#101A2E]">{doctor.reviews ?? 'Not available'}</p>
+              <p className="text-[0.6875rem] font-semibold uppercase tracking-wide text-[#6C7A90]">Reviews</p>
+              <p className="mt-1 text-[0.9375rem] font-extrabold text-[#101A2E]">{doctor.reviews ?? 'Not available'}</p>
             </div>
           </div>
         </div>
 
         <div className="mt-4 rounded-2xl border border-[#E6ECF3] bg-white p-4 shadow-sm">
-          <p className="text-[12px] font-semibold uppercase tracking-wide text-[#6C7A90]">Availability Status</p>
+          <p className="text-[0.75rem] font-semibold uppercase tracking-wide text-[#6C7A90]">Availability Status</p>
           <div className="mt-2 flex items-center justify-between gap-3">
-            <span className={`inline-flex items-center rounded-full border px-3 py-1.5 text-[12.5px] font-bold ${BADGE_STYLES[status]}`}>
+            <span className={`inline-flex items-center rounded-full border px-3 py-1.5 text-[0.78125rem] font-bold ${BADGE_STYLES[status]}`}>
               {prettyStatus(status)}
             </span>
             <Button
@@ -203,10 +196,10 @@ export default function DoctorProfileScreen() {
           </div>
         </div>
 
-        <h2 className="mt-6 text-[15px] font-extrabold text-[#101A2E]">About Doctor</h2>
-        <p className="mt-2 text-[13px] leading-relaxed text-[#3A465C]">{doctor.about || 'No profile description is available right now.'}</p>
+        <h2 className="mt-6 text-[0.9375rem] font-extrabold text-[#101A2E]">About Doctor</h2>
+        <p className="mt-2 text-[0.8125rem] leading-relaxed text-[#3A465C]">{doctor.about || 'No profile description is available right now.'}</p>
 
-        <div className="mt-4 flex flex-wrap items-center gap-2 text-[12px] text-[#3A465C]">
+        <div className="mt-4 flex flex-wrap items-center gap-2 text-[0.75rem] text-[#3A465C]">
           <span className="inline-flex items-center gap-1 rounded-full bg-[#F4F7FA] px-2.5 py-1.5 font-semibold text-[#3A465C]">
             <Users size={14} /> Speaks {doctor.languages?.length ? doctor.languages.join(', ') : 'not listed'}
           </span>
@@ -222,14 +215,14 @@ export default function DoctorProfileScreen() {
           <div className="mt-6 rounded-2xl border border-[#E6ECF3] bg-white p-4 shadow-sm">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <h3 className="text-[14px] font-extrabold text-[#101A2E]">Upcoming Availability</h3>
-                <p className="mt-0.5 text-[12px] text-[#6C7A90]">Available dates and slot capacity at a glance.</p>
+                <h3 className="text-[0.875rem] font-extrabold text-[#101A2E]">Upcoming Availability</h3>
+                <p className="mt-0.5 text-[0.75rem] text-[#6C7A90]">Available dates and slot capacity at a glance.</p>
               </div>
               <Clock3 size={18} className="text-[#0E8B7C]" />
             </div>
 
             {topDay ? (
-              <div className="mt-4 rounded-2xl bg-[#ECFDF9] px-4 py-3 text-[12.5px] text-[#0C6F64]">
+              <div className="mt-4 rounded-2xl bg-[#ECFDF9] px-4 py-3 text-[0.78125rem] text-[#0C6F64]">
                 <div className="flex items-center justify-between gap-3">
                   <span className="font-bold">Next date</span>
                   <span className="font-semibold">{formatDate(topDay.date)}</span>
@@ -245,8 +238,8 @@ export default function DoctorProfileScreen() {
 
         <div className="sticky bottom-2 mt-7 flex items-center gap-3 rounded-2xl border border-[#E6ECF3] bg-white p-4 shadow-lg">
           <div className="min-w-0">
-            <p className="text-[11.5px] font-semibold text-[#6C7A90]">Consultation Fee</p>
-            <p className="text-[19px] font-extrabold text-[#0E8B7C]">{doctor.fee !== undefined ? `LKR ${doctor.fee}` : 'Fee not listed'}</p>
+            <p className="text-[0.71875rem] font-semibold text-[#6C7A90]">Consultation Fee</p>
+            <p className="text-[1.1875rem] font-extrabold text-[#0E8B7C]">{doctor.fee !== undefined ? `LKR ${doctor.fee}` : 'Fee not listed'}</p>
           </div>
           <Button
             size="lg"

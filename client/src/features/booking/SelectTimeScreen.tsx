@@ -115,7 +115,7 @@ export default function SelectTimeScreen() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-[#F4F7FA] px-4 py-6 sm:px-6">
+      <main data-feature-accessibility className="min-h-screen bg-[#F4F7FA] px-4 py-6 sm:px-6">
         <div role="status" aria-label="Loading available time slots" className="mx-auto w-full max-w-md space-y-4">
           <Skeleton className="h-11 w-28 rounded-xl bg-[#E6ECF3]" />
           <Skeleton className="h-20 rounded-2xl bg-[#E6ECF3]" />
@@ -128,7 +128,7 @@ export default function SelectTimeScreen() {
 
   if (!doctor || !availability) {
     return (
-      <main className="min-h-screen bg-[#F4F7FA] px-4 py-6 sm:px-6">
+      <main data-feature-accessibility className="min-h-screen bg-[#F4F7FA] px-4 py-6 sm:px-6">
         <div className="mx-auto w-full max-w-md">
           <button
             onClick={() => navigate(-1)}
@@ -138,8 +138,8 @@ export default function SelectTimeScreen() {
             <ChevronLeft size={20} />
           </button>
           <div role="alert" className="mt-4 rounded-2xl border border-[#E8455F]/30 bg-[#FDECEF] p-5 text-[#E8455F]">
-            <p className="text-[15px] font-extrabold">Availability unavailable</p>
-            <p className="mt-1 text-[12.5px] font-medium">{error || "We could not load the selected doctor's availability."}</p>
+            <p className="text-[0.9375rem] font-extrabold">Availability unavailable</p>
+            <p className="mt-1 text-[0.78125rem] font-medium">{error || "We could not load the selected doctor's availability."}</p>
             <div className="mt-4 flex gap-3">
               <Button
                 variant="outline"
@@ -162,12 +162,12 @@ export default function SelectTimeScreen() {
   }
 
   return (
-    <main className="min-h-screen bg-[#F4F7FA] px-4 py-6 sm:px-6">
+    <main data-feature-accessibility className="min-h-screen bg-[#F4F7FA] px-4 py-6 sm:px-6">
       <div className="mx-auto w-full max-w-md space-y-0">
         <div className="flex items-center justify-between pb-3">
           <div>
-            <p className="text-[13px] font-semibold text-[#6C7A90]">Booking</p>
-            <h1 className="mt-0.5 text-[22px] font-extrabold uppercase tracking-tight text-[#101A2E]">Select Time</h1>
+            <p className="text-[0.8125rem] font-semibold text-[#6C7A90]">Booking</p>
+            <h1 className="mt-0.5 text-[1.375rem] font-extrabold uppercase tracking-tight text-[#101A2E]">Select Time</h1>
           </div>
           <button
             onClick={() => navigate(-1)}
@@ -179,16 +179,16 @@ export default function SelectTimeScreen() {
         </div>
 
         <div className="rounded-2xl border border-[#E6ECF3] bg-white p-4 text-center shadow-sm">
-          <p className="text-[15px] font-extrabold text-[#101A2E]">{doctor.name}</p>
-          <p className="mt-0.5 text-[12.5px] text-[#6C7A90]">
+          <p className="text-[0.9375rem] font-extrabold text-[#101A2E]">{doctor.name}</p>
+          <p className="mt-0.5 text-[0.78125rem] text-[#6C7A90]">
             {doctor.title || 'Specialist'} · {doctor.experienceYears ? `${doctor.experienceYears} Yrs Exp` : 'Experience not listed'}
           </p>
-          <p className="mt-1 inline-flex items-center gap-1 text-[12.5px] font-bold text-[#101A2E]">
+          <p className="mt-1 inline-flex items-center gap-1 text-[0.78125rem] font-bold text-[#101A2E]">
             <Star size={13} className="fill-[#F5A623] text-[#F5A623]" /> {doctor.availabilityStatus ?? 'AVAILABLE'}
           </p>
         </div>
 
-        <div className="mt-4 flex items-center justify-between rounded-2xl border border-[#0E8B7C] bg-[#ECFDF9] px-4 py-3 text-[13.5px] font-bold text-[#0C6F64]">
+        <div className="mt-4 flex items-center justify-between rounded-2xl border border-[#0E8B7C] bg-[#ECFDF9] px-4 py-3 text-[0.84375rem] font-bold text-[#0C6F64]">
           <div className="inline-flex items-center gap-2">
             <CalendarDays size={18} className="text-[#0E8B7C]" />
             <span>{selectedDate ? formatLongDate(selectedDate) : 'Select a date first'}</span>
@@ -204,7 +204,7 @@ export default function SelectTimeScreen() {
         </div>
 
         {error ? (
-          <div role="alert" className="mt-4 rounded-2xl border border-[#E8455F]/30 bg-[#FDECEF] p-4 text-[13px] font-semibold text-[#E8455F]">
+          <div role="alert" className="mt-4 rounded-2xl border border-[#E8455F]/30 bg-[#FDECEF] p-4 text-[0.8125rem] font-semibold text-[#E8455F]">
             {error}
           </div>
         ) : null}
@@ -213,17 +213,17 @@ export default function SelectTimeScreen() {
           <div className="mt-4 rounded-2xl border border-[#E6ECF3] bg-white p-4 shadow-sm">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <h2 className="text-[14px] font-extrabold text-[#101A2E]">Available Slots</h2>
-                <p className="mt-0.5 text-[12px] text-[#6C7A90]">{topDay.capacityLeft} slots remain open today</p>
+                <h2 className="text-[0.875rem] font-extrabold text-[#101A2E]">Available Slots</h2>
+                <p className="mt-0.5 text-[0.75rem] text-[#6C7A90]">{topDay.capacityLeft} slots remain open today</p>
               </div>
-              <span className="rounded-full bg-[#F4F7FA] px-2.5 py-1 text-[11px] font-bold text-[#3A465C]">
+              <span className="rounded-full bg-[#F4F7FA] px-2.5 py-1 text-[0.6875rem] font-bold text-[#3A465C]">
                 {topDay.totalCapacity} total
               </span>
             </div>
 
             {groupedSlots.length === 0 ? (
               <div className="mt-4 rounded-xl border border-dashed border-[#E6ECF3] p-6 text-center text-[#6C7A90]">
-                <p className="text-[14px] font-bold text-[#101A2E]">No time slots available</p>
+                <p className="text-[0.875rem] font-bold text-[#101A2E]">No time slots available</p>
                 <p className="mt-1 text-xs">All appointments for this date are fully booked.</p>
                 <Button
                   size="sm"
@@ -237,7 +237,7 @@ export default function SelectTimeScreen() {
               <div className="mt-4 space-y-4">
                 {groupedSlots.map((group) => (
                   <div key={group.period}>
-                    <p className="mb-2 text-[11.5px] font-bold uppercase tracking-wide text-[#6C7A90]">{group.period}</p>
+                    <p className="mb-2 text-[0.71875rem] font-bold uppercase tracking-wide text-[#6C7A90]">{group.period}</p>
                     <div className="grid grid-cols-2 gap-2.5">
                       {group.slots.map((slot) => (
                         <button
@@ -256,9 +256,9 @@ export default function SelectTimeScreen() {
                                 : 'border-[#E6ECF3] bg-white text-[#3A465C] hover:border-[#A7EADD]'
                           }`}
                         >
-                          <span className="block text-[12.5px] font-bold">{slot.label}</span>
+                          <span className="block text-[0.78125rem] font-bold">{slot.label}</span>
                           <span
-                            className={`mt-1 block text-[11px] ${
+                            className={`mt-1 block text-[0.6875rem] ${
                               slot.available
                                 ? selectedSlotId === slot.id
                                   ? 'text-white/80'
@@ -279,8 +279,8 @@ export default function SelectTimeScreen() {
         ) : null}
 
         <div className="mt-6 rounded-2xl border border-[#E6ECF3] bg-white p-4 shadow-sm">
-          <p className="text-[12px] font-semibold uppercase tracking-wide text-[#6C7A90]">Patient guidance</p>
-          <p className="mt-2 text-[13px] leading-relaxed text-[#3A465C]">
+          <p className="text-[0.75rem] font-semibold uppercase tracking-wide text-[#6C7A90]">Patient guidance</p>
+          <p className="mt-2 text-[0.8125rem] leading-relaxed text-[#3A465C]">
             Unavailable or full times are disabled. Pick a visible slot to continue to appointment review.
           </p>
         </div>

@@ -5,6 +5,6 @@ export const checkInSchema = z.object({
   appointmentId: z
     .string({ required_error: 'Appointment ID is required' })
     .refine((val) => isValidObjectId(val), { message: 'Invalid Appointment ID' }),
-});
+}).strict();
 
 export type CheckInInput = z.infer<typeof checkInSchema>;

@@ -22,30 +22,50 @@ const AlertDialog: React.FC<AlertDialogProps> = ({
   onConfirm,
   variant = 'default',
 }) => {
+  const dialog = React.useRef<HTMLDialogElement>(null);
+  const returnFocus = React.useRef<HTMLElement | null>(null);
+  const titleId = React.useId();
+  const descriptionId = React.useId();
+  React.useLayoutEffect(() => {
+    const element = dialog.current;
+    if (open && element && !element.open) {
+      returnFocus.current = document.activeElement as HTMLElement;
+      element.showModal();
+    }
+    return () => {
+      if (element?.open) element.close();
+      if (returnFocus.current?.isConnected) returnFocus.current.focus();
+    };
+  }, [open]);
+  const close = () => {
+    dialog.current?.close();
+    onOpenChange(false);
+    if (returnFocus.current?.isConnected) returnFocus.current.focus();
+  };
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="fixed inset-0" onClick={() => onOpenChange(false)} />
-      <div className="relative z-10 w-full max-w-md rounded-lg bg-background p-6 shadow-lg border border-border">
-        <h3 className="text-lg font-bold text-foreground">{title}</h3>
-        <p className="mt-2 text-sm text-muted-foreground">{description}</p>
+    <dialog ref={dialog} aria-labelledby={titleId} aria-describedby={descriptionId}
+      onCancel={(e) => { e.preventDefault(); close(); }}
+      onClick={(e) => { if (e.target === dialog.current) close(); }}
+      className="m-auto w-[calc(100%-2rem)] max-w-md rounded-lg border border-border bg-background p-6 shadow-lg backdrop:bg-black/50">
+        <h3 id={titleId} className="text-lg font-bold text-foreground">{title}</h3>
+        <p id={descriptionId} className="mt-2 text-sm text-muted-foreground">{description}</p>
         <div className="mt-6 flex justify-end gap-3">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" onClick={close}>
             {cancelText}
           </Button>
           <Button
             variant={variant}
             onClick={() => {
               onConfirm();
-              onOpenChange(false);
+              close();
             }}
           >
             {confirmText}
           </Button>
         </div>
-      </div>
-    </div>
+    </dialog>
   );
 };
 

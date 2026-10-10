@@ -14,8 +14,8 @@ const dob = z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD')
     && value <= new Date().toISOString().slice(0, 10), 'Enter a valid past date of birth');
 export const updateProfileSchema = z.object({
   name: z.string().trim().min(2).max(100).optional(), email: email.optional().or(z.literal('')),
-  phone: phone.optional(), dateOfBirth: dob.optional(),
-  gender: z.enum(['Male', 'Female', 'Other']).optional(), address: z.string().trim().max(500).optional(),
+  phone: phone.optional(), dateOfBirth: dob.optional().or(z.literal('')),
+  gender: z.enum(['Male', 'Female', 'Other']).optional().or(z.literal('')), address: z.string().trim().max(500).optional(),
 }).strict().refine(data => Object.keys(data).length > 0, 'Provide a field to update');
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;

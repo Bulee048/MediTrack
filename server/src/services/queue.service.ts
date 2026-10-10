@@ -1,3 +1,6 @@
+import { hospitalDate } from '../utils/hospitalDate.js';
+import mongoose from 'mongoose';
+import { Doctor } from '../models/Doctor.js';
 import { QueueTicket, IQueueTicket, QueueTicketStatus } from '../models/QueueTicket.js';
 import { Appointment } from '../models/Appointment.js';
 import { Department } from '../models/Department.js';
@@ -125,82 +128,41 @@ export class QueueService {
     validateObjectId(patientId, 'patient ID');
     validateObjectId(appointmentId, 'appointment ID');
 
-    const patientUser = await User.findById(patientId);
-    if (!patientUser || !patientUser.isActive) {
-      throw new AppError('Patient account not found or inactive', 401);
-    }
-
-    const appointment = await Appointment.findById(appointmentId).populate('doctor');
-    if (!appointment) {
-      throw new AppError('Appointment not found', 404);
-    }
-
-    if (appointment.patient.toString() !== patientId) {
-      throw new AppError('Access forbidden: You can only check in to your own appointments', 403);
-    }
-
-    if (['CANCELLED', 'COMPLETED'].includes(appointment.status)) {
-      throw new AppError(`Cannot check in for an appointment with status ${appointment.status}`, 400);
-    }
-
-    const existingTicket = await QueueTicket.findOne({
-      appointment: appointmentId,
-      status: { $in: ['WAITING', 'ALMOST_TURN', 'CALLING', 'IN_CONSULTATION', 'HELD'] },
+    let createdId = '';
+    await mongoose.connection.transaction(async session => {
+      // Coordinate check-in with booking/account operations and concurrent check-ins.
+      const patient = await User.findOneAndUpdate({ _id: patientId, role: 'PATIENT', isActive: true },
+        { $inc: { __v: 1 } }, { session, new: true, timestamps: false });
+      if (!patient) throw new AppError('Patient account not found or inactive', 401);
+      const appointment = await Appointment.findById(appointmentId).session(session);
+      if (!appointment) throw new AppError('Appointment not found', 404);
+      if (appointment.patient.toString() !== patientId) throw new AppError('You can only check in to your own appointments', 403);
+      if (!['BOOKED', 'RESCHEDULED'].includes(appointment.status)) throw new AppError('Only active appointments can check in', 409);
+      const today = hospitalDate();
+      if (appointment.appointmentDate.toISOString().slice(0, 10) !== today)
+        throw new AppError('Check-in is available only on the appointment date', 409);
+      if (appointment.queueTicket || await QueueTicket.exists({ patient: patientId,
+        createdAt: QueueCalculationService.getQueueDayRange(),
+        status: { $in: ['WAITING', 'ALMOST_TURN', 'CALLING', 'IN_CONSULTATION', 'HELD'] } }).session(session))
+        throw new AppError('You already have a checked-in appointment or active queue ticket', 409);
+      const doctor = await Doctor.findById(appointment.doctor).session(session);
+      if (!doctor) throw new AppError('Doctor not found', 404);
+      const department = await Department.findById(doctor.department).session(session);
+      if (!department) throw new AppError('Department not found for doctor', 404);
+      const { sequence, ticketNumber } = await QueueCalculationService.getNextSequence(department.code, today, session);
+      const ticket = new QueueTicket({ ticketNumber, sequenceNumber: sequence, appointment: appointment._id,
+        patient: patientId, doctor: doctor._id, department: department._id, status: 'WAITING', checkedInAt: new Date() });
+      const live = await QueueCalculationService.calculateLiveQueueState(ticket);
+      ticket.currentPosition = live.currentPosition; ticket.estimatedWaitMins = live.estimatedWaitMins; ticket.status = live.status;
+      await ticket.save({ session });
+      appointment.queueTicket = ticket._id;
+      await appointment.save({ session });
+      await NotificationService.createNotification({ userId: patientId, queueTicketId: ticket._id.toString(), appointmentId,
+        category: 'QUEUE_CREATED', title: 'Queue Check-In Successful', message: `Your queue ticket ${ticketNumber} has been issued for ${department.name}.` }, session);
+      createdId = ticket._id.toString();
     });
-
-    if (existingTicket) {
-      throw new AppError('You have already checked in for this appointment', 409);
-    }
-
-    const doctorObj = appointment.doctor as any;
-    const departmentId = doctorObj.department;
-    const department = await Department.findById(departmentId);
-    if (!department) {
-      throw new AppError('Department not found for doctor', 404);
-    }
-
-    const todayStr = new Date().toISOString().split('T')[0];
-    const { sequence, ticketNumber } = await QueueCalculationService.getNextSequence(
-      department.code,
-      todayStr
-    );
-
-    const ticket = new QueueTicket({
-      ticketNumber,
-      sequenceNumber: sequence,
-      appointment: appointment._id,
-      patient: patientId,
-      doctor: doctorObj._id,
-      department: department._id,
-      currentPosition: 1,
-      estimatedWaitMins: 0,
-      status: 'WAITING',
-      checkedInAt: new Date(),
-    });
-
-    const liveState = await QueueCalculationService.calculateLiveQueueState(ticket);
-    ticket.currentPosition = liveState.currentPosition;
-    ticket.estimatedWaitMins = liveState.estimatedWaitMins;
-    ticket.status = liveState.status;
-
-    await ticket.save();
-
-    appointment.queueTicket = ticket._id as any;
-    await appointment.save();
-
-    await NotificationService.createNotification({
-      userId: patientId,
-      title: 'Queue Check-In Successful',
-      message: `Your queue ticket ${ticket.ticketNumber} has been issued for ${department.name}.`,
-      category: 'QUEUE_CREATED',
-      queueTicketId: ticket._id.toString(),
-      appointmentId: appointment._id.toString(),
-    });
-
-    return (await QueueTicket.findById(ticket._id)
-      .populate('patient', 'name email phone')
-      .populate('doctor', 'name title roomNumber')
-      .populate('department', 'name code roomNumber')) as IQueueTicket;
+    return (await QueueTicket.findById(createdId).populate('patient', 'name email phone')
+      .populate('doctor', 'name title roomNumber').populate('department', 'name code roomNumber'))!;
   }
 
   /**
@@ -359,7 +321,9 @@ export class QueueService {
       );
     }
 
+    await NotificationService.createNotification({ userId: ticket.patient._id.toString(),
+      queueTicketId: ticket._id.toString(), appointmentId: ticket.appointment.toString(), category: 'QUEUE_UPDATE',
+      title: 'Queue status updated', message: `Your ticket ${ticket.ticketNumber} is now ${target.toLowerCase().replace(/_/g, ' ')}.` });
     return ticket;
   }
 }
-

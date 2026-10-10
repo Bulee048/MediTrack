@@ -1,3 +1,5 @@
+import { hospitalDate } from '../utils/hospitalDate.js';
+import type { ClientSession } from 'mongoose';
 import { QueueCounter } from '../models/QueueCounter.js';
 import { QueueTicket, IQueueTicket, QueueTicketStatus } from '../models/QueueTicket.js';
 
@@ -12,23 +14,21 @@ export interface LiveQueueCalculationResult {
 
 export class QueueCalculationService {
   static getQueueDayRange(date: Date = new Date()) {
-    const start = new Date(date);
-    start.setHours(0, 0, 0, 0);
-    const end = new Date(start);
-    end.setDate(end.getDate() + 1);
+    const start = new Date(`${hospitalDate(date)}T00:00:00+05:30`);
+    const end = new Date(start.getTime() + 86400000);
     return { $gte: start, $lt: end };
   }
 
   /**
    * Generates atomic next sequence number for a department on a given date string (YYYY-MM-DD)
    */
-  static async getNextSequence(deptCode: string, dateStr: string): Promise<{ sequence: number; ticketNumber: string }> {
+  static async getNextSequence(deptCode: string, dateStr: string, session?: ClientSession): Promise<{ sequence: number; ticketNumber: string }> {
     const scopeKey = `DEPT:${deptCode.toUpperCase()}:${dateStr}`;
-    
+
     const counter = await QueueCounter.findOneAndUpdate(
       { scopeKey },
       { $inc: { sequence: 1 } },
-      { new: true, upsert: true }
+      { new: true, upsert: true, session }
     );
 
     const sequence = counter.sequence;

@@ -44,7 +44,7 @@ export interface DoctorListFilters {
   available?: boolean;
 }
 
-export type DoctorsSource = 'api' | 'mock';
+export type DoctorsSource = 'api';
 
 export type DoctorAvailabilityStatus = 'AVAILABLE' | 'LIMITED' | 'UNAVAILABLE';
 

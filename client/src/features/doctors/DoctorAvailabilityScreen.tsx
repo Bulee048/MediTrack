@@ -69,7 +69,6 @@ export default function DoctorAvailabilityScreen() {
   }, [id]);
 
   const doctor = doctorResult?.doctor ?? null;
-  const source = doctorResult?.source ?? null;
   const fallbackReason = doctorResult?.fallbackReason;
   const selectedDay = availability?.days[selectedDayIndex] ?? availability?.days[0] ?? null;
   const selectedSlot = selectedDay?.slots.find((s) => s.id === selectedSlotId) ?? null;
@@ -88,7 +87,7 @@ export default function DoctorAvailabilityScreen() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-[#F4F7FA] px-4 py-6 sm:px-6">
+      <main data-feature-accessibility className="min-h-screen bg-[#F4F7FA] px-4 py-6 sm:px-6">
         <div role="status" aria-label="Loading doctor availability" className="mx-auto w-full max-w-md space-y-4">
           <Skeleton className="h-11 w-28 rounded-xl bg-[#E6ECF3]" />
           <Skeleton className="h-24 rounded-2xl bg-[#E6ECF3]" />
@@ -101,7 +100,7 @@ export default function DoctorAvailabilityScreen() {
 
   if (!doctor || !availability) {
     return (
-      <main className="min-h-screen bg-[#F4F7FA] px-4 py-6 sm:px-6">
+      <main data-feature-accessibility className="min-h-screen bg-[#F4F7FA] px-4 py-6 sm:px-6">
         <div className="mx-auto w-full max-w-md space-y-4">
           <button
             onClick={() => navigate(-1)}
@@ -111,8 +110,8 @@ export default function DoctorAvailabilityScreen() {
             <ChevronLeft size={20} />
           </button>
           <div role="alert" className="rounded-2xl border border-[#E8455F]/30 bg-[#FDECEF] p-5 text-[#E8455F]">
-            <p className="text-[15px] font-extrabold">Availability unavailable</p>
-            <p className="mt-1 text-[12.5px] font-medium">{error || "We could not load this doctor's availability."}</p>
+            <p className="text-[0.9375rem] font-extrabold">Availability unavailable</p>
+            <p className="mt-1 text-[0.78125rem] font-medium">{error || "We could not load this doctor's availability."}</p>
             <div className="mt-4 flex gap-3">
               <Button
                 variant="outline"
@@ -135,12 +134,12 @@ export default function DoctorAvailabilityScreen() {
   }
 
   return (
-    <main className="min-h-screen bg-[#F4F7FA] px-4 py-6 sm:px-6">
+    <main data-feature-accessibility className="min-h-screen bg-[#F4F7FA] px-4 py-6 sm:px-6">
       <div className="mx-auto w-full max-w-md space-y-0">
         <div className="flex items-center justify-between pb-3">
           <div>
-            <p className="text-[13px] font-semibold text-[#6C7A90]">Availability</p>
-            <h1 className="mt-0.5 text-[22px] font-extrabold uppercase tracking-tight text-[#101A2E]">Doctor Availability</h1>
+            <p className="text-[0.8125rem] font-semibold text-[#6C7A90]">Availability</p>
+            <h1 className="mt-0.5 text-[1.375rem] font-extrabold uppercase tracking-tight text-[#101A2E]">Doctor Availability</h1>
           </div>
           <button
             onClick={() => navigate(-1)}
@@ -151,36 +150,30 @@ export default function DoctorAvailabilityScreen() {
           </button>
         </div>
 
-        {source === 'mock' ? (
-          <div role="note" className="mt-2 rounded-2xl border border-[#F5A623]/30 bg-[#FFF6E6] px-4 py-3 text-[12.5px] font-semibold text-[#F5A623]">
-            [Temporary demo data] Temporary demo availability is being shown because the live API is unavailable.
-          </div>
-        ) : null}
-
         {fallbackReason ? (
-          <div role="note" className="mt-3 rounded-2xl border border-[#F5A623]/30 bg-[#FFF6E6] px-4 py-3 text-[12.5px] font-semibold text-[#F5A623]">
+          <div role="note" className="mt-3 rounded-2xl border border-[#F5A623]/30 bg-[#FFF6E6] px-4 py-3 text-[0.78125rem] font-semibold text-[#F5A623]">
             {fallbackReason}
           </div>
         ) : null}
 
         <div className="mt-4 rounded-2xl border border-[#E6ECF3] bg-white p-4 text-center shadow-sm">
-          <p className="text-[16px] font-extrabold text-[#101A2E]">{doctor.name}</p>
-          <p className="mt-0.5 text-[12.5px] text-[#6C7A90]">{doctor.title || 'Specialist'}</p>
-          <div className="mt-2 flex items-center justify-center gap-1 text-[12.5px] font-bold text-[#101A2E]">
+          <p className="text-[1rem] font-extrabold text-[#101A2E]">{doctor.name}</p>
+          <p className="mt-0.5 text-[0.78125rem] text-[#6C7A90]">{doctor.title || 'Specialist'}</p>
+          <div className="mt-2 flex items-center justify-center gap-1 text-[0.78125rem] font-bold text-[#101A2E]">
             <Star size={13} className="fill-[#F5A623] text-[#F5A623]" /> {doctor.rating?.toFixed(1) ?? 'Not rated'}
           </div>
-          <p className="mt-1 text-[12.5px] font-bold text-[#0E8B7C]">{doctor.department}</p>
+          <p className="mt-1 text-[0.78125rem] font-bold text-[#0E8B7C]">{doctor.department}</p>
         </div>
 
         <div className="mt-4 rounded-2xl border border-[#E6ECF3] bg-white p-4 shadow-sm">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <p className="text-[12px] font-semibold uppercase tracking-wide text-[#6C7A90]">Status</p>
-              <p className="mt-1 text-[15px] font-extrabold text-[#101A2E]">{statusLabel(availability.availabilityStatus)}</p>
+              <p className="text-[0.75rem] font-semibold uppercase tracking-wide text-[#6C7A90]">Status</p>
+              <p className="mt-1 text-[0.9375rem] font-extrabold text-[#101A2E]">{statusLabel(availability.availabilityStatus)}</p>
             </div>
             <Clock3 size={18} className="text-[#0E8B7C]" />
           </div>
-          <div className="mt-3 flex flex-wrap items-center gap-2 text-[12px] text-[#3A465C]">
+          <div className="mt-3 flex flex-wrap items-center gap-2 text-[0.75rem] text-[#3A465C]">
             <span className="inline-flex items-center gap-1 rounded-full bg-[#F4F7FA] px-2.5 py-1.5 font-semibold text-[#3A465C]">
               <Users size={14} /> {doctor.languages?.length ? doctor.languages.join(', ') : 'Language not listed'}
             </span>
@@ -193,11 +186,11 @@ export default function DoctorAvailabilityScreen() {
         <div className="mt-5 rounded-2xl border border-[#E6ECF3] bg-white p-4 shadow-sm">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <p className="text-[14px] font-extrabold text-[#101A2E]">Available Dates</p>
-              <p className="mt-0.5 text-[12px] text-[#6C7A90]">Select a date to view available slots.</p>
+              <p className="text-[0.875rem] font-extrabold text-[#101A2E]">Available Dates</p>
+              <p className="mt-0.5 text-[0.75rem] text-[#6C7A90]">Select a date to view available slots.</p>
             </div>
             <div className="flex items-center gap-2">
-              <span className="rounded-full bg-[#ECFDF9] px-2.5 py-1 text-[11px] font-bold text-[#0E8B7C]">
+              <span className="rounded-full bg-[#ECFDF9] px-2.5 py-1 text-[0.6875rem] font-bold text-[#0E8B7C]">
                 {availability.days.length} days
               </span>
               <button
@@ -220,14 +213,14 @@ export default function DoctorAvailabilityScreen() {
                   setSelectedDayIndex(index);
                   setSelectedSlotId('');
                 }}
-                className={`min-h-[50px] min-w-[96px] shrink-0 rounded-xl border px-3.5 py-2.5 text-left text-[12.5px] font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16A794] ${
+                className={`min-h-[50px] min-w-[96px] shrink-0 rounded-xl border px-3.5 py-2.5 text-left text-[0.78125rem] font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16A794] ${
                   selectedDayIndex === index
                     ? 'border-[#0E8B7C] bg-[#0E8B7C] text-white shadow-sm'
                     : 'border-[#E6ECF3] bg-white text-[#3A465C] hover:border-[#A7EADD]'
                 }`}
               >
                 <span className="block">{day.label}</span>
-                <span className={`mt-0.5 block text-[11px] ${selectedDayIndex === index ? 'text-white/80' : 'text-[#6C7A90]'}`}>
+                <span className={`mt-0.5 block text-[0.6875rem] ${selectedDayIndex === index ? 'text-white/80' : 'text-[#6C7A90]'}`}>
                   {daySummary(day)}
                 </span>
               </button>
@@ -239,17 +232,17 @@ export default function DoctorAvailabilityScreen() {
           <div className="mt-5 rounded-2xl border border-[#E6ECF3] bg-white p-4 shadow-sm">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-[14px] font-extrabold text-[#101A2E]">{formatDate(selectedDay.date)}</p>
-                <p className="mt-0.5 text-[12px] text-[#6C7A90]">{selectedDay.capacityLeft} slots remain open today</p>
+                <p className="text-[0.875rem] font-extrabold text-[#101A2E]">{formatDate(selectedDay.date)}</p>
+                <p className="mt-0.5 text-[0.75rem] text-[#6C7A90]">{selectedDay.capacityLeft} slots remain open today</p>
               </div>
-              <span className="rounded-full bg-[#F4F7FA] px-2.5 py-1 text-[11px] font-bold text-[#3A465C]">
+              <span className="rounded-full bg-[#F4F7FA] px-2.5 py-1 text-[0.6875rem] font-bold text-[#3A465C]">
                 {selectedDay.totalCapacity} total capacity
               </span>
             </div>
 
             {selectedDay.slots.length === 0 ? (
               <div className="mt-4 rounded-xl border border-dashed border-[#E6ECF3] p-4 text-center text-[#6C7A90]">
-                <p className="text-[13px] font-semibold text-[#101A2E]">No slots available on this date.</p>
+                <p className="text-[0.8125rem] font-semibold text-[#101A2E]">No slots available on this date.</p>
                 <Button
                   size="sm"
                   variant="outline"
@@ -276,9 +269,9 @@ export default function DoctorAvailabilityScreen() {
                           : 'border-[#E6ECF3] bg-white text-[#3A465C] hover:border-[#A7EADD]'
                     }`}
                   >
-                    <span className="block text-[12.5px] font-bold">{slot.label}</span>
+                    <span className="block text-[0.78125rem] font-bold">{slot.label}</span>
                     <span
-                      className={`mt-1 block text-[11px] ${
+                      className={`mt-1 block text-[0.6875rem] ${
                         slot.available
                           ? selectedSlotId === slot.id
                             ? 'text-white/80'
@@ -296,16 +289,16 @@ export default function DoctorAvailabilityScreen() {
         ) : null}
 
         <div className="mt-6 rounded-2xl border border-[#E6ECF3] bg-white p-4 shadow-sm">
-          <p className="text-[12px] font-semibold uppercase tracking-wide text-[#6C7A90]">Patient guidance</p>
-          <p className="mt-2 text-[13px] leading-relaxed text-[#3A465C]">
+          <p className="text-[0.75rem] font-semibold uppercase tracking-wide text-[#6C7A90]">Patient guidance</p>
+          <p className="mt-2 text-[0.8125rem] leading-relaxed text-[#3A465C]">
             Fully booked slots are disabled. Choose an available slot and click Continue to proceed to review.
           </p>
         </div>
 
         <div className="sticky bottom-2 mt-7 flex items-center gap-4 rounded-2xl border border-[#E6ECF3] bg-white p-4 shadow-lg">
           <div className="min-w-0">
-            <p className="text-[11.5px] font-semibold text-[#6C7A90]">Selected slot</p>
-            <p className="text-[15px] font-extrabold text-[#101A2E]">
+            <p className="text-[0.71875rem] font-semibold text-[#6C7A90]">Selected slot</p>
+            <p className="text-[0.9375rem] font-extrabold text-[#101A2E]">
               {selectedSlot ? selectedSlot.label : 'No slot selected'}
             </p>
           </div>

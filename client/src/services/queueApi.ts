@@ -1,3 +1,4 @@
+import axios from 'axios';
 import { apiClient } from '@/config/api';
 
 export interface QueueTicketData {
@@ -47,8 +48,8 @@ export class QueueApiService {
     try {
       const response = await apiClient.get<QueueApiResponse>('/queue/me');
       return response.data.data?.ticket || null;
-    } catch (error: any) {
-      if (error.response?.status === 404) {
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error) && error.response?.status === 404) {
         return null;
       }
       throw error;
@@ -56,10 +57,10 @@ export class QueueApiService {
   }
 
   static async checkIn(appointmentId: string): Promise<QueueTicketData> {
-    const response = await apiClient.post<QueueApiResponse>('/queue/check-in', { appointmentId });
-    if (!response.data.data?.ticket) {
-      throw new Error('Failed to create queue ticket');
-    }
-    return response.data.data.ticket;
+    // Check-in returns the saved model; GET /me supplies the authoritative live DTO.
+    await apiClient.post('/queue/check-in', { appointmentId });
+    const ticket = await this.getMyActiveTicket();
+    if (!ticket) throw new Error('Queue ticket could not be loaded. Please refresh the queue.');
+    return ticket;
   }
 }
