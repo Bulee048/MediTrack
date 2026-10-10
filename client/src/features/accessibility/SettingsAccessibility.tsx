@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { FeaturePageContent } from '@/components/FeaturePageContent';
@@ -29,10 +30,12 @@ const LANGUAGES = [
 
 export default function SettingsAccessibility() {
   const navigate = useNavigate();
-  const { settings, error, updateSettings } = useAccessibility();
+  const { settings, loading, error, updateSettings } = useAccessibility();
 
+  const [saveError, setSaveError] = useState('');
   const set = (patch: Partial<Settings>) => {
-    void updateSettings(patch).catch((e) => toast.error((e as Error).message));
+    setSaveError('');
+    void updateSettings(patch).catch((e) => { setSaveError((e as Error).message); toast.error((e as Error).message); });
   };
 
   const textSize = settings?.textSize ?? 'medium';
@@ -41,7 +44,8 @@ export default function SettingsAccessibility() {
   return (
     <FeaturePageContent title="Settings & Accessibility" back>
       <p role="status" className="mb-4 text-sm text-ink-muted">Text size, contrast and reduced motion are saved only in this browser. Account notification, reminder, screen-reader mode and language settings are not supported yet.</p>
-      {error && <p role="alert">{error}</p>}
+      {loading && <p role="status">Loading accessibility preferences…</p>}
+      {(error || saveError) && <p role="alert">{error || saveError}</p>}
       <p className="label">Notification Preferences</p>
       <div className="mt-2.5 rounded-2xl border border-line bg-white p-4 shadow-card">
         <SwitchRow
@@ -67,7 +71,7 @@ export default function SettingsAccessibility() {
         />
       </div>
 
-      <p className="mt-6 text-[13.5px] font-extrabold text-ink">Send Appointment Reminders</p>
+      <p className="mt-6 text-[0.84375rem] font-extrabold text-ink">Send Appointment Reminders</p>
       <div className="mt-2.5 grid grid-cols-3 gap-2.5">
         {REMINDERS.map((r) => (
           <button
@@ -76,7 +80,7 @@ export default function SettingsAccessibility() {
             disabled
             onClick={() => set({ reminder: r.key })}
             className={cn(
-              'rounded-xl border px-2 py-2.5 text-[11.5px] font-bold transition min-h-0',
+              'rounded-xl border px-2 py-2.5 text-[0.71875rem] font-bold transition min-h-0',
               (settings?.reminder ?? '1h') === r.key
                 ? 'border-brand-600 bg-brand-50 text-brand-700 font-extrabold'
                 : 'border-line bg-white text-ink-soft hover:border-brand-300'
@@ -91,12 +95,13 @@ export default function SettingsAccessibility() {
       <div className="mt-2.5 rounded-2xl border border-line bg-white p-4 shadow-card">
         <div className="flex items-center justify-between gap-3 pb-2">
           <span className="text-sm font-semibold text-ink">Text Size</span>
-          <span className="text-[13px] font-bold text-brand-600">
+          <span className="text-[0.8125rem] font-bold text-brand-600">
             {TEXT_SIZES[Math.max(0, sizeIndex)]?.label}
           </span>
         </div>
         <div className="py-2">
           <input
+            disabled={loading}
             type="range"
             min={0}
             max={TEXT_SIZES.length - 1}
@@ -126,7 +131,7 @@ export default function SettingsAccessibility() {
         </div>
       </div>
 
-      <p className="mt-7 text-[13.5px] font-extrabold text-ink">Preferred Application Language</p>
+      <p className="mt-7 text-[0.84375rem] font-extrabold text-ink">Preferred Application Language</p>
       <div className="mt-2.5">
         <Select
           disabled
@@ -141,19 +146,19 @@ export default function SettingsAccessibility() {
         </Select>
       </div>
 
-      <p className="mt-8 text-center text-[11.5px] text-ink-muted">
+      <p className="mt-8 text-center text-[0.71875rem] text-ink-muted">
         Local accessibility preferences
       </p>
 
       <button
         type="button"
         onClick={() => navigate('/app/profile')}
-        className="mt-4 w-full text-center text-[13px] font-bold text-brand-600 hover:text-brand-700 min-h-0"
+        className="mt-4 w-full text-center text-[0.8125rem] font-bold text-brand-600 hover:text-brand-700 min-h-0"
       >
         Back to profile
       </button>
 
-      <p className="mt-4 text-center text-[11.5px] text-ink-muted">
+      <p className="mt-4 text-center text-[0.71875rem] text-ink-muted">
         Preferences are not synced to your account
       </p>
     </FeaturePageContent>

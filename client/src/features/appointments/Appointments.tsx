@@ -14,6 +14,7 @@ export default function Appointments() {
   const [items, setItems] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [retry, setRetry] = useState(0);
 
   useEffect(() => {
     let active = true;
@@ -25,7 +26,7 @@ export default function Appointments() {
       .catch((e) => { if (active) setError((e as Error).message); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-  }, [tab]);
+  }, [tab, retry]);
 
   return (
     <FeaturePageContent title="My Appointments" back>
@@ -38,10 +39,10 @@ export default function Appointments() {
             <Users size={18} />
           </div>
           <div>
-            <p className="text-[13.5px] font-extrabold text-brand-900 leading-tight">
+            <p className="text-[0.84375rem] font-extrabold text-brand-900 leading-tight">
               Book for a Family Member
             </p>
-            <p className="text-[11.5px] text-brand-700 font-medium">
+            <p className="text-[0.71875rem] text-brand-700 font-medium">
               Easily manage appointments for your loved ones
             </p>
           </div>
@@ -55,9 +56,10 @@ export default function Appointments() {
           <button
             key={t}
             type="button"
+            aria-pressed={tab === t}
             onClick={() => setTab(t)}
             className={cn(
-              'flex-1 rounded-full py-2 text-[13px] font-bold capitalize transition min-h-0',
+              'flex-1 rounded-full py-2 text-[0.8125rem] font-bold capitalize transition min-h-0',
               tab === t
                 ? 'bg-brand-600 text-white shadow-soft'
                 : 'text-ink-muted hover:text-ink'
@@ -71,17 +73,17 @@ export default function Appointments() {
       {/* Appointments List */}
       <div className="mt-5 space-y-3.5">
         {loading && (
-          <div className="py-12 text-center text-sm text-ink-muted">
+          <div role="status" className="py-12 text-center text-sm text-ink-muted">
             <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-brand-600 border-t-transparent" />
             <p className="mt-2 font-medium">Loading appointments…</p>
           </div>
         )}
 
-        {error && <p role="alert" className="rounded-xl border border-danger/20 bg-danger-soft p-4 text-sm">{error}</p>}
+        {error && <div><p role="alert" className="rounded-xl border border-danger/20 bg-danger-soft p-4 text-sm">{error}</p><button type="button" className="mt-3 underline" onClick={() => setRetry(n => n + 1)}>Try again</button></div>}
         {!loading && !error && items.length === 0 && (
           <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-line bg-white/60 px-6 py-12 text-center">
             <p className="text-sm font-bold text-ink">No appointments here</p>
-            <p className="mt-1.5 max-w-xs text-[12.5px] text-ink-muted">
+            <p className="mt-1.5 max-w-xs text-[0.78125rem] text-ink-muted">
               {tab === 'upcoming'
                 ? 'Book an OPD consult to see it listed here.'
                 : 'Nothing to show for this filter yet.'}
@@ -101,10 +103,10 @@ export default function Appointments() {
                 className="block w-full rounded-2xl border border-line bg-white p-4 text-left shadow-card transition hover:border-brand-300 cursor-pointer"
               >
                 <div className="flex items-center justify-between">
-                  <span className={cn('chip border text-[11px] font-bold px-2.5 py-0.5', st.cls)}>
+                  <span className={cn('chip border text-[0.6875rem] font-bold px-2.5 py-0.5', st.cls)}>
                     {st.label}
                   </span>
-                  <span className="text-[12px] font-semibold text-ink-muted">
+                  <span className="text-[0.75rem] font-semibold text-ink-muted">
                     {a.date === new Date().toISOString().slice(0, 10)
                       ? 'Today'
                       : fmtMediumDate(a.date)}{' '}
@@ -114,14 +116,14 @@ export default function Appointments() {
 
                 <div className="mt-3 flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="text-[15.5px] font-extrabold tracking-tight text-ink">
+                    <p className="text-[0.96875rem] font-extrabold tracking-tight text-ink">
                       {a.doctorName}
                     </p>
-                    <p className="mt-0.5 text-[12.5px] text-ink-muted">
+                    <p className="mt-0.5 text-[0.78125rem] text-ink-muted">
                       {a.department} · {a.room}
                     </p>
                     {!a.bookedForSelf && a.familyMemberName && (
-                      <span className="mt-1.5 inline-block rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-700">
+                      <span className="mt-1.5 inline-block rounded-md bg-slate-100 px-2 py-0.5 text-[0.6875rem] font-semibold text-slate-700">
                         For: {a.familyMemberName}
                       </span>
                     )}
@@ -131,10 +133,10 @@ export default function Appointments() {
 
                 {live && (
                   <div className="mt-3 flex items-center justify-between rounded-xl bg-brand-50 px-3.5 py-2.5 border border-brand-200">
-                    <span className="text-[12px] font-extrabold text-brand-700">
+                    <span className="text-[0.75rem] font-extrabold text-brand-700">
                       Live Queue · {a.queueEntry?.token}
                     </span>
-                    <span className="flex items-center gap-1 text-[12px] font-bold text-brand-700">
+                    <span className="flex items-center gap-1 text-[0.75rem] font-bold text-brand-700">
                       <Clock3 size={13} /> Position #{a.queueEntry?.position}
                     </span>
                   </div>

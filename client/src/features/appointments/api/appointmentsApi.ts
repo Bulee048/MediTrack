@@ -1,37 +1,13 @@
 import { apiClient } from '@/config/api';
-import type { Appointment, AppointmentStatus, Slot } from '../types';
-type Person = string | { _id: string; name: string };
-interface BackendAppointment {
-  _id: string; patient: Person; familyMember?: Person;
-  doctor: string | { _id: string; name: string; roomNumber?: string; consultationFee?: number;
-    department: { _id: string; name: string } };
-  appointmentDate: string; timeSlot: string;
-  status: 'BOOKED' | 'RESCHEDULED' | 'CANCELLED' | 'COMPLETED';
-  queueTicket?: string; reason?: string; createdAt: string; updatedAt: string;
-}
+import type { Appointment, Slot } from '../types';
+import { mapAppointment, type BackendAppointment } from './appointmentResponse';
 interface Envelope<T> { success: boolean; data: T }
 interface AvailabilitySlot { date: string; startTime: string; endTime: string; capacity: number; bookedCount: number }
-const statuses: Record<BackendAppointment['status'], AppointmentStatus> = {
-  BOOKED: 'confirmed', RESCHEDULED: 'rescheduled', CANCELLED: 'cancelled', COMPLETED: 'completed',
-};
-const personId = (p: Person) => typeof p === 'string' ? p : p._id;
-const personName = (p: Person) => typeof p === 'string' ? '' : p.name;
-// Payment and live queue data are not supplied by the appointment contract.
-function mapAppointment(a: BackendAppointment): Appointment {
-  if (!a?._id || !statuses[a.status] || typeof a.doctor !== 'object' || !a.doctor?._id) throw new Error('Invalid appointment response');
-  return {
-    id: a._id, ref: a._id, patientId: personId(a.patient), patientName: personName(a.patient),
-    patientIdRef: personId(a.patient), bookedForSelf: !a.familyMember,
-    familyMemberId: a.familyMember ? personId(a.familyMember) : undefined,
-    familyMemberName: a.familyMember ? personName(a.familyMember) : undefined,
-    doctorId: a.doctor._id, doctorName: a.doctor.name,
-    departmentId: a.doctor.department._id, department: a.doctor.department.name,
-    room: a.doctor.roomNumber ?? 'Not provided', date: a.appointmentDate.slice(0, 10),
-    time: a.timeSlot, slotId: a.timeSlot, status: statuses[a.status],
-    checkedIn: Boolean(a.queueTicket),
-    paymentStatus: 'unknown', amount: a.doctor.consultationFee ?? 0,
-    reason: a.reason, createdAt: a.createdAt, updatedAt: a.updatedAt,
-  };
+interface Availability { availabilityStatus: string; slots: AvailabilitySlot[] }
+async function availability(doctorId: string): Promise<Availability> {
+  const res = await apiClient.get<Envelope<Availability>>(`/doctors/${encodeURIComponent(doctorId)}/availability`);
+  if (!res.data.success || !Array.isArray(res.data.data?.slots)) throw new Error('Invalid availability response');
+  return res.data.data;
 }
 export const appointmentsApi = {
   list: async (tab: 'upcoming' | 'past' | 'cancelled' = 'upcoming'): Promise<Appointment[]> => {
@@ -57,21 +33,25 @@ export const appointmentsApi = {
     return mapAppointment(res.data.data.appointment);
   },
   cancel: async (id: string): Promise<{ appointment: Appointment }> => {
-    const current = await appointmentsApi.detail(id);
     const res = await apiClient.patch<Envelope<{ appointment: BackendAppointment }>>(`/appointments/${encodeURIComponent(id)}/cancel`);
     if (!res.data.success) throw new Error('Could not cancel appointment');
     const cancelled = res.data.data?.appointment;
     if (cancelled?._id !== id || cancelled.status !== 'CANCELLED') throw new Error('Invalid cancellation response');
-    // Cancellation returns an unpopulated document; preserve the previously fetched display data.
-    return { appointment: { ...current, status: 'cancelled', updatedAt: cancelled.updatedAt } };
+    return { appointment: mapAppointment(cancelled) };
   },
   getAvailableSlots: async (doctorId: string, date: string): Promise<Slot[]> => {
-    const res = await apiClient.get<Envelope<{ slots: AvailabilitySlot[] }>>(`/doctors/${encodeURIComponent(doctorId)}/availability`);
-    if (!res.data.success || !Array.isArray(res.data.data?.slots)) throw new Error('Invalid availability response');
-    return res.data.data.slots.filter(s => s.date.slice(0, 10) === date).map(s => ({
+    const data = await availability(doctorId);
+    return data.slots.filter(s => typeof s.date === 'string' && s.date.slice(0, 10) === date).map<Slot>(s => ({
       id: s.startTime, label: `${s.startTime} - ${s.endTime}`,
       period: Number(s.startTime.slice(0, 2)) < 12 ? 'morning' : Number(s.startTime.slice(0, 2)) < 17 ? 'afternoon' : 'evening',
-      enabled: s.bookedCount < s.capacity,
-    }));
+      enabled: data.availabilityStatus !== 'UNAVAILABLE' && date >= new Date().toISOString().slice(0, 10)
+        && Number.isFinite(s.bookedCount) && Number.isFinite(s.capacity) && s.bookedCount < s.capacity,
+    })).sort((a, b) => a.id.localeCompare(b.id));
+  },
+  getAvailableDates: async (doctorId: string): Promise<string[]> => {
+    const data = await availability(doctorId);
+    if (data.availabilityStatus === 'UNAVAILABLE') return [];
+    return [...new Set(data.slots.filter(s => typeof s.date === 'string' && s.date.slice(0, 10) >= new Date().toISOString().slice(0, 10)
+      && Number.isFinite(s.bookedCount) && Number.isFinite(s.capacity) && s.bookedCount < s.capacity).map(s => s.date.slice(0, 10)))].sort();
   },
 };

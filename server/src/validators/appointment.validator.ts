@@ -4,15 +4,16 @@ import { isValidObjectId } from 'mongoose';
 // YYYY-MM-DD format regex
 const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
 // HH:MM 24-hour format regex
+const bookingDate = z.string().regex(dateRegex, 'Date must be in YYYY-MM-DD format')
+  .refine(value => { const date = new Date(`${value}T00:00:00Z`); return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value; }, 'Invalid calendar date')
+  .refine(value => value >= new Date().toISOString().slice(0, 10), 'Appointment date cannot be in the past');
 const timeRegex = /^([01]\d|2[0-3]):[0-5]\d$/;
 
 export const bookAppointmentSchema = z.object({
   doctorId: z
     .string({ required_error: 'Doctor ID is required' })
     .refine((val) => isValidObjectId(val), { message: 'Invalid Doctor ID' }),
-  date: z
-    .string({ required_error: 'Appointment date is required' })
-    .regex(dateRegex, 'Date must be in YYYY-MM-DD format'),
+  date: bookingDate,
   time: z
     .string({ required_error: 'Time slot is required' })
     .regex(timeRegex, 'Time must be in HH:MM (24-hour) format'),
@@ -22,16 +23,14 @@ export const bookAppointmentSchema = z.object({
     .optional()
     .refine((val) => !val || isValidObjectId(val), { message: 'Invalid Family Member ID' }),
   reason: z.string().trim().max(500, 'Reason cannot exceed 500 characters').optional(),
-});
+}).strict();
 
 export const rescheduleAppointmentSchema = z.object({
-  date: z
-    .string({ required_error: 'New appointment date is required' })
-    .regex(dateRegex, 'Date must be in YYYY-MM-DD format'),
+  date: bookingDate,
   time: z
     .string({ required_error: 'New time slot is required' })
     .regex(timeRegex, 'Time must be in HH:MM (24-hour) format'),
-});
+}).strict();
 
 export const updateAppointmentStatusSchema = z.object({
   status: z.enum(['BOOKED', 'RESCHEDULED', 'CANCELLED', 'COMPLETED'], {

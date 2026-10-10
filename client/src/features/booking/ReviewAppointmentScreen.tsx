@@ -1,5 +1,5 @@
 import { useBookingPatient } from '@/features/family/context/BookingPatientContext';
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { Building2, CalendarDays, ChevronLeft, Clock3, Loader2, MapPin, Pencil, RotateCcw, Star, User2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -32,7 +32,8 @@ function formatSlotLabel(slotLabel: string) {
 export default function ReviewAppointmentScreen() {
   const params = useParams();
   const navigate = useNavigate();
-  const { patient } = useBookingPatient();
+  const { patient, loading: patientLoading, error: patientError, selectPatient } = useBookingPatient();
+  const pending = useRef(false);
   const location = useLocation();
   const state = (location.state ?? {}) as LocationState;
   const id = params.id ?? state.doctor?.id ?? '';
@@ -130,7 +131,8 @@ export default function ReviewAppointmentScreen() {
   };
 
   const confirm = async () => {
-    if (!doctor || !selectedDate || !selectedSlotId) return;
+    if (!doctor || !selectedDate || !selectedSlotId || patientLoading || patientError || pending.current) return;
+    pending.current = true;
 
     setSubmitting(true);
     setError('');
@@ -151,6 +153,7 @@ export default function ReviewAppointmentScreen() {
         patientName: patientSummary,
       });
 
+      selectPatient(null);
       navigate(`/app/book/done/${appointment.id}`, {
         state: {
           appointment,
@@ -160,13 +163,13 @@ export default function ReviewAppointmentScreen() {
     } catch (submitError: unknown) {
       setError(submitError instanceof Error ? submitError.message : 'Unable to confirm appointment');
     } finally {
-      setSubmitting(false);
+      pending.current = false; setSubmitting(false);
     }
   };
 
-  if (loading) {
+  if (loading || patientLoading) {
     return (
-      <main className="min-h-screen bg-[#F4F7FA] px-4 py-6 sm:px-6">
+      <main data-feature-accessibility className="min-h-screen bg-[#F4F7FA] px-4 py-6 sm:px-6">
         <div role="status" aria-label="Loading review details" className="mx-auto w-full max-w-md space-y-4">
           <Skeleton className="h-11 w-32 rounded-xl bg-[#E6ECF3]" />
           <Skeleton className="h-24 rounded-2xl bg-[#E6ECF3]" />
@@ -180,7 +183,7 @@ export default function ReviewAppointmentScreen() {
 
   if (!doctor) {
     return (
-      <main className="min-h-screen bg-[#F4F7FA] px-4 py-6 sm:px-6">
+      <main data-feature-accessibility className="min-h-screen bg-[#F4F7FA] px-4 py-6 sm:px-6">
         <div className="mx-auto w-full max-w-md">
           <button
             onClick={() => navigate(-1)}
@@ -190,8 +193,8 @@ export default function ReviewAppointmentScreen() {
             <ChevronLeft size={20} />
           </button>
           <div role="alert" className="mt-4 rounded-2xl border border-[#E8455F]/30 bg-[#FDECEF] p-5 text-[#E8455F]">
-            <p className="text-[15px] font-extrabold">Review unavailable</p>
-            <p className="mt-1 text-[12.5px] font-medium">{error || 'We could not load the selected doctor.'}</p>
+            <p className="text-[0.9375rem] font-extrabold">Review unavailable</p>
+            <p className="mt-1 text-[0.78125rem] font-medium">{error || 'We could not load the selected doctor.'}</p>
             <div className="mt-4 flex gap-3">
               <Button
                 variant="outline"
@@ -214,12 +217,12 @@ export default function ReviewAppointmentScreen() {
   }
 
   return (
-    <main className="min-h-screen bg-[#F4F7FA] px-4 py-6 sm:px-6">
+    <main data-feature-accessibility className="min-h-screen bg-[#F4F7FA] px-4 py-6 sm:px-6">
       <div className="mx-auto w-full max-w-md space-y-0">
         <div className="flex items-center justify-between pb-3">
           <div>
-            <p className="text-[13px] font-semibold text-[#6C7A90]">Booking</p>
-            <h1 className="mt-0.5 text-[22px] font-extrabold uppercase tracking-tight text-[#101A2E]">Review Appointment</h1>
+            <p className="text-[0.8125rem] font-semibold text-[#6C7A90]">Booking</p>
+            <h1 className="mt-0.5 text-[1.375rem] font-extrabold uppercase tracking-tight text-[#101A2E]">Review Appointment</h1>
           </div>
           <button
             onClick={() => navigate(-1)}
@@ -230,8 +233,9 @@ export default function ReviewAppointmentScreen() {
           </button>
         </div>
 
+        {patientError && <p role="alert" className="p-4 text-danger-600">{patientError} <button type="button" className="underline" onClick={() => navigate('/app/family')}>Choose patient</button></p>}
         {error ? (
-          <div role="alert" className="mt-2 rounded-2xl border border-[#E8455F]/30 bg-[#FDECEF] p-4 text-[13px] font-semibold text-[#E8455F]">
+          <div role="alert" className="mt-2 rounded-2xl border border-[#E8455F]/30 bg-[#FDECEF] p-4 text-[0.8125rem] font-semibold text-[#E8455F]">
             {error}
           </div>
         ) : null}
@@ -239,22 +243,22 @@ export default function ReviewAppointmentScreen() {
         <SectionCard label="Doctor & Specialty" onEdit={goToDate} editLabel="Edit Doctor">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="text-[15.5px] font-extrabold text-[#101A2E]">{doctor.name}</p>
-              <p className="mt-0.5 text-[12.5px] text-[#6C7A90]">
+              <p className="text-[0.96875rem] font-extrabold text-[#101A2E]">{doctor.name}</p>
+              <p className="mt-0.5 text-[0.78125rem] text-[#6C7A90]">
                 {doctor.title || 'Specialist'} · {doctor.department}
               </p>
-              <p className="mt-1 inline-flex items-center gap-1 text-[12.5px] font-bold text-[#101A2E]">
+              <p className="mt-1 inline-flex items-center gap-1 text-[0.78125rem] font-bold text-[#101A2E]">
                 <Star size={13} className="fill-[#F5A623] text-[#F5A623]" /> {doctor.availabilityStatus ?? 'AVAILABLE'}
               </p>
             </div>
-            <span className="rounded-full bg-[#F4F7FA] px-2.5 py-1 text-[11px] font-bold text-[#3A465C]">
+            <span className="rounded-full bg-[#F4F7FA] px-2.5 py-1 text-[0.6875rem] font-bold text-[#3A465C]">
               {doctor.room ? `Room ${doctor.room}` : 'Room not listed'}
             </span>
           </div>
         </SectionCard>
 
         <SectionCard label="Date & Time" onEdit={goToTime} editLabel="Edit Time">
-          <div className="space-y-2 text-[13px] text-[#3A465C]">
+          <div className="space-y-2 text-[0.8125rem] text-[#3A465C]">
             <p className="inline-flex items-center gap-2 font-bold text-[#101A2E]">
               <CalendarDays size={16} className="text-[#0E8B7C]" />
               {selectedDate ? formatLongDate(selectedDate) : 'Select a date'}
@@ -267,7 +271,7 @@ export default function ReviewAppointmentScreen() {
         </SectionCard>
 
         <SectionCard label="Patient Info">
-          <div className="space-y-2 text-[13px] text-[#3A465C]">
+          <div className="space-y-2 text-[0.8125rem] text-[#3A465C]">
             <p className="inline-flex items-center gap-2 font-bold text-[#101A2E]">
               <User2 size={16} className="text-[#0E8B7C]" />
               {patientSummary}
@@ -284,19 +288,19 @@ export default function ReviewAppointmentScreen() {
         </SectionCard>
 
         <div className="mt-4 rounded-2xl border border-[#E6ECF3] bg-white p-4 shadow-sm">
-          <p className="text-[12px] font-semibold uppercase tracking-wide text-[#6C7A90]">Fee Breakdown</p>
-          <div className="mt-3 space-y-2 text-[13.5px]">
+          <p className="text-[0.75rem] font-semibold uppercase tracking-wide text-[#6C7A90]">Fee Breakdown</p>
+          <div className="mt-3 space-y-2 text-[0.84375rem]">
             <Row label="OPD Consultation Fee" value={`LKR ${quote?.consultationFee ?? doctor.fee ?? 0}`} />
             <Row label="Platform Convenience Fee" value={`LKR ${quote?.platformFee ?? 0}`} />
             <div className="mt-2 flex items-center justify-between border-t border-[#E6ECF3] pt-3">
-              <p className="text-[14px] font-extrabold text-[#101A2E]">Total Amount</p>
-              <p className="text-[18px] font-extrabold text-[#0E8B7C]">LKR {totalAmount}</p>
+              <p className="text-[0.875rem] font-extrabold text-[#101A2E]">Total Amount</p>
+              <p className="text-[1.125rem] font-extrabold text-[#0E8B7C]">LKR {totalAmount}</p>
             </div>
           </div>
         </div>
 
         <div className="mt-4 rounded-2xl border border-[#E6ECF3] bg-white p-4 shadow-sm">
-          <Label htmlFor="visit-reason" className="text-[12px] font-semibold uppercase tracking-wide text-[#6C7A90]">
+          <Label htmlFor="visit-reason" className="text-[0.75rem] font-semibold uppercase tracking-wide text-[#6C7A90]">
             Reason for visit (optional)
           </Label>
           <Textarea
@@ -306,7 +310,7 @@ export default function ReviewAppointmentScreen() {
             onChange={(e) => setReason(e.target.value)}
             placeholder="e.g. Chest pain on exertion for 2 weeks"
           />
-          <p className="mt-2 text-[12px] text-[#6C7A90]">Shared with the doctor before your consultation.</p>
+          <p className="mt-2 text-[0.75rem] text-[#6C7A90]">Shared with the doctor before your consultation.</p>
         </div>
 
         <div className="mt-6 flex gap-3">
@@ -314,13 +318,13 @@ export default function ReviewAppointmentScreen() {
             variant="outline"
             className="h-12 min-h-[44px] flex-1 border-[#E6ECF3] bg-white text-[#3A465C] hover:bg-[#F4F7FA] focus-visible:ring-2 focus-visible:ring-[#16A794] font-bold"
             onClick={() => navigate(-1)}
-            disabled={submitting}
+            disabled={Boolean(patientError) || patientLoading || submitting}
           >
             Back
           </Button>
           <Button
             className="h-12 min-h-[44px] flex-1 bg-[#0E8B7C] font-bold text-white hover:bg-[#0C6F64] disabled:bg-[#E6ECF3] disabled:text-[#6C7A90] focus-visible:ring-2 focus-visible:ring-[#16A794]"
-            disabled={submitting || !selectedDate || !selectedSlotId || !patientName || !quote || Boolean(error)}
+            disabled={Boolean(patientError) || patientLoading || submitting || !selectedDate || !selectedSlotId || !patientName || !quote || Boolean(error)}
             onClick={confirm}
           >
             {submitting ? (
@@ -351,12 +355,12 @@ function SectionCard({
   return (
     <div className="mt-4 rounded-2xl border border-[#E6ECF3] bg-white p-4 shadow-sm">
       <div className="flex items-center justify-between gap-3">
-        <p className="text-[12px] font-semibold uppercase tracking-wide text-[#6C7A90]">{label}</p>
+        <p className="text-[0.75rem] font-semibold uppercase tracking-wide text-[#6C7A90]">{label}</p>
         {onEdit ? (
           <button
             onClick={onEdit}
             aria-label={editLabel || `Edit ${label}`}
-            className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center gap-1.5 px-3 py-2 text-[12.5px] font-bold text-[#0E8B7C] hover:text-[#0C6F64] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16A794] rounded-lg"
+            className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center gap-1.5 px-3 py-2 text-[0.78125rem] font-bold text-[#0E8B7C] hover:text-[#0C6F64] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16A794] rounded-lg"
           >
             <Pencil size={13} /> Edit
           </button>

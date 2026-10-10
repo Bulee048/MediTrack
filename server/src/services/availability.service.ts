@@ -46,6 +46,7 @@ export class AvailabilityService {
     timeStr: string,
     session?: ClientSession
   ): Promise<IDoctor> {
+    if (dateStr < new Date().toISOString().slice(0, 10)) throw new AppError('Appointment date cannot be in the past', 409);
     const query = Doctor.findOne({ _id: doctorId, isActive: true });
     if (session) query.session(session);
     const doctor = await query;

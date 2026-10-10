@@ -113,7 +113,7 @@ export default function SelectDateScreen() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-[#F4F7FA] px-4 py-6 sm:px-6">
+      <main data-feature-accessibility className="min-h-screen bg-[#F4F7FA] px-4 py-6 sm:px-6">
         <div role="status" aria-label="Loading calendar dates" className="mx-auto w-full max-w-md space-y-4">
           <Skeleton className="h-11 w-28 rounded-xl bg-[#E6ECF3]" />
           <Skeleton className="h-24 rounded-2xl bg-[#E6ECF3]" />
@@ -126,7 +126,7 @@ export default function SelectDateScreen() {
 
   if (!doctor) {
     return (
-      <main className="min-h-screen bg-[#F4F7FA] px-4 py-6 sm:px-6">
+      <main data-feature-accessibility className="min-h-screen bg-[#F4F7FA] px-4 py-6 sm:px-6">
         <div className="mx-auto w-full max-w-md">
           <button
             onClick={() => navigate(-1)}
@@ -136,8 +136,8 @@ export default function SelectDateScreen() {
             <ChevronLeft size={20} />
           </button>
           <div role="alert" className="mt-4 rounded-2xl border border-[#E8455F]/30 bg-[#FDECEF] p-5 text-[#E8455F]">
-            <p className="text-[15px] font-extrabold">Doctor unavailable</p>
-            <p className="mt-1 text-[12.5px] font-medium">{error || 'We could not load the selected doctor.'}</p>
+            <p className="text-[0.9375rem] font-extrabold">Doctor unavailable</p>
+            <p className="mt-1 text-[0.78125rem] font-medium">{error || 'We could not load the selected doctor.'}</p>
             <div className="mt-4 flex gap-3">
               <Button
                 variant="outline"
@@ -160,12 +160,12 @@ export default function SelectDateScreen() {
   }
 
   return (
-    <main className="min-h-screen bg-[#F4F7FA] px-4 py-6 sm:px-6">
+    <main data-feature-accessibility className="min-h-screen bg-[#F4F7FA] px-4 py-6 sm:px-6">
       <div className="mx-auto w-full max-w-md space-y-0">
         <div className="flex items-center justify-between pb-3">
           <div>
-            <p className="text-[13px] font-semibold text-[#6C7A90]">Booking</p>
-            <h1 className="mt-0.5 text-[22px] font-extrabold uppercase tracking-tight text-[#101A2E]">Select Date</h1>
+            <p className="text-[0.8125rem] font-semibold text-[#6C7A90]">Booking</p>
+            <h1 className="mt-0.5 text-[1.375rem] font-extrabold uppercase tracking-tight text-[#101A2E]">Select Date</h1>
           </div>
           <button
             onClick={() => navigate(-1)}
@@ -177,18 +177,18 @@ export default function SelectDateScreen() {
         </div>
 
         <div className="rounded-2xl border border-[#E6ECF3] bg-white p-4 text-center shadow-sm">
-          <p className="text-[15px] font-extrabold text-[#101A2E]">{doctor.name}</p>
-          <p className="mt-0.5 text-[12.5px] text-[#6C7A90]">
+          <p className="text-[0.9375rem] font-extrabold text-[#101A2E]">{doctor.name}</p>
+          <p className="mt-0.5 text-[0.78125rem] text-[#6C7A90]">
             {doctor.title || 'Specialist'} · {doctor.experienceYears ? `${doctor.experienceYears} Yrs Exp` : 'Experience not listed'}
           </p>
-          <p className="mt-1 inline-flex items-center gap-1 text-[12.5px] font-bold text-[#101A2E]">
+          <p className="mt-1 inline-flex items-center gap-1 text-[0.78125rem] font-bold text-[#101A2E]">
             <Star size={13} className="fill-[#F5A623] text-[#F5A623]" /> {doctor.availabilityStatus ?? 'AVAILABLE'}
           </p>
         </div>
 
         <div className="mt-4 rounded-2xl border border-[#E6ECF3] bg-white p-4 shadow-sm">
           <div className="flex items-center justify-between">
-            <p className="text-[15px] font-extrabold text-[#101A2E]">
+            <p className="text-[0.9375rem] font-extrabold text-[#101A2E]">
               {monthDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
             </p>
             <div className="flex gap-2">
@@ -213,7 +213,7 @@ export default function SelectDateScreen() {
 
           <div className="mt-4 grid grid-cols-7 gap-1 text-center" role="grid" aria-label="Month calendar">
             {['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'].map((day) => (
-              <span key={day} className="pb-1 text-[11.5px] font-bold text-[#6C7A90]">
+              <span key={day} className="pb-1 text-[0.71875rem] font-bold text-[#6C7A90]">
                 {day}
               </span>
             ))}
@@ -231,7 +231,7 @@ export default function SelectDateScreen() {
                   onClick={() => setSelectedDate(cell.iso)}
                   aria-pressed={isSelected}
                   aria-label={`${cell.day} ${formatLongDate(cell.iso)}, ${available ? 'Available' : 'Unavailable'}`}
-                  className={`relative mx-auto grid h-11 w-11 min-h-[44px] min-w-[44px] place-items-center rounded-full text-[13px] font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16A794] ${
+                  className={`relative mx-auto grid h-11 w-11 min-h-[44px] min-w-[44px] place-items-center rounded-full text-[0.8125rem] font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16A794] ${
                     isSelected
                       ? 'bg-[#0E8B7C] text-white shadow-sm font-bold'
                       : available
@@ -248,7 +248,7 @@ export default function SelectDateScreen() {
             })}
           </div>
 
-          <div className="mt-4 flex flex-wrap items-center gap-4 border-t border-[#E6ECF3] pt-3 text-[11px] font-semibold text-[#6C7A90]">
+          <div className="mt-4 flex flex-wrap items-center gap-4 border-t border-[#E6ECF3] pt-3 text-[0.6875rem] font-semibold text-[#6C7A90]">
             <span className="flex items-center gap-1.5">
               <span className="h-2.5 w-2.5 rounded-full bg-[#0E8B7C]" /> Selected
             </span>
@@ -262,7 +262,7 @@ export default function SelectDateScreen() {
         </div>
 
         {selectedDate ? (
-          <p className="mt-4 text-center text-[13.5px] font-bold text-[#0C6F64]">{formatLongDate(selectedDate)}</p>
+          <p className="mt-4 text-center text-[0.84375rem] font-bold text-[#0C6F64]">{formatLongDate(selectedDate)}</p>
         ) : null}
 
         <div className="mt-6 flex gap-3">

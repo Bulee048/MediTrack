@@ -5,7 +5,7 @@ export const createFamilyMemberSchema = z.object({
   relationship: z.string().trim().min(2).max(40),
   dateOfBirth: dateOfBirthSchema,
   gender: patientGenderSchema,
-  phone: patientPhoneSchema.optional(),
+  phone: patientPhoneSchema.or(z.literal('')).optional(),
 }).strict();
 export const updateFamilyMemberSchema = createFamilyMemberSchema.partial().strict()
   .refine(data => Object.keys(data).length > 0, 'At least one editable field is required');

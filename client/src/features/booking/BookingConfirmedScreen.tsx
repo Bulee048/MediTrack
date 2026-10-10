@@ -51,11 +51,11 @@ export default function BookingConfirmedScreen() {
     return `Room ${room}`;
   }, [room]);
 
-  if (loading) return <main className="min-h-screen bg-[#F4F7FA] p-6"><p role="status">Loading your appointment…</p></main>;
+  if (loading) return <main data-feature-accessibility className="min-h-screen bg-[#F4F7FA] p-6"><p role="status">Loading your appointment…</p></main>;
 
   if (!appointment) {
     return (
-      <main className="min-h-screen bg-[#F4F7FA] px-4 py-6 sm:px-6">
+      <main data-feature-accessibility className="min-h-screen bg-[#F4F7FA] px-4 py-6 sm:px-6">
         <div className="mx-auto flex w-full max-w-md flex-col gap-4">
           <button
             onClick={() => navigate(-1)}
@@ -65,8 +65,8 @@ export default function BookingConfirmedScreen() {
             <MoveLeft size={20} />
           </button>
           <div role="alert" className="rounded-2xl border border-[#F5A623]/30 bg-[#FFF6E6] p-5 text-[#101A2E]">
-            <h1 className="text-[15px] font-extrabold">Confirmation unavailable</h1>
-            <p className="mt-1 text-[12.5px] font-medium text-[#3A465C]">{error || 'We could not find the booking details for this appointment.'}</p>
+            <h1 className="text-[0.9375rem] font-extrabold">Confirmation unavailable</h1>
+            <p className="mt-1 text-[0.78125rem] font-medium text-[#3A465C]">{error || 'We could not find the booking details for this appointment.'}</p>
           </div>
           <div className="flex gap-3">
             <Button
@@ -89,12 +89,12 @@ export default function BookingConfirmedScreen() {
   }
 
   return (
-    <main className="min-h-screen bg-[#F4F7FA] px-4 py-6 sm:px-6">
+    <main data-feature-accessibility className="min-h-screen bg-[#F4F7FA] px-4 py-6 sm:px-6">
       <div className="mx-auto w-full max-w-md space-y-0">
         <div className="flex items-center justify-between pb-3">
           <div>
-            <p className="text-[13px] font-semibold text-[#6C7A90]">Booking</p>
-            <h1 className="mt-0.5 text-[22px] font-extrabold uppercase tracking-tight text-[#101A2E]">{appointment.status === 'confirmed' ? 'Booking Confirmed' : 'Booking Details'}</h1>
+            <p className="text-[0.8125rem] font-semibold text-[#6C7A90]">Booking</p>
+            <h1 className="mt-0.5 text-[1.375rem] font-extrabold uppercase tracking-tight text-[#101A2E]">{appointment.status === 'confirmed' ? 'Booking Confirmed' : 'Booking Details'}</h1>
           </div>
           <button
             onClick={() => navigate('/patient/home')}
@@ -109,19 +109,20 @@ export default function BookingConfirmedScreen() {
           <span className="mx-auto grid h-20 w-20 place-items-center rounded-full border-4 border-[#0E8B7C]/30 bg-[#0E8B7C] text-white shadow-sm">
             <Check size={36} strokeWidth={3} />
           </span>
-          <h2 className="mt-5 text-[24px] font-extrabold tracking-tight text-[#101A2E]">Appointment {appointment.status === 'confirmed' ? 'Confirmed' : appointment.status === 'cancelled' ? 'Cancelled' : 'Completed'}</h2>
-          <p className="mt-1.5 text-[13px] text-[#3A465C]">These details were retrieved from your saved appointment.</p>
+          <h2 className="mt-5 text-[1.5rem] font-extrabold tracking-tight text-[#101A2E]">Appointment {appointment.status === 'confirmed' ? 'Confirmed' : appointment.status === 'cancelled' ? 'Cancelled' : 'Completed'}</h2>
+          <p className="mt-1.5 text-[0.8125rem] text-[#3A465C]">These details were retrieved from your saved appointment.</p>
           {appointmentIdentifier ? (
-            <p className="mt-3 inline-flex items-center gap-2 rounded-full border border-[#0E8B7C]/30 bg-white px-3.5 py-1.5 text-[12.5px] font-bold text-[#0E8B7C] shadow-sm">
+            <p className="mt-3 inline-flex items-center gap-2 rounded-full border border-[#0E8B7C]/30 bg-white px-3.5 py-1.5 text-[0.78125rem] font-bold text-[#0E8B7C] shadow-sm">
               <Ticket size={15} /> Reference: {appointmentIdentifier}
             </p>
           ) : null}
         </div>
 
         <div className="mt-4 rounded-2xl border border-[#E6ECF3] bg-white p-5 shadow-sm">
-          <p className="text-[12px] font-semibold uppercase tracking-wide text-[#6C7A90]">Appointment Details</p>
+          <p className="text-[0.75rem] font-semibold uppercase tracking-wide text-[#6C7A90]">Appointment Details</p>
 
           <div className="mt-4 space-y-3.5">
+            <DetailRow label="Patient" value={appointment.patientName} />
             <DetailRow label="Doctor" value={doctor?.name ?? appointment.doctorName} />
             <DetailRow label="Department" value={department} />
             <DetailRow label="Date" value={selectedDate ? formatLongDate(selectedDate) : 'Date not listed'} />
@@ -130,8 +131,8 @@ export default function BookingConfirmedScreen() {
           </div>
 
           <div className="mt-5 rounded-2xl bg-[#F4F7FA] p-4 border border-[#E6ECF3]">
-            <p className="text-[11.5px] font-semibold uppercase tracking-wide text-[#6C7A90]">Appointment reference</p>
-            <p className="mt-1 text-[16px] font-extrabold text-[#101A2E]">{appointmentIdentifier || 'Pending'}</p>
+            <p className="text-[0.71875rem] font-semibold uppercase tracking-wide text-[#6C7A90]">Appointment reference</p>
+            <p className="mt-1 text-[1rem] font-extrabold text-[#101A2E]">{appointmentIdentifier || 'Pending'}</p>
           </div>
         </div>
 
@@ -141,8 +142,8 @@ export default function BookingConfirmedScreen() {
               <Ticket size={24} />
             </span>
             <div>
-              <p className="text-[14px] font-extrabold text-[#101A2E]">Keep this confirmation</p>
-              <p className="mt-0.5 text-[12.5px] text-[#3A465C]">Show this ticket at the counter upon arrival.</p>
+              <p className="text-[0.875rem] font-extrabold text-[#101A2E]">Keep this confirmation</p>
+              <p className="mt-0.5 text-[0.78125rem] text-[#3A465C]">Show this ticket at the counter upon arrival.</p>
             </div>
           </div>
         </div>
@@ -165,7 +166,7 @@ export default function BookingConfirmedScreen() {
 
         <button
           onClick={() => navigate(`/patient/doctors/${appointment.doctorId}/date`)}
-          className="mt-4 flex min-h-[44px] w-full items-center justify-center py-2 text-[13.5px] font-bold text-[#6C7A90] hover:text-[#101A2E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16A794] rounded-lg"
+          className="mt-4 flex min-h-[44px] w-full items-center justify-center py-2 text-[0.84375rem] font-bold text-[#6C7A90] hover:text-[#101A2E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16A794] rounded-lg"
         >
           Book another visit
         </button>
@@ -177,8 +178,8 @@ export default function BookingConfirmedScreen() {
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-start justify-between gap-4">
-      <span className="text-[13px] font-medium text-[#6C7A90]">{label}</span>
-      <span className="text-right text-[13.5px] font-bold text-[#101A2E]">{value}</span>
+      <span className="text-[0.8125rem] font-medium text-[#6C7A90]">{label}</span>
+      <span className="text-right text-[0.84375rem] font-bold text-[#101A2E]">{value}</span>
     </div>
   );
 }

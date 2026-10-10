@@ -216,3 +216,24 @@
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
 }
+
+/* Scale appointment/family controls without changing the shared shell. */
+[data-feature-accessibility] .label, [data-feature-accessibility] .chip { font-size: .6875rem; }
+[data-feature-accessibility] button { height: auto; min-height: 2.75rem; white-space: normal; }
+[data-feature-accessibility] input, [data-feature-accessibility] select { height: auto; min-height: 2.75rem; font-size: .875rem; }
+[data-feature-accessibility] [role='alert'] { overflow-wrap: anywhere; }
+[data-high-contrast] [data-feature-accessibility] {
+  --color-brand-600: #00584e; --color-brand-700: #004a41;
+  --color-success: #11632d; --color-danger-600: #9b1235;
+  --color-info: #154b8b; --color-warn: #704200; --color-violet: #56248a;
+  --color-line: #111827; --color-ink-soft: #111827;
+}
+[data-high-contrast] [data-feature-accessibility] :focus-visible { outline-color: #000; }
+
+[data-high-contrast] [data-feature-accessibility] [class*="text-[#"] { color: #111827; }
+
+[data-feature-accessibility] .bg-destructive { background: #9b1235; color: white; }
+[data-feature-accessibility] .bg-primary { background: var(--color-brand-700); color: white; }
+[data-high-contrast] [data-feature-accessibility] .text-success { color: #11632d; }
+[data-high-contrast] [data-feature-accessibility] [class*="bg-[#0E8B7C]"],
+[data-high-contrast] [data-feature-accessibility] [class*="bg-[#16A794]"] { background-color: #00584e; }

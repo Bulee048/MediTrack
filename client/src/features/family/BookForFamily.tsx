@@ -1,5 +1,5 @@
 import { useBookingPatient } from './context/BookingPatientContext';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CirclePlus, Pencil, Trash2, UserCheck, Users } from 'lucide-react';
 import { toast } from 'sonner';
@@ -24,13 +24,16 @@ const AVATAR_TONES = [
 
 export default function BookForFamily() {
   const navigate = useNavigate();
-  const { selectPatient } = useBookingPatient();
+  const { patient, selectPatient } = useBookingPatient();
   const [editingId, setEditingId] = useState<string | null>(null);
 
   const [members, setMembers] = useState<FamilyMember[]>([]);
   const [error, setError] = useState('');
+  const [retry, setRetry] = useState(0);
+  const pending = useRef(false);
+  const [deleting, setDeleting] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null | undefined>(patient?.id);
   const [adding, setAdding] = useState(false);
   const [memberToDelete, setMemberToDelete] = useState<FamilyMember | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -47,8 +50,12 @@ export default function BookForFamily() {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    familyApi.getFamilyMembers().then(setMembers).catch((e) => setError((e as Error).message)).finally(() => setLoading(false));
-  }, []);
+    let active = true;
+    setLoading(true); setError('');
+    familyApi.getFamilyMembers().then(rows => { if (active) setMembers(rows); })
+      .catch(e => { if (active) setError((e as Error).message); }).finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [retry]);
 
   const pick = (m: FamilyMember) => {
     setSelectedId(m.id);
@@ -61,21 +68,25 @@ export default function BookForFamily() {
   };
 
   const saveNew = async () => {
+    if (pending.current) return;
     const e: Record<string, string> = {};
     if (form.name.trim().length < 2) e.name = 'Enter the full name';
     if (!form.relation) e.relation = 'Select a relation';
     if (!form.dob) e.dob = 'Enter date of birth';
     setErrors(e);
-    if (Object.keys(e).length > 0) return;
+    if (Object.keys(e).length > 0) {
+      document.getElementById(e.name ? 'family-full-name' : e.relation ? 'family-relation' : 'family-date-of-birth')?.focus();
+      return;
+    }
 
-    setSaving(true);
+    pending.current = true; setErrors({}); setSaving(true);
     try {
       const input = {
         name: form.name.trim(),
         relation: form.relation,
         dob: form.dob,
         gender: (form.gender || 'Other') as FamilyMember['gender'],
-        phone: form.phone || undefined,
+        phone: form.phone,
       };
       const created = editingId ? await familyApi.updateFamilyMember(editingId, input) : await familyApi.addFamilyMember(input);
       setMembers((prev) => editingId ? prev.map(m => m.id === editingId ? created : m) : [...prev, created]);
@@ -86,9 +97,10 @@ export default function BookForFamily() {
         description: `${created.name} is saved and selected for booking.`,
       });
     } catch (err) {
+      setErrors({ submit: (err as Error).message });
       toast.error((err as Error).message || 'Could not save family member');
     } finally {
-      setSaving(false);
+      pending.current = false; setSaving(false);
     }
   };
 
@@ -99,26 +111,32 @@ export default function BookForFamily() {
   };
 
   const confirmDelete = async () => {
-    if (!memberToDelete) return;
+    if (!memberToDelete || pending.current) return;
+    pending.current = true; setDeleting(true);
     try {
       await familyApi.deleteFamilyMember(memberToDelete.id);
       setMembers((prev) => prev.filter((m) => m.id !== memberToDelete.id));
       if (selectedId === memberToDelete.id) {
-        setSelectedId(null);
+        setSelectedId(undefined);
+        selectPatient(null);
       }
       toast.success('Family member removed', {
         description: `${memberToDelete.name} has been removed from your list.`,
       });
     } catch (err) {
+      setError((err as Error).message);
       toast.error((err as Error).message || 'Failed to remove family member');
     } finally {
+      pending.current = false; setDeleting(false);
       setMemberToDelete(null);
       setDeleteDialogOpen(false);
     }
   };
 
   const continueBook = () => {
+    if (selectedId === undefined || adding || saving || deleting) return;
     const selected = members.find(m => m.id === selectedId);
+    if (selectedId !== null && !selected) { setError('Please select an available family member'); return; }
     selectPatient(selected ? { id: selected.id, name: selected.name } : null);
     navigate('/app/doctors');
   };
@@ -127,10 +145,12 @@ export default function BookForFamily() {
     <FeaturePageContent title="Book for Someone Else" back>
       {loading && <p role="status">Loading family members…</p>}
       {error && <p role="alert" className="mb-4 rounded-xl bg-danger-soft p-4 text-sm">{error}</p>}
+      {error && <button type="button" className="mb-4 underline" onClick={() => setRetry(n => n + 1)}>Try again</button>}
+      {!loading && !error && members.length === 0 && <p role="status" className="mb-4 text-sm">No saved family members. Add a member or choose Myself.</p>}
       {/* Banner highlighting family booking ease */}
       <div className="flex items-start gap-3 rounded-2xl bg-brand-50 p-4 border border-brand-200">
         <Users className="h-5 w-5 text-brand-700 shrink-0 mt-0.5" />
-        <p className="text-[13px] leading-relaxed text-brand-900 font-medium">
+        <p className="text-[0.8125rem] leading-relaxed text-brand-900 font-medium">
           Select a family member to book their OPD appointment, or register a new member below.
         </p>
       </div>
@@ -140,6 +160,8 @@ export default function BookForFamily() {
         {/* Book for Myself Card */}
         <button
           type="button"
+          aria-pressed={selectedId === null && !adding}
+          disabled={saving || deleting}
           onClick={bookForSelf}
           className={cn(
             'flex w-full items-center gap-3.5 rounded-2xl border-2 bg-white p-4 text-left transition min-h-0',
@@ -148,12 +170,12 @@ export default function BookForFamily() {
               : 'border-line hover:border-brand-200'
           )}
         >
-          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-brand-50 text-[13px] font-extrabold text-brand-700 border border-brand-200">
+          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-brand-50 text-[0.8125rem] font-extrabold text-brand-700 border border-brand-200">
             ME
           </span>
           <span className="min-w-0 flex-1">
-            <span className="block text-[14.5px] font-extrabold text-ink">Myself</span>
-            <span className="block text-[12px] text-ink-muted">Use my own patient profile</span>
+            <span className="block text-[0.90625rem] font-extrabold text-ink">Myself</span>
+            <span className="block text-[0.75rem] text-ink-muted">Use my own patient profile</span>
           </span>
           <Radio checked={selectedId === null && !adding} />
         </button>
@@ -169,31 +191,32 @@ export default function BookForFamily() {
                 : 'border-line hover:border-brand-200'
             )}
           >
-            <button type="button" onClick={() => pick(m)} aria-label={`Select ${m.name} for booking`}
+            <button type="button" disabled={saving || deleting} onClick={() => pick(m)} aria-label={`Select ${m.name} for booking`}
               aria-pressed={selectedId === m.id} className="flex min-w-0 flex-1 items-center gap-2 text-left">
             <span
               className={cn(
-                'grid h-11 w-11 shrink-0 place-items-center rounded-full text-[13px] font-extrabold',
+                'grid h-11 w-11 shrink-0 place-items-center rounded-full text-[0.8125rem] font-extrabold',
                 AVATAR_TONES[i % AVATAR_TONES.length]
               )}
             >
               {initials(m.name)}
             </span>
             <span className="min-w-0 flex-1">
-              <span className="block text-[14.5px] font-extrabold text-ink truncate">{m.name}</span>
-              <span className="block text-[12px] text-ink-muted">
+              <span className="block text-[0.90625rem] font-extrabold text-ink break-words">{m.name}</span>
+              <span className="block text-[0.75rem] text-ink-muted">
                 {m.relation} · {m.dob ? `${age(m.dob)} Yrs` : 'DOB not provided'} {m.gender ? `(${m.gender})` : ''}
               </span>
             </span>
 
             </button>
-            <button type="button" aria-label={`Edit ${m.name}`} className="shrink-0 rounded-lg p-2 text-brand-700"
+            <button type="button" disabled={saving || deleting} aria-label={`Edit ${m.name}`} className="shrink-0 rounded-lg p-2 text-brand-700"
               onClick={() => { setEditingId(m.id); setAdding(true); setForm({ name: m.name, relation: m.relation, dob: m.dob, gender: m.gender, phone: m.phone ?? '', notes: '' }); }}>
               <Pencil size={16} />
             </button>
             {/* Remove member button with confirmation trigger */}
             <button
               type="button"
+              disabled={saving || deleting}
               onClick={(e) => requestDelete(e, m)}
               title="Remove family member"
               aria-label={`Remove ${m.name}`}
@@ -209,12 +232,13 @@ export default function BookForFamily() {
       {/* Clearly visible Add Family Member button */}
       <button
         type="button"
+        disabled={saving || deleting}
         onClick={() => {
           setEditingId(null); setForm({ name: '', relation: '', dob: '', gender: 'Other', phone: '', notes: '' });
           setAdding(!adding);
           setSelectedId(null);
         }}
-        className="mt-4 flex items-center gap-2 text-[13.5px] font-bold text-brand-600 hover:text-brand-700 min-h-0"
+        className="mt-4 flex items-center gap-2 text-[0.84375rem] font-bold text-brand-600 hover:text-brand-700 min-h-0"
       >
         <CirclePlus size={18} />
         <span>{adding ? 'Close Add Form' : 'Add Family Member'}</span>
@@ -222,24 +246,25 @@ export default function BookForFamily() {
 
       {/* Add Family Member Form */}
       {adding && (
-        <div className="mt-4 rounded-2xl border border-line bg-white p-5 shadow-card animate-in fade-in">
-          <p className="mb-4 text-[14px] font-extrabold text-ink">{editingId ? 'Edit Family Member Details' : 'New Family Member Details'}</p>
+        <form onSubmit={e => { e.preventDefault(); void saveNew(); }} className="mt-4 rounded-2xl border border-line bg-white p-5 shadow-card animate-in fade-in">
+          <fieldset disabled={saving}>
+          <p className="mb-4 text-[0.875rem] font-extrabold text-ink">{editingId ? 'Edit Family Member Details' : 'New Family Member Details'}</p>
 
           <div>
-            <label htmlFor="family-full-name" className="mb-1.5 block text-[13px] font-semibold text-ink">Full Name</label>
-            <Input id="family-full-name"
+            <label htmlFor="family-full-name" className="mb-1.5 block text-[0.8125rem] font-semibold text-ink">Full Name</label>
+            <Input aria-invalid={Boolean(errors.name)} aria-describedby={errors.name ? 'family-name-error' : undefined} id="family-full-name"
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
               placeholder="Enter family member's full name"
               className={errors.name ? 'border-danger' : ''}
             />
-            {errors.name && <p className="mt-1 text-xs text-danger-600">{errors.name}</p>}
+            {errors.name && <p id="family-name-error" role="alert" className="mt-1 text-xs text-danger-600">{errors.name}</p>}
           </div>
 
           <div className="mt-4 grid grid-cols-2 gap-3">
             <div>
-              <label htmlFor="family-relation" className="mb-1.5 block text-[13px] font-semibold text-ink">Relation</label>
-              <Select id="family-relation"
+              <label htmlFor="family-relation" className="mb-1.5 block text-[0.8125rem] font-semibold text-ink">Relation</label>
+              <Select aria-invalid={Boolean(errors.relation)} aria-describedby={errors.relation ? 'family-relation-error' : undefined} id="family-relation"
                 value={form.relation}
                 onChange={(e) => setForm({ ...form, relation: e.target.value })}
                 className={errors.relation ? 'border-danger' : ''}
@@ -251,24 +276,24 @@ export default function BookForFamily() {
                   </option>
                 ))}
               </Select>
-              {errors.relation && <p className="mt-1 text-xs text-danger-600">{errors.relation}</p>}
+              {errors.relation && <p id="family-relation-error" role="alert" className="mt-1 text-xs text-danger-600">{errors.relation}</p>}
             </div>
 
             <div>
-              <label htmlFor="family-date-of-birth" className="mb-1.5 block text-[13px] font-semibold text-ink">Date of Birth</label>
-              <Input id="family-date-of-birth"
-                type="date"
+              <label htmlFor="family-date-of-birth" className="mb-1.5 block text-[0.8125rem] font-semibold text-ink">Date of Birth</label>
+              <Input aria-invalid={Boolean(errors.dob)} aria-describedby={errors.dob ? 'family-dob-error' : undefined} id="family-date-of-birth"
+                type="date" max={new Date().toISOString().slice(0, 10)}
                 value={form.dob}
                 onChange={(e) => setForm({ ...form, dob: e.target.value })}
                 className={errors.dob ? 'border-danger' : ''}
               />
-              {errors.dob && <p className="mt-1 text-xs text-danger-600">{errors.dob}</p>}
+              {errors.dob && <p id="family-dob-error" role="alert" className="mt-1 text-xs text-danger-600">{errors.dob}</p>}
             </div>
           </div>
 
           <div className="mt-4 grid grid-cols-2 gap-3">
             <div>
-              <label htmlFor="family-gender" className="mb-1.5 block text-[13px] font-semibold text-ink">Gender</label>
+              <label htmlFor="family-gender" className="mb-1.5 block text-[0.8125rem] font-semibold text-ink">Gender</label>
               <Select id="family-gender"
                 value={form.gender}
                 onChange={(e) => setForm({ ...form, gender: e.target.value })}
@@ -279,7 +304,7 @@ export default function BookForFamily() {
               </Select>
             </div>
             <div>
-              <label htmlFor="family-phone-optional" className="mb-1.5 block text-[13px] font-semibold text-ink">Phone (Optional)</label>
+              <label htmlFor="family-phone-optional" className="mb-1.5 block text-[0.8125rem] font-semibold text-ink">Phone (Optional)</label>
               <Input id="family-phone-optional"
                 value={form.phone}
                 onChange={(e) => setForm({ ...form, phone: e.target.value })}
@@ -292,19 +317,22 @@ export default function BookForFamily() {
             size="lg"
             className="mt-5 w-full bg-brand-600 text-white hover:bg-brand-700 font-bold"
             disabled={saving}
-            onClick={saveNew}
+            type="submit"
           >
             {saving ? 'Saving...' : 'Save Family Member'}
           </Button>
-        </div>
+          </fieldset>
+        </form>
       )}
 
+      {errors.submit && <p role="alert" className="mt-3 text-danger-600">{errors.submit}</p>}
+      {selectedId === undefined && <p className="mt-3 text-sm">Choose Myself or a family member to continue.</p>}
       {/* Continue to Book */}
       <div className="mt-7">
         <Button
           size="lg"
           className="w-full bg-brand-600 text-white hover:bg-brand-700 font-bold"
-          disabled={loading || Boolean(error) || adding}
+          disabled={loading || Boolean(error) || adding || saving || deleting || selectedId === undefined}
           onClick={continueBook}
         >
           <UserCheck size={18} className="mr-2" />
