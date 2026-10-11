@@ -1,3 +1,4 @@
+import { hospitalDate } from '../utils/hospitalDate.js';
 import { ClientSession } from 'mongoose';
 import { Doctor, IDoctor, IAvailabilitySlot } from '../models/Doctor.js';
 import { AppError } from '../utils/AppError.js';
@@ -46,6 +47,7 @@ export class AvailabilityService {
     timeStr: string,
     session?: ClientSession
   ): Promise<IDoctor> {
+    if (dateStr < hospitalDate()) throw new AppError('Appointment date cannot be in the past', 409);
     const query = Doctor.findOne({ _id: doctorId, isActive: true });
     if (session) query.session(session);
     const doctor = await query;

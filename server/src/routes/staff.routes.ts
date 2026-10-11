@@ -1,0 +1,10 @@
+import { Router } from 'express';
+import { authenticate } from '../middleware/auth.middleware.js';
+import { authorizeRoles } from '../middleware/role.middleware.js';
+import { registerWalkIn, findPatients, bookForPatient } from '../controllers/staff.controller.js';
+const router=Router();
+router.use(authenticate,authorizeRoles('STAFF','ADMIN'));
+router.get('/patients',findPatients);
+router.post('/patients',registerWalkIn);
+router.post('/appointments',bookForPatient);
+export default router;

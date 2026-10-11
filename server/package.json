@@ -7,7 +7,14 @@
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test:appointments": "tsx tests/appointment.integration.ts",
+    "test:patient-app": "tsx tests/patient-app.integration.ts",
+    "seed:demo": "tsx scripts/seed-demo.ts",
+    "seed:demo:reset": "tsx scripts/seed-demo.ts --reset",
+    "test:reminders": "tsx tests/reminder.integration.ts",
+    "test:staff-settings": "tsx tests/staff-settings.integration.ts",
+    "test:demo-seed": "tsx tests/demo-seed.integration.ts"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

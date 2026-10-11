@@ -1,0 +1,9 @@
+{
+  "name": "meditrack-demo",
+  "private": true,
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "seed:demo": "npm --prefix server run seed:demo",
+    "seed:demo:reset": "npm --prefix server run seed:demo:reset"
+  }
+}

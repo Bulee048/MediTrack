@@ -3,13 +3,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 
 interface AuthShellProps {
   title: string;
+  accountTitle?: string;
   description: string;
   eyebrow?: string;
   children: ReactNode;
   footer?: ReactNode;
 }
 
-export function AuthShell({ title, description, eyebrow = 'MediTrack', children, footer }: AuthShellProps) {
+export function AuthShell({ title, description, eyebrow = 'MediTrack', accountTitle = 'Patient Account', children, footer }: AuthShellProps) {
   return (
     <main className="min-h-screen bg-[#F4F7FA] px-4 py-8 sm:px-6 lg:px-8">
       <div className="mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-md flex-col justify-center">
@@ -21,7 +22,7 @@ export function AuthShell({ title, description, eyebrow = 'MediTrack', children,
 
         <Card className="border-[#E6ECF3] bg-white shadow-xl shadow-[#101A2E]/5">
           <CardHeader className="space-y-2 pb-4">
-            <CardTitle className="text-lg text-[#101A2E]">Patient Account</CardTitle>
+            <CardTitle className="text-lg text-[#101A2E]">{accountTitle}</CardTitle>
             <CardDescription className="text-[#6C7A90]">Secure access for appointments, bookings, and profile updates.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-5">{children}</CardContent>

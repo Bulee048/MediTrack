@@ -4,6 +4,7 @@ import { z } from 'zod';
 dotenv.config();
 
 const envSchema = z.object({
+  MONGODB_DB_NAME: z.literal('meditrack_demo').optional(),
   PORT: z.string().transform((val) => parseInt(val, 10)).default('5000'),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   CLIENT_URL: z.string().url().default('http://localhost:5173'),

@@ -13,6 +13,7 @@ router.get('/me', authorizeRoles('PATIENT'), QueueController.getMyActiveTicket);
 router.post('/check-in', authorizeRoles('PATIENT'), QueueController.checkIn);
 
 // Staff/Admin queue routes
+router.post('/staff/check-in', authorizeRoles('STAFF', 'ADMIN'), QueueController.staffCheckIn);
 router.get('/', authorizeRoles('STAFF', 'ADMIN'), QueueController.getAllForStaff);
 router.post('/call-next', authorizeRoles('STAFF', 'ADMIN'), QueueController.callNext);
 router.patch('/:id/start-consultation', authorizeRoles('STAFF', 'ADMIN'), QueueController.startConsultation);

@@ -73,7 +73,6 @@ export default function DoctorListScreen() {
   }, [departmentId, availableOnly, minRating, q]);
 
   const doctors = result.doctors;
-  const usingTemporaryData = result.source === 'mock';
 
   const resetFilters = () => {
     setQ('');
@@ -82,12 +81,12 @@ export default function DoctorListScreen() {
   };
 
   return (
-    <main className="min-h-screen bg-[#F4F7FA] px-4 py-6 sm:px-6">
+    <main data-feature-accessibility className="min-h-screen bg-[#F4F7FA] px-4 py-6 sm:px-6">
       <div className="mx-auto w-full max-w-md space-y-0">
         <div className="flex items-center justify-between pb-3">
           <div>
-            <p className="text-[13px] font-semibold text-[#6C7A90]">Browse</p>
-            <h1 className="mt-0.5 text-[22px] font-extrabold uppercase tracking-tight text-[#101A2E]">{departmentName}</h1>
+            <p className="text-[0.8125rem] font-semibold text-[#6C7A90]">Browse</p>
+            <h1 className="mt-0.5 text-[1.375rem] font-extrabold uppercase tracking-tight text-[#101A2E]">{departmentName}</h1>
           </div>
           <button
             onClick={() => navigate(-1)}
@@ -126,7 +125,7 @@ export default function DoctorListScreen() {
             <button
               onClick={() => setMinRating(null)}
               aria-label={`Clear rating filter ${minRating} stars`}
-              className="flex h-12 min-h-[44px] shrink-0 items-center gap-1.5 rounded-xl border border-[#0E8B7C] bg-[#ECFDF9] px-3.5 text-[12.5px] font-bold text-[#0C6F64] hover:bg-[#D2F5EE] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16A794]"
+              className="flex h-12 min-h-[44px] shrink-0 items-center gap-1.5 rounded-xl border border-[#0E8B7C] bg-[#ECFDF9] px-3.5 text-[0.78125rem] font-bold text-[#0C6F64] hover:bg-[#D2F5EE] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16A794]"
             >
               <Star size={13} className="fill-[#F5A623] text-[#F5A623]" /> {minRating}+ <X size={13} />
             </button>
@@ -137,7 +136,7 @@ export default function DoctorListScreen() {
           <button
             onClick={() => setAvailableOnly((value) => !value)}
             aria-pressed={availableOnly}
-            className={`min-h-[44px] shrink-0 rounded-full border px-3.5 py-2.5 text-[12.5px] font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16A794] ${
+            className={`min-h-[44px] shrink-0 rounded-full border px-3.5 py-2.5 text-[0.78125rem] font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16A794] ${
               availableOnly
                 ? 'border-[#0E8B7C] bg-[#0E8B7C] text-white'
                 : 'border-[#E6ECF3] bg-white text-[#3A465C] hover:border-[#A7EADD]'
@@ -150,7 +149,7 @@ export default function DoctorListScreen() {
             <button
               onClick={resetFilters}
               aria-label="Reset all filters"
-              className="min-h-[44px] shrink-0 rounded-full border border-[#E6ECF3] bg-white px-3.5 py-2.5 text-[12.5px] font-bold text-[#3A465C] hover:border-[#A7EADD] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16A794]"
+              className="min-h-[44px] shrink-0 rounded-full border border-[#E6ECF3] bg-white px-3.5 py-2.5 text-[0.78125rem] font-bold text-[#3A465C] hover:border-[#A7EADD] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16A794]"
             >
               Reset
             </button>
@@ -160,24 +159,18 @@ export default function DoctorListScreen() {
         <div className="mt-5 rounded-2xl bg-[#0E8B7C] p-4 text-white shadow-md">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[10.5px] font-extrabold uppercase tracking-wider text-[#D2F5EE]">Doctors</p>
-              <p className="mt-1 text-[15px] font-extrabold">Find the right specialist for your visit</p>
+              <p className="text-[0.65625rem] font-extrabold uppercase tracking-wider text-[#D2F5EE]">Doctors</p>
+              <p className="mt-1 text-[0.9375rem] font-extrabold">Find the right specialist for your visit</p>
             </div>
             <Stethoscope size={20} className="opacity-90" />
           </div>
-          <p className="mt-2 text-[12.5px] text-white/80">
+          <p className="mt-2 text-[0.78125rem] text-white/80">
             {departmentId ? 'Filtered by the selected department.' : 'Browse all specialists and refine by availability.'}
           </p>
         </div>
 
-        {usingTemporaryData ? (
-          <div role="note" className="mt-3 rounded-2xl border border-[#F5A623]/30 bg-[#FFF6E6] px-4 py-3 text-[12.5px] font-semibold text-[#F5A623]">
-            [Temporary demo data] Live doctor data is temporarily unavailable. Showing demo doctors instead.
-          </div>
-        ) : null}
-
         {result.fallbackReason ? (
-          <div role="note" className="mt-3 rounded-2xl border border-[#F5A623]/30 bg-[#FFF6E6] px-4 py-3 text-[12.5px] font-semibold text-[#F5A623]">
+          <div role="note" className="mt-3 rounded-2xl border border-[#F5A623]/30 bg-[#FFF6E6] px-4 py-3 text-[0.78125rem] font-semibold text-[#F5A623]">
             {result.fallbackReason}
           </div>
         ) : null}
@@ -210,8 +203,8 @@ export default function DoctorListScreen() {
           </div>
         ) : error ? (
           <div role="alert" className="mt-5 rounded-2xl border border-[#E8455F]/30 bg-[#FDECEF] p-5 text-[#E8455F]">
-            <p className="text-[14px] font-extrabold">Could not load doctors</p>
-            <p className="mt-1 text-[12.5px] font-medium">{error}</p>
+            <p className="text-[0.875rem] font-extrabold">Could not load doctors</p>
+            <p className="mt-1 text-[0.78125rem] font-medium">{error}</p>
             <Button
               size="sm"
               variant="outline"
@@ -223,8 +216,8 @@ export default function DoctorListScreen() {
           </div>
         ) : doctors.length === 0 ? (
           <div className="mt-5 rounded-2xl border border-dashed border-[#E6ECF3] bg-white/70 p-6 text-center">
-            <p className="text-[14px] font-bold text-[#101A2E]">No doctors match your search.</p>
-            <p className="mt-1 text-[12.5px] text-[#6C7A90]">Try a different name or department filter.</p>
+            <p className="text-[0.875rem] font-bold text-[#101A2E]">No doctors match your search.</p>
+            <p className="mt-1 text-[0.78125rem] text-[#6C7A90]">Try a different name or department filter.</p>
             <Button
               size="sm"
               className="mt-4 h-11 min-h-[44px] bg-[#0E8B7C] font-bold text-white hover:bg-[#0C6F64] focus-visible:ring-2 focus-visible:ring-[#16A794]"
@@ -247,25 +240,25 @@ export default function DoctorListScreen() {
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <p className="text-[15.5px] font-extrabold tracking-tight text-[#101A2E]">{doctor.name}</p>
-                        <p className="mt-0.5 text-[12.5px] text-[#6C7A90]">
+                        <p className="text-[0.96875rem] font-extrabold tracking-tight text-[#101A2E]">{doctor.name}</p>
+                        <p className="mt-0.5 text-[0.78125rem] text-[#6C7A90]">
                           {doctor.title || 'Specialist'} · {doctor.department}
                         </p>
                       </div>
                       <div className="shrink-0 text-right">
                         <span
-                          className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[12px] font-bold ${
+                          className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[0.75rem] font-bold ${
                             AVAILABILITY_STYLES[status]
                           }`}
                         >
                           <Star size={12} className="fill-current" />
                           {AVAILABILITY_LABELS[status] ?? status}
                         </span>
-                        <p className="mt-1 text-[10.5px] font-semibold text-[#6C7A90]">{doctor.reviews ?? 'Not available'} reviews</p>
+                        <p className="mt-1 text-[0.65625rem] font-semibold text-[#6C7A90]">{doctor.reviews ?? 'Not available'} reviews</p>
                       </div>
                     </div>
 
-                    <div className="mt-2.5 flex flex-wrap items-center gap-2 text-[12.5px] text-[#3A465C]">
+                    <div className="mt-2.5 flex flex-wrap items-center gap-2 text-[0.78125rem] text-[#3A465C]">
                       <span className="inline-flex items-center gap-1 rounded-full bg-[#F4F7FA] px-2.5 py-1 font-semibold text-[#3A465C]">
                         <Building2 size={12} /> {doctor.department}
                       </span>
@@ -277,8 +270,8 @@ export default function DoctorListScreen() {
 
                   <div className="mt-3.5 flex items-center justify-between gap-3 border-t border-[#E6ECF3] px-4 py-3.5">
                     <div className="min-w-0">
-                      <p className="text-[11px] font-bold uppercase tracking-wide text-[#6C7A90]">Experience</p>
-                      <p className={`mt-0.5 text-[13.5px] font-extrabold ${doctor.experienceYears ? 'text-[#101A2E]' : 'text-[#6C7A90]'}`}>
+                      <p className="text-[0.6875rem] font-bold uppercase tracking-wide text-[#6C7A90]">Experience</p>
+                      <p className={`mt-0.5 text-[0.84375rem] font-extrabold ${doctor.experienceYears ? 'text-[#101A2E]' : 'text-[#6C7A90]'}`}>
                         {doctor.experienceYears ? `${doctor.experienceYears} Yrs Exp` : 'Not listed'}
                       </p>
                     </div>

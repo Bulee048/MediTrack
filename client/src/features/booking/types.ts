@@ -23,6 +23,8 @@ export interface BookingAppointment {
   reason?: string;
   status: 'BOOKED' | 'RESCHEDULED' | 'CANCELLED' | 'COMPLETED';
   patientId: string;
+  patientName: string;
+  room?: string;
   familyMemberId?: string;
   createdAt: string;
 }

@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { Doctor, IDoctor, IAvailabilitySlot } from '../models/Doctor.js';
 import { Department } from '../models/Department.js';
 import { AppError } from '../utils/AppError.js';
@@ -113,38 +114,23 @@ export class DoctorService {
     data: UpdateAvailabilityInput
   ): Promise<IDoctor> {
     validateObjectId(id, 'doctor ID');
-    const doctor = await Doctor.findById(id);
-    if (!doctor) {
-      throw new AppError('Doctor not found', 404);
-    }
-
-    if (data.availabilityStatus) {
-      doctor.availabilityStatus = data.availabilityStatus;
-    }
-
-    // Preserve existing bookedCount for matching slots
-    const existingSlotsMap = new Map<string, number>();
-    doctor.availabilitySlots.forEach((slot) => {
-      const key = `${new Date(slot.date).toISOString().split('T')[0]}_${slot.startTime}_${slot.endTime}`;
-      existingSlotsMap.set(key, slot.bookedCount || 0);
+    await mongoose.connection.transaction(async session => {
+      const doctor = await Doctor.findOneAndUpdate({_id:id},{$inc:{__v:1}},{session,new:true});
+      if (!doctor) throw new AppError('Doctor not found',404);
+      if (data.expectedVersion !== undefined && doctor.__v !== data.expectedVersion + 1) throw new AppError('Schedule changed since it was loaded. Reload and try again.',409);
+      const key = (slot: { date: Date; startTime: string; endTime: string }) => `${slot.date.toISOString().slice(0,10)}_${slot.startTime}_${slot.endTime}`;
+      const existing = new Map(doctor.availabilitySlots.map(slot=>[key(slot),slot]));
+      const desired = new Set(data.slots.map(key));
+      for (const slot of doctor.availabilitySlots) if (slot.bookedCount > 0 && !desired.has(key(slot))) throw new AppError('Cannot remove or move a slot with existing bookings',409);
+      const updated: IAvailabilitySlot[] = data.slots.map(slot=>{
+        const bookedCount=existing.get(key(slot))?.bookedCount ?? 0;
+        if(slot.capacity<bookedCount) throw new AppError('Capacity cannot be lower than existing bookings',409);
+        return {...slot,bookedCount};
+      });
+      doctor.availabilitySlots=updated as any;
+      if(data.availabilityStatus)doctor.availabilityStatus=data.availabilityStatus;
+      await doctor.save({session});
     });
-
-    const updatedSlots: IAvailabilitySlot[] = data.slots.map((s) => {
-      const slotDate = new Date(s.date);
-      const key = `${slotDate.toISOString().split('T')[0]}_${s.startTime}_${s.endTime}`;
-      const existingBooked = existingSlotsMap.get(key) || 0;
-
-      return {
-        date: slotDate,
-        startTime: s.startTime,
-        endTime: s.endTime,
-        capacity: s.capacity,
-        bookedCount: existingBooked,
-      };
-    });
-
-    doctor.availabilitySlots = updatedSlots as any;
-    await doctor.save();
-    return (await doctor.populate('department', 'name code roomNumber')) as IDoctor;
+    return (await Doctor.findById(id).populate('department','name code roomNumber'))!;
   }
 }

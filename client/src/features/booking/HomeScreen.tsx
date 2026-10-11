@@ -1,22 +1,24 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Building2, CalendarPlus, Clock3, LayoutGrid, RotateCcw, Search, User2, X } from 'lucide-react';
+import { Bell, Building2, CalendarPlus, Clock3, LayoutGrid, RotateCcw, Search, User2, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { fetchDepartments } from '@/features/doctors/departments.service';
+import { useProfile } from '@/features/profile/context/ProfileContext';
 import type { DoctorDepartment } from '@/features/doctors/types';
 
 const QUICK_ACTIONS = [
   { label: 'Book OPD', icon: CalendarPlus, to: '/app/departments', tone: 'bg-[#ECFDF9] text-[#0E8B7C]' },
-  { label: 'Doctors', icon: Clock3, to: '/app/doctors', tone: 'bg-[#FDECEF] text-[#E8455F]' },
+  { label: 'My Queue', icon: Clock3, to: '/queue', tone: 'bg-[#FDECEF] text-[#E8455F]' },
   { label: 'Departments', icon: LayoutGrid, to: '/app/departments', tone: 'bg-[#EBF2FE] text-[#3B82F6]' },
   { label: 'My Profile', icon: User2, to: '/app/profile', tone: 'bg-[#F3EEFE] text-[#8B5CF6]' },
 ];
 
 export default function HomeScreen() {
   const navigate = useNavigate();
+  const { user } = useProfile();
   const [query, setQuery] = useState('');
   const [departments, setDepartments] = useState<DoctorDepartment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -52,14 +54,14 @@ export default function HomeScreen() {
   }, [departments, query]);
 
   return (
-    <main className="min-h-screen bg-[#F4F7FA] px-4 py-6 sm:px-6">
+    <main data-feature-accessibility className="min-h-screen bg-[#F4F7FA] px-4 py-6 sm:px-6">
       <div className="mx-auto w-full max-w-md space-y-0">
         <div className="flex items-center justify-between pb-3">
           <div>
-            <p className="text-[13px] font-semibold text-[#6C7A90]">Good Morning,</p>
-            <h1 className="mt-0.5 text-[22px] font-extrabold uppercase tracking-tight text-[#101A2E]">Welcome Back</h1>
+            <p className="text-[0.8125rem] font-semibold text-[#6C7A90]">Good Morning,</p>
+            <h1 className="mt-0.5 text-[1.375rem] font-extrabold uppercase tracking-tight text-[#101A2E]">{user?.name || 'Welcome Back'}</h1>
           </div>
-          <button onClick={() => navigate('/app/profile')} aria-label="View account" className="h-11 w-11 rounded-xl border bg-white"><User2 size={20} className="mx-auto" /></button>
+          <button onClick={() => navigate('/notifications')} aria-label="View notifications" className="h-11 w-11 rounded-xl border bg-white"><Bell size={20} className="mx-auto" /></button>
         </div>
 
         <div className="relative mt-2">
@@ -87,13 +89,13 @@ export default function HomeScreen() {
 
         <div className="mt-5 rounded-2xl bg-gradient-to-br from-[#0E8B7C] to-[#0C6F64] p-5 text-white shadow-md">
           <div className="flex items-center justify-between">
-            <span className="text-[10.5px] font-extrabold uppercase tracking-wider text-[#D2F5EE]">Find care faster</span>
-            <span className="text-[11.5px] font-semibold text-white/80">Browse specialties</span>
+            <span className="text-[0.65625rem] font-extrabold uppercase tracking-wider text-[#D2F5EE]">Find care faster</span>
+            <span className="text-[0.71875rem] font-semibold text-white/80">Browse specialties</span>
           </div>
-          <p className="mt-3 text-[17px] font-extrabold leading-snug">
+          <p className="mt-3 text-[1.0625rem] font-extrabold leading-snug">
             Choose a department, then pick the doctor and time that suits you.
           </p>
-          <p className="mt-1 text-[12.5px] text-white/80">Use the departments directory to start booking an OPD visit.</p>
+          <p className="mt-1 text-[0.78125rem] text-white/80">Use the departments directory to start booking an OPD visit.</p>
           <Button
             size="sm"
             className="mt-4 h-11 min-h-[44px] bg-white font-bold text-[#0E8B7C] hover:bg-[#ECFDF9] focus-visible:ring-2 focus-visible:ring-white"
@@ -103,7 +105,7 @@ export default function HomeScreen() {
           </Button>
         </div>
 
-        <h2 className="mt-7 text-[16px] font-extrabold tracking-tight text-[#101A2E]">Quick Actions</h2>
+        <h2 className="mt-7 text-[1rem] font-extrabold tracking-tight text-[#101A2E]">Quick Actions</h2>
         <div className="mt-3 grid grid-cols-2 gap-3">
           {QUICK_ACTIONS.map((action) => (
             <button
@@ -114,16 +116,16 @@ export default function HomeScreen() {
               <span className={`grid h-10 w-10 place-items-center rounded-xl ${action.tone}`}>
                 <action.icon size={19} />
               </span>
-              <span className="text-[13.5px] font-bold text-[#101A2E]">{action.label}</span>
+              <span className="text-[0.84375rem] font-bold text-[#101A2E]">{action.label}</span>
             </button>
           ))}
         </div>
 
         <div className="mt-7 flex items-center justify-between">
-          <h2 className="text-[16px] font-extrabold tracking-tight text-[#101A2E]">Nearby Specialties</h2>
+          <h2 className="text-[1rem] font-extrabold tracking-tight text-[#101A2E]">Nearby Specialties</h2>
           <button
             onClick={() => navigate('/app/departments')}
-            className="inline-flex min-h-[44px] items-center px-2 text-[12.5px] font-bold text-[#0E8B7C] hover:text-[#0C6F64] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16A794] rounded-lg"
+            className="inline-flex min-h-[44px] items-center px-2 text-[0.78125rem] font-bold text-[#0E8B7C] hover:text-[#0C6F64] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16A794] rounded-lg"
           >
             View All
           </button>
@@ -156,8 +158,8 @@ export default function HomeScreen() {
           </div>
         ) : results.length === 0 ? (
           <div className="mt-3 rounded-2xl border border-dashed border-[#E6ECF3] bg-white/70 p-6 text-center">
-            <p className="text-[14px] font-bold text-[#101A2E]">No specialties match your search</p>
-            <p className="mt-1 text-[12.5px] text-[#6C7A90]">Try a different keyword or browse all departments.</p>
+            <p className="text-[0.875rem] font-bold text-[#101A2E]">No specialties match your search</p>
+            <p className="mt-1 text-[0.78125rem] text-[#6C7A90]">Try a different keyword or browse all departments.</p>
             <Button
               size="sm"
               variant="outline"
@@ -181,14 +183,14 @@ export default function HomeScreen() {
                 <span className="grid h-11 w-11 place-items-center rounded-xl bg-[#ECFDF9] text-[#0E8B7C]">
                   <Building2 size={20} />
                 </span>
-                <span className="text-[12px] font-bold leading-tight text-[#101A2E]">{department.name}</span>
-                <span className="text-[10.5px] font-medium text-[#6C7A90]">{department.code}</span>
+                <span className="text-[0.75rem] font-bold leading-tight text-[#101A2E]">{department.name}</span>
+                <span className="text-[0.65625rem] font-medium text-[#6C7A90]">{department.code}</span>
               </button>
             ))}
           </div>
         )}
 
-        <div className="mt-6 flex items-center justify-center gap-2 text-[11.5px] text-[#6C7A90]">
+        <div className="mt-6 flex items-center justify-center gap-2 text-[0.71875rem] text-[#6C7A90]">
           <Badge variant="secondary" className="border-[#2FBF71]/30 bg-[#E8F9F0] text-[#2FBF71]">
             Live directory
           </Badge>
