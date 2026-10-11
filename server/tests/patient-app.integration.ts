@@ -1,3 +1,4 @@
+import {databaseLookup} from '../src/config/databaseLookup.js';
 import { hospitalDate } from '../src/utils/hospitalDate.js';
 import 'dotenv/config';
 import assert from 'node:assert/strict';
@@ -42,7 +43,7 @@ async function main() {
   }
   const check = (condition: unknown, message: string) => { assert.ok(condition, message); checks++; console.log(`PASS ${message}`); };
   try {
-    await mongoose.connect(env.MONGODB_URI, { serverSelectionTimeoutMS: 20000, ...(env.MONGODB_DB_NAME ? {dbName:env.MONGODB_DB_NAME} : {}) });
+    await mongoose.connect(env.MONGODB_URI, { lookup: databaseLookup, serverSelectionTimeoutMS: 20000, ...(env.MONGODB_DB_NAME ? {dbName:env.MONGODB_DB_NAME} : {}) });
     for (const [index, phone] of phones.entries()) {
       const registered = await request('/auth/register', '', 'POST', { name: `Integration Patient ${index + 1}`, phone, password });
       if (registered.body?.data?.user?.id) ownerIds.push(new mongoose.Types.ObjectId(registered.body.data.user.id));
@@ -138,6 +139,7 @@ async function main() {
     check((await request(`/queue/${tickets[2]._id}/hold`, staff, 'PATCH')).status === 200, 'waiting hold');
     check((await request(`/queue/${tickets[3]._id}/skip`, staff, 'PATCH')).status === 200, 'waiting skip');
     check((await request('/queue/me', c)).body.data.ticket.currentPosition === 0, 'held ticket excluded from positions');
+    const staffLive=(await request(`/queue?doctorId=${doctorId}`,staff)).body.data.tickets;check(staffLive.find((t:{_id:string})=>t._id===String(tickets[1]._id)).currentPosition===1&&staffLive.filter((t:{status:string})=>['COMPLETED','HELD','SKIPPED'].includes(t.status)).every((t:{currentPosition:number})=>t.currentPosition===0),'staff queue recalculates live positions after transitions');
     check((await request('/queue/me', d)).body.data.ticket.status === 'SKIPPED', 'skipped state retained');
     check((await QueueTicket.findById(ticketA._id))?.ticketNumber === ticketA.ticketNumber, 'ticket number stable through transitions');
     check(await Notification.countDocuments({ user: ownerIds[0], category: 'YOUR_TURN' }) === 1, 'one your-turn notification');
@@ -157,6 +159,10 @@ async function main() {
     const cancellations = await Promise.all([request(`/appointments/${familyAppointmentId}/cancel`, a, 'PATCH'), request(`/appointments/${familyAppointmentId}/cancel`, a, 'PATCH')]);
     check(cancellations.map(item => item.status).sort().join(',') === '200,409', 'cancel duplicate guarded');
     check(await Notification.countDocuments({ appointment: familyAppointmentId, category: 'APPOINTMENT_CANCELLED' }) === 1, 'cancel notification deduplicated by successful transaction');
+    const familyToday=await book(a,'16:00',today,familyId);check(familyToday.status===201,'same-day caregiver booking persists');
+    const familyTicket=await request('/queue/check-in',a,'POST',{appointmentId:familyToday.body.data.appointment._id});check(familyTicket.status===201,'caregiver appointment uses official check-in');
+    const familyStaffList=(await request(`/queue?doctorId=${doctorId}`,staff)).body.data.tickets;
+    check(familyStaffList.find((t:{_id:string})=>t._id===familyTicket.body.data.ticket._id).appointment.familyMember.name==='Integration Caregiver Edited','staff queue identifies caregiver rather than account owner');
     await QueueTicket.deleteOne({ _id: old._id });
     console.log(`RESULT ${checks} patient application API/Atlas assertions passed`);
     if (process.env.BROWSER_FIXTURE_PATH) {

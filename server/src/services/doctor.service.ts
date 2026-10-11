@@ -27,7 +27,7 @@ export class DoctorService {
     }
 
     if (params.search && params.search.trim()) {
-      const regex = new RegExp(params.search.trim(), 'i');
+      const regex = new RegExp(params.search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
       filter.$or = [{ name: regex }, { title: regex }, { roomNumber: regex }];
     }
 

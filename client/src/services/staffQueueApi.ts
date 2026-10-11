@@ -46,6 +46,7 @@ export interface StaffQueueListTicket extends Omit<StaffQueueTicket, 'patient' |
     appointmentDate: string;
     timeSlot: string;
     reason?: string;
+    familyMember?: {_id:string;name:string;relationship:string}|null;
   } | null;
 }
 

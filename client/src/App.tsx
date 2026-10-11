@@ -235,7 +235,7 @@ export default function App() {
               <Route path="/" element={<Home />} />
               <Route path="/login" element={<LoginScreen />} />
               <Route path="/staff/login" element={<LoginScreen staff />} />
-              <Route path="/staff" element={<StaffDashboard />} />
+              <Route path="/staff/*" element={<StaffDashboard />} />
               <Route path="/register" element={<RegisterScreen />} />
               <Route element={<ProfileProvider><PatientShell /></ProfileProvider>}>
               <Route path="/app" element={<Navigate to="/app/appointments" replace />} />

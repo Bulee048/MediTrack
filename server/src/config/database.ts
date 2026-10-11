@@ -1,10 +1,11 @@
+import { databaseLookup } from './databaseLookup.js';
 import mongoose from 'mongoose';
 import dns from 'node:dns';
 import { env } from './env.js';
 
 // Set public DNS servers to resolve MongoDB Atlas SRV records reliably on Windows
 try {
-  dns.setServers(['8.8.8.8', '8.8.4.4', '1.1.1.1']);
+  if(process.env.TEST_DNS_SERVERS)dns.setServers(process.env.TEST_DNS_SERVERS.split(','));
 } catch {
   // Fallback to default DNS configuration
 }
@@ -12,7 +13,7 @@ try {
 export async function connectDatabase(): Promise<typeof mongoose> {
   if (env.NODE_ENV === 'production' && env.MONGODB_DB_NAME) throw new Error('Demo database cannot be used in production mode');
   try {
-    const conn = await mongoose.connect(env.MONGODB_URI, env.MONGODB_DB_NAME ? {dbName:env.MONGODB_DB_NAME} : {});
+    const conn = await mongoose.connect(env.MONGODB_URI, { ...(env.MONGODB_DB_NAME ? {dbName:env.MONGODB_DB_NAME} : {}), lookup: databaseLookup });
     console.log(`[Database] MongoDB connected successfully to host: ${conn.connection.host}`);
     return conn;
   } catch (error: unknown) {

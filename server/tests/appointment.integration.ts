@@ -1,3 +1,4 @@
+import {databaseLookup} from '../src/config/databaseLookup.js';
 import 'dotenv/config';
 import assert from 'node:assert/strict';
 import { randomUUID, randomBytes } from 'node:crypto';
@@ -38,7 +39,7 @@ async function main() {
   }
   function check(condition: unknown, name: string) { assert.ok(condition, name); checks++; console.log(`PASS ${name}`); }
   try {
-    await mongoose.connect(env.MONGODB_URI, { serverSelectionTimeoutMS: 20000, ...(env.MONGODB_DB_NAME ? {dbName:env.MONGODB_DB_NAME} : {}) });
+    await mongoose.connect(env.MONGODB_URI, { lookup: databaseLookup, serverSelectionTimeoutMS: 20000, ...(env.MONGODB_DB_NAME ? {dbName:env.MONGODB_DB_NAME} : {}) });
     const address = server.address();
     assert.ok(address && typeof address !== 'string');
     base = `http://127.0.0.1:${address.port}`;

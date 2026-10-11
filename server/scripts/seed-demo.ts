@@ -1,3 +1,4 @@
+import {databaseLookup} from '../src/config/databaseLookup.js';
 import 'dotenv/config';
 
 import mongoose from 'mongoose';
@@ -83,7 +84,7 @@ async function main() {
 
   if (process.env.TEST_DNS_SERVERS) setServers(process.env.TEST_DNS_SERVERS.split(','));
 
-  await mongoose.connect(env.MONGODB_URI,{dbName:'meditrack_demo',serverSelectionTimeoutMS:20000});
+  await mongoose.connect(env.MONGODB_URI,{dbName:'meditrack_demo',serverSelectionTimeoutMS:20000,lookup:databaseLookup});
 
   if (mongoose.connection.name !== 'meditrack_demo') throw new Error('Isolated demo database verification failed');
 

@@ -265,25 +265,13 @@ export class AppointmentService {
       throw new AppError('Appointment not found', 404);
     }
 
-    // Check invalid transitions
-    if (appointment.status === 'CANCELLED' && newStatus !== 'CANCELLED') {
-      throw new AppError('Cannot update status of a cancelled appointment', 400);
+    // Reuse authoritative workflows: raw status writes must not bypass slot capacity or queue guards.
+    if (newStatus === 'CANCELLED') return this.cancelAppointment(appointmentId, appointment.patient.toString());
+    if (newStatus === 'COMPLETED' && appointment.queueTicket) {
+      const { QueueService } = await import('./queue.service.js');
+      await QueueService.completeConsultation(appointment.queueTicket.toString());
+      return (await Appointment.findById(appointmentId).populate('patient', 'name email phone').populate('doctor', 'name title roomNumber'))!;
     }
-
-    if (appointment.status === 'COMPLETED' && newStatus !== 'COMPLETED') {
-      throw new AppError('Cannot change status of a completed appointment', 400);
-    }
-
-    appointment.status = newStatus;
-    await appointment.save();
-
-    return (await Appointment.findById(appointment._id)
-      .populate('patient', 'name email phone')
-      .populate('familyMember', 'name relationship phone')
-      .populate({
-        path: 'doctor',
-        select: 'name title roomNumber consultationFee department',
-        populate: { path: 'department', select: 'name code roomNumber' },
-      })) as IAppointment;
+    throw new AppError('Use booking/rescheduling or the valid consultation workflow to change appointment state', 409);
   }
 }

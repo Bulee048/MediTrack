@@ -1,3 +1,4 @@
+import {databaseLookup} from '../src/config/databaseLookup.js';
 import 'dotenv/config';
 import assert from 'node:assert/strict';
 import mongoose from 'mongoose';
@@ -17,7 +18,7 @@ const check=(condition:unknown,message:string)=>{assert.ok(condition,message);ch
 async function main(){
   if(process.env.RUN_ATLAS_TESTS!=='true'||env.MONGODB_DB_NAME!=='meditrack_demo'||env.NODE_ENV==='production')throw new Error('Require explicit isolated demo Atlas test configuration');
   if(process.env.TEST_DNS_SERVERS)setServers(process.env.TEST_DNS_SERVERS.split(','));
-  await mongoose.connect(env.MONGODB_URI,{dbName:'meditrack_demo',serverSelectionTimeoutMS:20000});
+  await mongoose.connect(env.MONGODB_URI,{dbName:'meditrack_demo',serverSelectionTimeoutMS:20000,lookup:databaseLookup});
   const run = (now: Date) => ReminderService.run(now, String(userId));
   try{
     await User.create({_id:userId,name:'Reminder Test',phone:`test-${userId}`,role:'PATIENT',isActive:true});

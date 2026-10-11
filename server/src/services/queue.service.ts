@@ -195,12 +195,21 @@ export class QueueService {
       filter.status = params.status;
     }
 
-    return await QueueTicket.find(filter)
+    const tickets = await QueueTicket.find(filter)
       .populate('patient', 'name email phone nic')
       .populate('doctor', 'name title roomNumber')
       .populate('department', 'name code roomNumber')
-      .populate('appointment', 'appointmentDate timeSlot reason')
+      .populate({path:'appointment',select:'appointmentDate timeSlot reason familyMember',populate:{path:'familyMember',select:'name relationship'}})
       .sort({ sequenceNumber: 1 });
+    // Recalculate positions from the complete waiting scope, even when the
+    // requested list filters out some statuses. Keep stored status unchanged:
+    // ALMOST_TURN persistence and notification creation belong to queue/me.
+    await Promise.all(tickets.map(async ticket => {
+      const live = await QueueCalculationService.calculateLiveQueueState(ticket);
+      ticket.currentPosition = live.currentPosition;
+      ticket.estimatedWaitMins = live.estimatedWaitMins;
+    }));
+    return tickets;
   }
 
   /**

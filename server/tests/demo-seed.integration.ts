@@ -1,3 +1,4 @@
+import {databaseLookup} from '../src/config/databaseLookup.js';
 import 'dotenv/config';
 import assert from 'node:assert/strict';
 import mongoose from 'mongoose';
@@ -17,7 +18,7 @@ async function invoke(extra:NodeJS.ProcessEnv,args:string[]=[]){
 async function snapshot(){return JSON.stringify({users:await User.find({email:{$regex:'^demo\\.'}}).sort('_id').lean(),doctors:await Doctor.find({_id:{$in:Array.from({length:16},(_,i)=>id(`doctor:${i}`))}}).sort('_id').lean(),appointments:await Appointment.find({patient:{$in:patients}}).sort('_id').lean(),tickets:await QueueTicket.find({patient:{$in:patients}}).sort('_id').lean()});}
 async function main(){
  if(process.env.RUN_ATLAS_TESTS!=='true'||env.MONGODB_DB_NAME!=='meditrack_demo'||env.NODE_ENV==='production')throw new Error('Explicit isolated demo test opt-in required');
- if(process.env.TEST_DNS_SERVERS)setServers(process.env.TEST_DNS_SERVERS.split(','));await mongoose.connect(env.MONGODB_URI,{dbName:'meditrack_demo',serverSelectionTimeoutMS:20000});
+ if(process.env.TEST_DNS_SERVERS)setServers(process.env.TEST_DNS_SERVERS.split(','));await mongoose.connect(env.MONGODB_URI,{dbName:'meditrack_demo',serverSelectionTimeoutMS:20000,lookup:databaseLookup});
  try{
  assert.equal(await User.countDocuments({_id:{$in:patients},role:'PATIENT'}),10);assert.equal(await User.countDocuments({role:'STAFF',email:{$regex:'^demo\\.'}}),4);assert.equal(await User.countDocuments({role:'ADMIN',email:{$regex:'^demo\\.'}}),1);assert.equal(await Doctor.countDocuments({_id:{$in:Array.from({length:16},(_,i)=>id(`doctor:${i}`))}}),16);console.log('PASS account and doctor counts');
  const states=await QueueTicket.distinct('status',{patient:{$in:patients}});for(const status of ['WAITING','ALMOST_TURN','CALLING','IN_CONSULTATION','HELD','SKIPPED','COMPLETED'])assert.ok(states.includes(status),`Missing ${status}`);console.log('PASS representative valid queue states');

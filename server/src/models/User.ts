@@ -18,6 +18,7 @@ export interface IUser extends Document {
   gender?: string;
   address?: string;
   notificationPreferences?: NotificationPreferences;
+  staffPreferences?: { refreshSeconds: 15 | 30 | 60; showCompletedTickets: boolean };
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -77,6 +78,7 @@ const userSchema = new Schema<IUser>(
       trim: true,
     },
     notificationPreferences: { type: new Schema({ inAppAlerts:{type:Boolean,default:true}, queueAlerts:{type:Boolean,default:true}, promoEmailOptIn:{type:Boolean,default:false}, reminders:{type:Boolean,default:true}, reminderOffset:{type:String,enum:['30m','1h','1d'],default:'1h'} },{_id:false}), default:()=>({}) },
+    staffPreferences: { type: new Schema({ refreshSeconds: { type: Number, enum: [15, 30, 60], default: 15 }, showCompletedTickets: { type: Boolean, default: true } }, { _id: false }), default: () => ({}) },
     isActive: {
       type: Boolean,
       default: true,

@@ -214,7 +214,7 @@ export default function SelectTimeScreen() {
             <div className="flex items-center justify-between gap-3">
               <div>
                 <h2 className="text-[0.875rem] font-extrabold text-[#101A2E]">Available Slots</h2>
-                <p className="mt-0.5 text-[0.75rem] text-[#6C7A90]">{topDay.capacityLeft} slots remain open today</p>
+                <p className="mt-0.5 text-[0.75rem] text-[#6C7A90]">{topDay.capacityLeft} slots remain open on this date</p>
               </div>
               <span className="rounded-full bg-[#F4F7FA] px-2.5 py-1 text-[0.6875rem] font-bold text-[#3A465C]">
                 {topDay.totalCapacity} total

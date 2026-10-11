@@ -39,7 +39,7 @@ export const slotSchema = z.object({
 export const updateAvailabilitySchema = z.object({
   expectedVersion: z.number().int().min(0).optional(),
   availabilityStatus: z.enum(['AVAILABLE', 'LIMITED', 'UNAVAILABLE']).optional(),
-  slots: z.array(slotSchema).refine(slots=>new Set(slots.map(s=>`${s.date.toISOString().slice(0,10)}_${s.startTime}`)).size===slots.length,'Duplicate slot start time'),
+  slots: z.array(slotSchema).refine(slots=>new Set(slots.map(s=>`${s.date.toISOString().slice(0,10)}_${s.startTime}`)).size===slots.length,'Duplicate slot start time').refine(slots => slots.every((slot, index) => slots.slice(index + 1).every(other => slot.date.toISOString().slice(0,10) !== other.date.toISOString().slice(0,10) || slot.endTime <= other.startTime || other.endTime <= slot.startTime)), 'Schedule slots cannot overlap'),
 });
 
 export type CreateDoctorInput = z.infer<typeof createDoctorSchema>;
