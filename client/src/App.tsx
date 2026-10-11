@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter, Routes, Route, Link, Navigate } from 'react-router-dom';
 import { Toaster } from '@/components/ui/sonner';
+import StaffDashboard from '@/features/staff/StaffDashboard';
 import LoginScreen from '@/features/auth/LoginScreen';
 import RegisterScreen from '@/features/auth/RegisterScreen';
 import HomeScreen from '@/features/booking/HomeScreen';
@@ -69,12 +70,13 @@ function Home() {
             </div>
           </div>
           <Badge className="bg-brand-50 text-brand-700 border-brand-200 text-sm px-3 py-1">
-            System Online
+            Patient &amp; Staff Portals
           </Badge>
         </header>
 
         <nav aria-label="Patient account access" className="flex flex-wrap gap-4">
           <Link to="/login" className="font-bold text-brand-700 underline">Sign in</Link>
+          <Link to="/staff/login" className="font-bold text-brand-700 underline">Staff portal</Link>
           <Link to="/register" className="font-bold text-brand-700 underline">Register</Link>
           <Link to="/app/home" className="font-bold text-brand-700 underline">Patient home</Link>
         </nav>
@@ -232,6 +234,8 @@ export default function App() {
               {/* Landing & Home */}
               <Route path="/" element={<Home />} />
               <Route path="/login" element={<LoginScreen />} />
+              <Route path="/staff/login" element={<LoginScreen staff />} />
+              <Route path="/staff" element={<StaffDashboard />} />
               <Route path="/register" element={<RegisterScreen />} />
               <Route element={<ProfileProvider><PatientShell /></ProfileProvider>}>
               <Route path="/app" element={<Navigate to="/app/appointments" replace />} />

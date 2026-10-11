@@ -11,6 +11,7 @@ import { User } from '../src/models/User.js';
 import { Doctor } from '../src/models/Doctor.js';
 import { Department } from '../src/models/Department.js';
 import { FamilyMember } from '../src/models/FamilyMember.js';
+import { AppointmentReminder } from '../src/models/AppointmentReminder.js';
 import { Notification } from '../src/models/Notification.js';
 import { Appointment } from '../src/models/Appointment.js';
 
@@ -37,7 +38,7 @@ async function main() {
   }
   function check(condition: unknown, name: string) { assert.ok(condition, name); checks++; console.log(`PASS ${name}`); }
   try {
-    await mongoose.connect(env.MONGODB_URI, { serverSelectionTimeoutMS: 20000 });
+    await mongoose.connect(env.MONGODB_URI, { serverSelectionTimeoutMS: 20000, ...(env.MONGODB_DB_NAME ? {dbName:env.MONGODB_DB_NAME} : {}) });
     const address = server.address();
     assert.ok(address && typeof address !== 'string');
     base = `http://127.0.0.1:${address.port}`;
@@ -140,6 +141,7 @@ async function main() {
     }
   } finally {
     if (mongoose.connection.readyState === 1) {
+      await AppointmentReminder.deleteMany({ user: { $in: ids.slice(0, 2) } });
       await Notification.deleteMany({ user: { $in: ids.slice(0, 2) } });
       assert.equal(await Notification.countDocuments({ user: { $in: ids.slice(0, 2) } }), 0);
       await Appointment.deleteMany({ patient: { $in: ids.slice(0, 2) } });

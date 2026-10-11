@@ -15,3 +15,10 @@ export async function fetchCurrentUser() {
 }
 export function logoutPatient() { clearAuthToken(); }
 export function buildLoginInput(identifier: string, password: string) { return getLoginPayload(identifier, password); }
+
+export async function loginStaff(input: LoginInput) {
+  const session = await loginPatientAccount(input);
+  if (!['STAFF', 'ADMIN'].includes(session.user.role)) throw new Error('Sign in with a staff or admin account');
+  setAuthToken(session.token);
+  return session;
+}

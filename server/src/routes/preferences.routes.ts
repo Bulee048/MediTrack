@@ -1,0 +1,12 @@
+import { Router } from 'express';
+import { z } from 'zod';
+import { authenticate } from '../middleware/auth.middleware.js';
+import { authorizeRoles } from '../middleware/role.middleware.js';
+import { validateBody } from '../middleware/validate.middleware.js';
+import { getPreferences, updatePreferences } from '../controllers/preferences.controller.js';
+const router = Router();
+const schema = z.object({ inAppAlerts: z.boolean().optional(), queueAlerts: z.boolean().optional(), promoEmailOptIn: z.boolean().optional(), reminders: z.boolean().optional(), reminderOffset: z.enum(['30m','1h','1d']).optional() }).strict().refine(value => Object.keys(value).length > 0, 'Provide a preference');
+router.use(authenticate, authorizeRoles('PATIENT'));
+router.get('/', getPreferences);
+router.patch('/', validateBody(schema), updatePreferences);
+export default router;

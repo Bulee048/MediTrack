@@ -30,6 +30,8 @@ export function applyAccessibilityToDOM(settings: Settings) {
 
   document.documentElement.toggleAttribute('data-reduced-motion', settings.reducedMotion);
   document.documentElement.toggleAttribute('data-high-contrast', settings.highContrast);
+  document.documentElement.toggleAttribute('data-screen-reader-announcements', settings.screenReader);
+  document.documentElement.toggleAttribute('data-screen-reader-announcements', settings.screenReader);
   // Apply high contrast
   if (settings.highContrast) {
     document.body.setAttribute('data-contrast', 'high');

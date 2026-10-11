@@ -8,6 +8,7 @@ export interface NotificationData {
   title: string;
   message: string;
   category:
+    | 'APPOINTMENT_REMINDER'
     | 'APPOINTMENT_CREATED'
     | 'APPOINTMENT_UPDATED'
     | 'APPOINTMENT_CANCELLED'

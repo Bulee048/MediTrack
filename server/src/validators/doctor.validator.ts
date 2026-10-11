@@ -27,18 +27,19 @@ export const updateDoctorSchema = z.object({
 });
 
 export const slotSchema = z.object({
-  date: z.string().or(z.date()).transform((val) => new Date(val)),
-  startTime: z.string().trim().min(1, 'Start time is required'),
-  endTime: z.string().trim().min(1, 'End time is required'),
-  capacity: z.number().min(0, 'Capacity cannot be negative'),
+  date: z.string().or(z.date()).transform((val) => new Date(val)).refine(value=>!Number.isNaN(value.getTime()),'Invalid date'),
+  startTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Use HH:MM'),
+  endTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Use HH:MM'),
+  capacity: z.number().int().min(0, 'Capacity cannot be negative'),
 }).refine((data) => data.startTime < data.endTime, {
   message: 'End time must be later than start time',
   path: ['endTime'],
 });
 
 export const updateAvailabilitySchema = z.object({
+  expectedVersion: z.number().int().min(0).optional(),
   availabilityStatus: z.enum(['AVAILABLE', 'LIMITED', 'UNAVAILABLE']).optional(),
-  slots: z.array(slotSchema),
+  slots: z.array(slotSchema).refine(slots=>new Set(slots.map(s=>`${s.date.toISOString().slice(0,10)}_${s.startTime}`)).size===slots.length,'Duplicate slot start time'),
 });
 
 export type CreateDoctorInput = z.infer<typeof createDoctorSchema>;

@@ -1,5 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { env } from '../config/env.js';
+import staffRoutes from './staff.routes.js';
+import preferencesRoutes from './preferences.routes.js';
 import authRoutes from './auth.routes.js';
 import familyRoutes from './family.routes.js';
 import departmentRoutes from './department.routes.js';
@@ -24,6 +26,8 @@ router.get('/health', (_req: Request, res: Response) => {
 });
 
 // Mounted module routes
+router.use('/staff',staffRoutes);
+router.use('/preferences',preferencesRoutes);
 router.use('/auth', authRoutes);
 router.use('/family-members', familyRoutes);
 router.use('/departments', departmentRoutes);

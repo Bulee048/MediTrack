@@ -39,3 +39,6 @@ Thumbs.db
 
 # Read-only reference project
 /app/
+
+# Development-only generated demo credentials
+.demo/

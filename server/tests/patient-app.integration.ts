@@ -15,6 +15,7 @@ import { Appointment } from '../src/models/Appointment.js';
 import { FamilyMember } from '../src/models/FamilyMember.js';
 import { QueueTicket } from '../src/models/QueueTicket.js';
 import { QueueCounter } from '../src/models/QueueCounter.js';
+import { AppointmentReminder } from '../src/models/AppointmentReminder.js';
 import { Notification } from '../src/models/Notification.js';
 
 async function main() {
@@ -41,7 +42,7 @@ async function main() {
   }
   const check = (condition: unknown, message: string) => { assert.ok(condition, message); checks++; console.log(`PASS ${message}`); };
   try {
-    await mongoose.connect(env.MONGODB_URI, { serverSelectionTimeoutMS: 20000 });
+    await mongoose.connect(env.MONGODB_URI, { serverSelectionTimeoutMS: 20000, ...(env.MONGODB_DB_NAME ? {dbName:env.MONGODB_DB_NAME} : {}) });
     for (const [index, phone] of phones.entries()) {
       const registered = await request('/auth/register', '', 'POST', { name: `Integration Patient ${index + 1}`, phone, password });
       if (registered.body?.data?.user?.id) ownerIds.push(new mongoose.Types.ObjectId(registered.body.data.user.id));
@@ -166,6 +167,7 @@ async function main() {
     }
   } finally {
     if (mongoose.connection.readyState === 1) {
+      await AppointmentReminder.deleteMany({ user: { $in: ownerIds } });
       await Notification.deleteMany({ user: { $in: ownerIds } });
       await QueueTicket.deleteMany({ patient: { $in: ownerIds } });
       await QueueCounter.deleteMany({ scopeKey: { $in: [today, future].map(day => `DEPT:${code}:${day}`) } });

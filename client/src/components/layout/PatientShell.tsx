@@ -1,3 +1,7 @@
+import { useAccessibility } from '@/features/accessibility/context/AccessibilityContext';
+import { useState } from 'react';
+import { InAppAlerts } from '@/features/notifications/InAppAlerts';
+import { useEffect } from 'react';
 import { BookingPatientProvider } from '@/features/family/context/BookingPatientContext';
 import { NavLink, Navigate, Outlet, useLocation } from 'react-router-dom';
 import { CalendarDays, Home, User, Users, Clock3 } from 'lucide-react';
@@ -11,14 +15,24 @@ const links = [
   { to: '/app/profile', label: 'Profile', icon: User },
 ];
 export default function PatientShell() {
+  const { settings } = useAccessibility();
+  const [pageAnnouncement, setPageAnnouncement] = useState('');
   const session = useAuthSession();
   const location = useLocation();
   const { user, loading, error, refreshProfile } = useProfile();
+  useEffect(() => {
+    const content = document.getElementById('patient-content'); content?.focus();
+    const announce = () => setPageAnnouncement(settings.screenReader ? (content?.querySelector('h1')?.textContent ?? '') : '');
+    announce();
+    if (!content || !settings.screenReader) return;
+    const observer = new MutationObserver(announce); observer.observe(content, { childList: true, subtree: true, characterData: true });
+    return () => observer.disconnect();
+  }, [location.pathname, settings.screenReader, loading]);
   if (!getAccessToken()) return <Navigate to="/login" state={{ from: location.pathname }} replace />;
   if (loading || !user) return <main className="min-h-svh bg-canvas p-5"><p role={loading ? 'status' : 'alert'}>{loading ? 'Loading patient account…' : error}</p>{!loading && <button type="button" onClick={() => void refreshProfile()}>Try again</button>}</main>;
   if (user.role !== 'PATIENT') return <main><p role="alert">This portal is for patient accounts.</p></main>;
   return (
-    <BookingPatientProvider key={session}><div className="flex h-svh flex-col bg-canvas">
+    <BookingPatientProvider key={session}><InAppAlerts /><p className="sr-only" role="status" aria-live="polite">{pageAnnouncement}</p><div className="flex h-svh flex-col bg-canvas">
       <a href="#patient-content" className="sr-only focus:not-sr-only focus:p-3">Skip to content</a>
       <div id="patient-content" tabIndex={-1} className="min-h-0 min-w-0 flex-1 overflow-y-auto"><Outlet key={session} /></div>
       <nav aria-label="Patient navigation" className="z-40 shrink-0 border-t border-line bg-white pb-[env(safe-area-inset-bottom)]">

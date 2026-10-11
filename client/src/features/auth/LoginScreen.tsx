@@ -9,10 +9,10 @@ import { Label } from '@/components/ui/label';
 import { setAuthToken } from './auth.storage';
 import { AuthShell } from './AuthShell';
 import { loginFormSchema, type LoginFormValues } from './auth.schemas';
-import { buildLoginInput, loginPatient } from './auth.service';
+import { buildLoginInput, loginPatient, loginStaff } from './auth.service';
 import { getAuthErrorMessage } from './auth.utils';
 
-export default function LoginScreen() {
+export default function LoginScreen({ staff = false }: { staff?: boolean }) {
   const [showPassword, setShowPassword] = useState(false);
 
   const {
@@ -27,10 +27,10 @@ export default function LoginScreen() {
   });
 
   const login = useMutation({
-    mutationFn: loginPatient,
+    mutationFn: staff ? loginStaff : loginPatient,
     onSuccess: (response) => {
       setAuthToken(response.token);
-      window.location.assign('/app/home');
+      window.location.assign(staff ? '/staff' : '/app/home');
     },
     onError: (error) => {
       setError('root', { message: getAuthErrorMessage(error, 'Unable to sign in') });
@@ -43,9 +43,10 @@ export default function LoginScreen() {
 
   return (
     <AuthShell
-      title="Welcome Back"
+      accountTitle={staff ? "Staff Account" : "Patient Account"}
+      title={staff ? "Staff Sign In" : "Welcome Back"}
       description="Enter your email or phone number to continue securely."
-      footer={
+      footer={staff ? <a href="/login">Patient sign in</a> :
         <>
           New here?{' '}
           <a

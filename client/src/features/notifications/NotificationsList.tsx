@@ -15,6 +15,7 @@ const categories = {
   QUEUE_UPDATE: { group: 'queue', label: 'Queue update', icon: Clock3, tone: 'bg-sky-50 text-sky-700' },
   ALMOST_TURN: { group: 'queue', label: 'Almost your turn', icon: Bell, tone: 'bg-amber-50 text-amber-800' },
   YOUR_TURN: { group: 'queue', label: 'Your turn', icon: CheckCircle2, tone: 'bg-teal-100 text-teal-800' },
+  APPOINTMENT_REMINDER: { group: 'appointment', label: 'Appointment reminder', icon: Bell, tone: 'bg-amber-50 text-amber-800' },
   APPOINTMENT_CREATED: { group: 'appointment', label: 'Appointment created', icon: CalendarDays, tone: 'bg-sky-50 text-sky-700' },
   APPOINTMENT_UPDATED: { group: 'appointment', label: 'Appointment updated', icon: CalendarDays, tone: 'bg-sky-50 text-sky-700' },
   APPOINTMENT_CANCELLED: { group: 'appointment', label: 'Appointment cancelled', icon: CalendarDays, tone: 'bg-slate-100 text-slate-700' },

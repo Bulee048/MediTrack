@@ -235,7 +235,10 @@ main { overflow-wrap: anywhere; }
 }
 [data-high-contrast] [data-feature-accessibility] :focus-visible { outline-color: #000; }
 
-[data-high-contrast] [data-feature-accessibility] [class*="text-[#"] { color: #111827; }
+[data-high-contrast] :is(input, select, textarea) { background-color: #fff; color: #111827; border-color: #111827; }
+[data-high-contrast] [data-feature-accessibility] :is(.text-slate-400, .text-slate-500, .text-slate-600, .text-ink-soft) { color: #111827; }
+[data-high-contrast] [data-feature-accessibility] .text-white { color: #fff; }
+[data-high-contrast] :is(dialog, [role='dialog'], [role='alertdialog']) { background: #fff; color: #111827; border: 2px solid #111827; }
 
 [data-feature-accessibility] .bg-destructive { background: #9b1235; color: white; }
 [data-feature-accessibility] .bg-primary { background: var(--color-brand-700); color: white; }

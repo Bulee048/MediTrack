@@ -1,8 +1,20 @@
+import { Appointment } from '../models/Appointment.js';
+import { AppError } from '../utils/AppError.js';
 import { Request, Response, NextFunction } from 'express';
 import { QueueService } from '../services/queue.service.js';
 import { checkInSchema } from '../validators/queue.validator.js';
 
 export class QueueController {
+  static async staffCheckIn(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const validated = checkInSchema.parse(req.body);
+      const appointment = await Appointment.findById(validated.appointmentId);
+      if (!appointment) throw new AppError('Appointment not found', 404);
+      const ticket = await QueueService.checkIn(String(appointment.patient), validated.appointmentId);
+      res.status(201).json({ success: true, data: { ticket }, message: 'Patient checked in' });
+    } catch (error) { next(error); }
+  }
+
   static async getMyActiveTicket(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const patientId = req.user!.id;

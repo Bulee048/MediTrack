@@ -48,7 +48,8 @@ test('checked-in marker prevents treating appointment as freely editable', () =>
 const storage = new Map();
 globalThis.localStorage = { getItem: key => storage.get(key) ?? null, setItem: (key, value) => storage.set(key, value) };
 test('device accessibility preferences persist and unsupported account features reject', async () => {
-  const updated = await localAccessibilityPreferences.updateSettings({ textSize: 'large', highContrast: true, reducedMotion: true });
+  const updated = await localAccessibilityPreferences.updateSettings({ textSize: 'large', highContrast: true, reducedMotion: true, screenReader: true });
+  assert.equal((await localAccessibilityPreferences.getSettings()).screenReader, true);
   assert.equal(updated.textSize, 'large'); assert.equal((await localAccessibilityPreferences.getSettings()).highContrast, true);
   await assert.rejects(localAccessibilityPreferences.updateSettings({ push: true }), /not supported/);
   storage.set('meditrack.localAccessibilityPreferences', '{bad');
@@ -76,6 +77,17 @@ test('one token store advances session/cache boundary on login, switch and logou
   assert.equal(events.length, 3);
   delete globalThis.window;
 });
+test('patient and staff sessions remain isolated', () => {
+  const values = new Map();
+  globalThis.localStorage = { getItem: key => values.get(key) ?? null, setItem: (key,value)=>values.set(key,value), removeItem:key=>values.delete(key) };
+  globalThis.window = { location: { pathname:'/login' }, dispatchEvent:()=>{} };
+  setAuthToken('patient-token');
+  globalThis.window.location.pathname='/staff/login'; setAuthToken('staff-token');
+  assert.equal(getAuthToken(),'staff-token'); clearAuthToken(); assert.equal(getAuthToken(),null);
+  globalThis.window.location.pathname='/queue'; assert.equal(getAuthToken(),'patient-token'); clearAuthToken();
+  delete globalThis.window;
+});
+
 test('legacy slot labels normalize to the same management time contract', () => {
   assert.equal(mapAppointment({ ...appointment, timeSlot: '09:00 - 09:30' }).time, '09:00');
 });
