@@ -2,7 +2,9 @@
 
 ## Baseline and boundaries
 
-Repair branch: `codex/full-app-repair`, based on the verified `integration/patient-app` merge `3e16488`. No newer `integration/full-app` exists; the available staff branch is already an ancestor and contains no official staff UI. The reference `app/web/` remains read-only. Existing user document deletions are excluded from this checkpoint.
+Repair branch: `feature/full-app-repair`, based on the verified `integration/patient-app` merge `3e16488`. No newer `integration/full-app` exists; the available staff branch is already an ancestor and contains no official staff UI. The reference `app/web/` remains read-only. Existing user document deletions are excluded from this checkpoint.
+
+Stable demo checkpoint: branch `release/stable-demo`, tag `v1.0.0-stable-demo`. See `stable-demo-release.md` for release verification and supported capabilities. The seed's historical namespace remains fixed to preserve all account and booking IDs; display names no longer include the removed label. A guarded maintenance command, `npx tsx scripts/remove-demo-label.ts <label>` from `server/`, updates only display fields and local account names under explicit demo configuration. It does not reset data or change passwords.
 
 ## Startup
 
@@ -29,9 +31,9 @@ $env:MONGODB_DB_NAME='meditrack_demo'
 npm run seed:demo
 ```
 
-`TEST_DNS_SERVERS` is optional for environments needing explicit SRV resolvers. The seed uses stable fictional ownership IDs and a manifest, and refuses an incomplete seed rather than silently overwriting it. Completed reruns preserve users, doctors, appointments, queues and capacities exactly. A versioned completion step adds historical and waiting fixtures to an earlier same-day seed, preserving existing records and credentials.
+`TEST_DNS_SERVERS` is optional for environments needing explicit SRV resolvers. The seed uses stable ownership IDs and a manifest, and refuses an incomplete seed rather than silently overwriting it. Completed reruns preserve users, doctors, appointments, queues and capacities exactly. A versioned completion step adds historical and waiting fixtures to an earlier same-day seed, preserving existing records and credentials.
 
-The initial dataset contains eight departments, sixteen fictional doctors, ten fictional patients, four fictional staff, one fictional admin, four family members, **22 appointments**, and nine queue tickets. Future schedules cover the next fourteen days. Later browser verification adds separate demonstration bookings; these are not claimed as initial seed records. Reset explicitly when refreshing an expired dated scenario.
+The initial dataset contains eight departments, sixteen doctors, ten patients, four staff, one admin, four family members, **22 appointments**, and nine queue tickets. Future schedules cover the next fourteen days. Later browser verification adds separate demonstration bookings; these are not claimed as initial seed records. Reset explicitly when refreshing an expired dated scenario.
 
 Future/current bookings, family bookings, cancellation, rescheduling, check-in and queue transitions use the real services. One historical completed appointment is imported with its matching occupied historical doctor slot; it is not booked retroactively through the patient API. Queue scenarios include WAITING, ALMOST_TURN, CALLING, IN_CONSULTATION, HELD, SKIPPED and COMPLETED. Notifications come from the actual appointment and queue services.
 
@@ -42,17 +44,17 @@ Generated development-only passwords are available locally in `server/.demo/cred
 ## Reset safety
 
 ```powershell
-$env:DEMO_RESET_CONFIRM='meditrack_demo:fictional-only'
+$env:DEMO_RESET_CONFIRM='meditrack_demo:owned-only'
 npm run seed:demo:reset
 Remove-Item Env:DEMO_RESET_CONFIRM
 npm run seed:demo
 ```
 
-Reset requires both explicit demo configuration and the exact confirmation value. It removes only manifest-owned accounts, departments/doctors and records owned by those fictional accounts, including their later demo bookings. It preserves unrelated accounts and refuses to orphan unrelated appointments or doctors referencing seeded entities. It never drops the database, collections or indexes. Stop the demo server while resetting. Unconfirmed reset and production/missing-opt-in seed refusal are integration-tested without deleting records.
+Reset requires both explicit demo configuration and the exact confirmation value. It removes only manifest-owned accounts, departments/doctors and records owned by those accounts, including their later demo bookings. It preserves unrelated accounts and refuses to orphan unrelated appointments or doctors referencing seeded entities. It never drops the database, collections or indexes. Stop the demo server while resetting. Unconfirmed reset and production/missing-opt-in seed refusal are integration-tested without deleting records.
 
 ## Patient and staff workflow
 
-Login as a fictional patient. Browse Department → Doctor → Date → Available Slot → Review → Confirm. Confirmation follows MongoDB persistence. Manage owned appointments through Visits; supported family/profile changes use authenticated APIs. Payment, refunds, insurance/medical history editing and translation remain explicitly unavailable where unsupported by the existing backend.
+Login as a patient. Browse Department → Doctor → Date → Available Slot → Review → Confirm. Confirmation follows MongoDB persistence. Manage owned appointments through Visits; supported family/profile changes use authenticated APIs. Payment, refunds, insurance/medical history editing and translation remain explicitly unavailable where unsupported by the existing backend.
 
 Open the staff portal in another tab and authenticate with a distinct staff account. Find the patient's appointment. **Check-in is allowed only on the appointment day in Asia/Colombo**; future appointments cannot be checked in early. For same-session queue demonstrations, use a valid same-day appointment. Select its doctor, Call Next, observe the patient's CALLING state and notification, Start consultation, then Complete. Refresh both portals to verify persisted completion.
 
@@ -85,7 +87,7 @@ Text size is applied through rem units and persisted immediately. Contrast uses 
 | Notifications | Real event generation, ownership, read-one/read-all, filters, polling |
 | Settings | Server preferences, local accessibility, explicit unsupported delivery/translation |
 | Reminders | Persisted scheduling, transaction delivery, cancellation/reschedule/past guards |
-| Seed | Isolated target, fictional ownership, bcrypt, idempotency, guarded reset |
+| Seed | Isolated target, ownership, bcrypt, idempotency, guarded reset |
 
 ## Verification commands
 
@@ -93,7 +95,7 @@ Client: `npm --prefix client run typecheck`, `npm --prefix client run build`, `n
 
 Server: `npm --prefix server run typecheck`, `npm --prefix server run build`, `npx --prefix server tsc --project server/tsconfig.seed.json`.
 
-For Atlas integration suites, set `RUN_ATLAS_TESTS=true`, `MONGODB_DB_NAME=meditrack_demo`, `NODE_ENV=test`; then run from `server/`: `npm run test:appointments`, `npm run test:patient-app`, `npm run test:reminders`, `npm run test:staff-settings`, `npm run test:demo-seed`. Tests create scoped fictional fixtures and clean up only their own records. Controlled reminder clocks are scoped to the fixture user so they cannot advance other demo users' jobs.
+For Atlas integration suites, set `RUN_ATLAS_TESTS=true`, `MONGODB_DB_NAME=meditrack_demo`, `NODE_ENV=test`; then run from `server/`: `npm run test:appointments`, `npm run test:patient-app`, `npm run test:reminders`, `npm run test:staff-settings`, `npm run test:demo-seed`. Tests create scoped fixtures and clean up only their own records. Controlled reminder clocks are scoped to the fixture user so they cannot advance other demo users' jobs.
 
 ### Recorded results
 
@@ -107,7 +109,7 @@ For Atlas integration suites, set `RUN_ATLAS_TESTS=true`, `MONGODB_DB_NAME=medit
 
 ## Browser and startup verification
 
-Real seeded patient/staff logins, future booking, cancellation, rescheduling, family creation/booking, staff registration and doctor schedule edits passed. The staff-created 17:00 slot on October 13 was visible and bookable for the fictional family member; confirmation persisted after refresh. A same-day staff booking progressed through check-in, CALLING, IN_CONSULTATION and COMPLETED, visible in the patient portal after refresh. Future appointments remain ineligible for early check-in. Notification filters, read-one/read-all and refresh persistence passed. Settings retained Large text, contrast, reduced motion, extra announcements, email opt-in and 30-minute reminder offset after refresh and a real relogin. Mobile queue at 390 pixels had no horizontal overflow; staff was checked at 375 pixels. No fatal JavaScript console errors or blank screens were observed.
+Real seeded patient/staff logins, future booking, cancellation, rescheduling, family creation/booking, staff registration and doctor schedule edits passed. The staff-created 17:00 slot on October 13 was visible and bookable for the family member; confirmation persisted after refresh. A same-day staff booking progressed through check-in, CALLING, IN_CONSULTATION and COMPLETED, visible in the patient portal after refresh. Future appointments remain ineligible for early check-in. Notification filters, read-one/read-all and refresh persistence passed. Settings retained Large text, contrast, reduced motion, extra announcements, email opt-in and 30-minute reminder offset after refresh and a real relogin. Mobile queue at 390 pixels had no horizontal overflow; staff was checked at 375 pixels. No fatal JavaScript console errors or blank screens were observed.
 
 Cross-portal testing used independently authenticated patient/staff tabs in the available in-app browser. A second physical browser context and assistive-technology hardware were not available, so no claim is made for those checks. Root `npm run dev` was stopped and restarted successfully against Atlas meditrack_demo; local URLs above were verified. System SRV DNS initially refused queries; explicit TEST_DNS_SERVERS resolved the Atlas test connection and all suites passed on rerun.
 

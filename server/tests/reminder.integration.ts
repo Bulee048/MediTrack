@@ -20,9 +20,9 @@ async function main(){
   await mongoose.connect(env.MONGODB_URI,{dbName:'meditrack_demo',serverSelectionTimeoutMS:20000});
   const run = (now: Date) => ReminderService.run(now, String(userId));
   try{
-    await User.create({_id:userId,name:'Fictional Reminder Test',phone:`test-${userId}`,role:'PATIENT',isActive:true});
+    await User.create({_id:userId,name:'Reminder Test',phone:`test-${userId}`,role:'PATIENT',isActive:true});
     await Department.create({_id:departmentId,name:'Reminder test',code:`TEST${departmentId}`});
-    await Doctor.create({_id:doctorId,name:'Fictional Reminder Test Doctor',department:departmentId});
+    await Doctor.create({_id:doctorId,name:'Reminder Test Doctor',department:departmentId});
     const date=new Date(Date.now()+30*86400000);const day=date.toISOString().slice(0,10);
     const appointment=await Appointment.create({patient:userId,doctor:doctorId,appointmentDate:new Date(day),timeSlot:'10:00',status:'BOOKED'});
     const schedule=reminderSchedule(String(appointment._id),appointment.appointmentDate,'10:00','1h');
