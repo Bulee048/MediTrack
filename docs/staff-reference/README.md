@@ -1,0 +1,3 @@
+# Original staff reference source
+
+Preserved unchanged from the local read-only app/web/src staff-specific files supplied with this group project. These files were ignored and absent from the original staff checkpoint (9ca07dd). This archive preserves the original source; it is not executable production code, and its imports/API contracts are not presented as official backend functionality. Production adaptation belongs in client/ and server/ on integration/full-app. Original author identity has not been inferred or rewritten. Only staff-specific pages, shell and access/session helpers are archived; shared/patient source and secrets are excluded.
