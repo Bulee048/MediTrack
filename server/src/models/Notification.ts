@@ -7,6 +7,7 @@ export type NotificationCategory =
   | 'APPOINTMENT_CANCELLED'
   | 'QUEUE_CREATED'
   | 'QUEUE_UPDATE'
+  | 'QUEUE_CANCELLED'
   | 'ALMOST_TURN'
   | 'YOUR_TURN'
   | 'SYSTEM';
@@ -60,6 +61,7 @@ const notificationSchema = new Schema<INotification>(
         'APPOINTMENT_CANCELLED',
         'QUEUE_CREATED',
         'QUEUE_UPDATE',
+        'QUEUE_CANCELLED',
         'ALMOST_TURN',
         'YOUR_TURN',
         'SYSTEM',

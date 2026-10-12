@@ -28,7 +28,7 @@ export default function PatientAccountScreen() {
     } catch (e) { setError(e instanceof Error ? e.message : 'Unable to save account'); }
     finally { setSaving(false); }
   }
-  return <main className="min-h-screen bg-[#F4F7FA] p-4 sm:p-6"><div className="mx-auto max-w-md space-y-5">
+  return <main className="min-h-full bg-canvas p-4 sm:p-6"><div className="mx-auto max-w-md space-y-5">
     <Link className="inline-block p-3 text-teal-800" to="/app/home">Back to Home</Link>
     <h1 className="text-2xl font-bold">My Account</h1>
     {error && <p role="alert" className="text-red-700">{error} {!user && <button onClick={() => window.location.reload()}>Try again</button>}</p>}

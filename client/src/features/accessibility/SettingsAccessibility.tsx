@@ -55,7 +55,7 @@ export default function SettingsAccessibility() {
       {loading && <p role="status">Loading accessibility preferences…</p>}
       {(error || saveError) && <p role="alert">{error || saveError}</p>}
       <p className="label">Notification Preferences</p>
-      <div className="mt-2.5 rounded-2xl border border-line bg-white p-4 shadow-card">
+      <div className="mt-2.5 surface p-4 shadow-card">
         <SwitchRow
           disabled={accountDisabled}
           checked={account.data?.inAppAlerts ?? false}
@@ -102,7 +102,7 @@ export default function SettingsAccessibility() {
       </div>
 
       <p className="mt-7 label">Accessibility Features</p>
-      <div className="mt-2.5 rounded-2xl border border-line bg-white p-4 shadow-card">
+      <div className="mt-2.5 surface p-4 shadow-card">
         <div className="flex items-center justify-between gap-3 pb-2">
           <span className="text-sm font-semibold text-ink">Text Size</span>
           <span className="text-[0.8125rem] font-bold text-brand-600">

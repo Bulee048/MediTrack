@@ -1,3 +1,4 @@
+import { LoadingState } from '@/components/ui/feedback';
 import { useBookingPatient } from './context/BookingPatientContext';
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -143,7 +144,7 @@ export default function BookForFamily() {
 
   return (
     <FeaturePageContent title="Book for Someone Else" back>
-      {loading && <p role="status">Loading family members…</p>}
+      {loading && <LoadingState label="Loading family members"/>}
       {error && <p role="alert" className="mb-4 rounded-xl bg-danger-soft p-4 text-sm">{error}</p>}
       {error && <button type="button" className="mb-4 underline" onClick={() => setRetry(n => n + 1)}>Try again</button>}
       {!loading && !error && members.length === 0 && <p role="status" className="mb-4 text-sm">No saved family members. Add a member or choose Myself.</p>}
@@ -246,7 +247,7 @@ export default function BookForFamily() {
 
       {/* Add Family Member Form */}
       {adding && (
-        <form onSubmit={e => { e.preventDefault(); void saveNew(); }} className="mt-4 rounded-2xl border border-line bg-white p-5 shadow-card animate-in fade-in">
+        <form onSubmit={e => { e.preventDefault(); void saveNew(); }} className="mt-4 surface p-5 shadow-card animate-in fade-in">
           <fieldset disabled={saving}>
           <p className="mb-4 text-[0.875rem] font-extrabold text-ink">{editingId ? 'Edit Family Member Details' : 'New Family Member Details'}</p>
 

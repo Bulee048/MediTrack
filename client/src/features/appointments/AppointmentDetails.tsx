@@ -4,7 +4,7 @@ import { QueueApiService } from '@/services/queueApi';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Building2, Clock3, Timer } from 'lucide-react';
+import { Building2, Clock3 } from 'lucide-react';
 import { FeaturePageContent } from '@/components/FeaturePageContent';
 import { Button } from '@/components/ui/button';
 import { appointmentsApi } from './api/appointmentsApi';
@@ -42,7 +42,6 @@ export default function AppointmentDetails() {
 
   const st = STATUS_STYLES[appt.status] ?? STATUS_STYLES.confirmed;
   const paySt = STATUS_STYLES[appt.paymentStatus] ?? { label: 'Not provided', cls: 'bg-slate-100 text-slate-700 border-slate-200' };
-  const inQueue = Boolean(appt.queueEntry && appt.queueEntry.status === 'waiting');
   const cancelled = appt.status === 'cancelled';
   const active = Boolean(appt.doctorId) && !appt.checkedIn && (appt.status === 'confirmed' || appt.status === 'rescheduled');
 
@@ -63,10 +62,10 @@ export default function AppointmentDetails() {
 
   return (
     <FeaturePageContent title="Appointment Details" back>
-      <div className="rounded-2xl border border-line bg-white p-5 shadow-card">
+      <div className="surface p-5 shadow-card">
         {/* Status and Reference */}
         <div className="flex items-center justify-between">
-          <span className={cn('chip border text-[0.6875rem] font-bold px-2.5 py-0.5', st.cls)}>
+          <span className={cn('chip border text-xs font-bold px-2.5 py-0.5', st.cls)}>
             {st.label}
           </span>
           <span className="text-[0.75rem] font-semibold text-ink-muted">ID: #{appt.ref}</span>
@@ -80,50 +79,6 @@ export default function AppointmentDetails() {
             {appt.doctor?.rating ? `${appt.doctor.rating.toFixed(1)} ★` : appt.room}
           </p>
         </div>
-
-        {/* Live Queue Status Widget */}
-        {inQueue && appt.queueEntry && (
-          <div className="mt-4 rounded-2xl border border-brand-300 bg-brand-50/70 p-4">
-            <div className="flex items-center justify-between">
-              <span className="flex items-center gap-2 text-[0.71875rem] font-extrabold uppercase tracking-wide text-brand-700">
-                <span className="relative flex h-2.5 w-2.5">
-                  <span className="absolute h-full w-full animate-ping rounded-full bg-brand-600 opacity-75" />
-                  <span className="relative h-2.5 w-2.5 rounded-full bg-brand-600" />
-                </span>
-                Live Queue Status
-              </span>
-              <span className="text-[0.875rem] font-extrabold text-brand-700">
-                {appt.queueEntry.token}
-              </span>
-            </div>
-            <div className="mt-3 grid grid-cols-3 gap-2 text-center">
-              <div>
-                <p className="text-[0.59375rem] font-bold uppercase tracking-wide text-brand-700/70">
-                  Current turn
-                </p>
-                <p className="mt-0.5 text-[0.875rem] font-extrabold text-brand-700">
-                  {appt.queueEntry.nowServing || '—'}
-                </p>
-              </div>
-              <div>
-                <p className="text-[0.59375rem] font-bold uppercase tracking-wide text-brand-700/70">
-                  Your position
-                </p>
-                <p className="mt-0.5 text-[0.875rem] font-extrabold text-brand-700">
-                  #{String(appt.queueEntry.position).padStart(2, '0')}
-                </p>
-              </div>
-              <div>
-                <p className="text-[0.59375rem] font-bold uppercase tracking-wide text-brand-700/70">
-                  Est. wait
-                </p>
-                <p className="mt-0.5 text-[0.875rem] font-extrabold text-danger-600">
-                  ~{appt.queueEntry.estWaitMins} mins
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Hospital Location */}
         <div className="mt-4">
@@ -151,7 +106,7 @@ export default function AppointmentDetails() {
           <div>
             <p className="label">Payment Status</p>
             <p className="mt-1">
-              <span className={cn('chip border text-[0.6875rem] font-bold px-2 py-0.5', paySt.cls)}>
+              <span className={cn('chip border text-xs font-bold px-2 py-0.5', paySt.cls)}>
                 {paySt.label}
               </span>
             </p>
@@ -178,7 +133,7 @@ export default function AppointmentDetails() {
         {/* Cancellation Reason if cancelled */}
         {cancelled && appt.cancelReason && (
           <div className="mt-4 rounded-xl bg-danger-soft p-3 border border-danger/20">
-            <p className="text-[0.6875rem] font-bold uppercase tracking-wide text-danger-600">
+            <p className="text-xs font-bold uppercase tracking-wide text-danger-600">
               Cancellation Note
             </p>
             <p className="mt-1 text-[0.78125rem] text-danger-600 font-medium">{appt.cancelReason}</p>
@@ -188,24 +143,17 @@ export default function AppointmentDetails() {
 
       {/* Action Buttons */}
       <div className="mt-6 space-y-3">
-        {(canCheckIn || appt.checkedIn) &&
-          (inQueue ? (
-            <div className="rounded-xl bg-brand-50 p-3 text-center border border-brand-200">
-              <p className="text-[0.8125rem] font-bold text-brand-700 flex items-center justify-center gap-1.5">
-                <Timer size={16} /> Token {appt.queueEntry?.token} is live in queue
-              </p>
-            </div>
-          ) : (
-            <Button
-              size="lg"
-              className="w-full bg-brand-600 text-white hover:bg-brand-700 font-bold"
-              disabled={checkingIn}
-              onClick={() => void handleCheckIn()}
-            >
-              <Clock3 size={17} className="mr-2" />
-              {checkingIn ? 'Checking in…' : appt.checkedIn ? 'Open OPD Queue' : 'Check In to OPD Queue'}
-            </Button>
-          ))}
+        {(canCheckIn || appt.checkedIn) && (
+          <Button
+            size="lg"
+            className="w-full bg-brand-600 text-white hover:bg-brand-700 font-bold"
+            disabled={checkingIn}
+            onClick={() => void handleCheckIn()}
+          >
+            <Clock3 size={17} className="mr-2" />
+            {checkingIn ? 'Checking in…' : appt.checkedIn ? 'View My Queue' : 'Check In to OPD Queue'}
+          </Button>
+        )}
 
         {active && (
           <div className="grid grid-cols-2 gap-3">

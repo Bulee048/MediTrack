@@ -1,3 +1,4 @@
+import { LoadingState } from '@/components/ui/feedback';
 import { hospitalDate } from '@/lib/hospitalDate';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -44,7 +45,7 @@ export default function Appointments() {
       </Link>
 
       {/* Tabs */}
-      <div className="flex rounded-full bg-slate-200/70 p-1">
+      <div className="segmented-control">
         {(['upcoming', 'past', 'cancelled'] as Tab[]).map((t) => (
           <button
             key={t}
@@ -52,7 +53,7 @@ export default function Appointments() {
             aria-pressed={tab === t}
             onClick={() => setTab(t)}
             className={cn(
-              'flex-1 rounded-full py-2 text-[0.8125rem] font-bold capitalize transition min-h-0',
+              'flex-1 rounded-xl px-2 py-3 text-sm font-semibold capitalize transition',
               tab === t
                 ? 'bg-brand-600 text-white shadow-soft'
                 : 'text-ink-muted hover:text-ink'
@@ -66,10 +67,7 @@ export default function Appointments() {
       {/* Appointments List */}
       <div className="mt-5 space-y-3.5">
         {loading && (
-          <div role="status" className="py-12 text-center text-sm text-ink-muted">
-            <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-brand-600 border-t-transparent" />
-            <p className="mt-2 font-medium">Loading appointments…</p>
-          </div>
+          <LoadingState label="Loading appointments"/>
         )}
 
         {error && <div><p role="alert" className="rounded-xl border border-danger/20 bg-danger-soft p-4 text-sm">{error}</p><button type="button" className="mt-3 underline" onClick={() => void refetch()}>Try again</button></div>}
@@ -93,10 +91,10 @@ export default function Appointments() {
               <Link
                 key={a.id}
                 to={`/app/appointments/${a.id}`}
-                className="block w-full rounded-2xl border border-line bg-white p-4 text-left shadow-card transition hover:border-brand-300 cursor-pointer"
+                className="block w-full surface p-4 text-left shadow-card transition hover:border-brand-300 cursor-pointer"
               >
                 <div className="flex items-center justify-between">
-                  <span className={cn('chip border text-[0.6875rem] font-bold px-2.5 py-0.5', st.cls)}>
+                  <span className={cn('chip border text-xs font-bold px-2.5 py-0.5', st.cls)}>
                     {st.label}
                   </span>
                   <span className="text-[0.75rem] font-semibold text-ink-muted">
@@ -116,7 +114,7 @@ export default function Appointments() {
                       {a.department} · {a.room}
                     </p>
                     {!a.bookedForSelf && a.familyMemberName && (
-                      <span className="mt-1.5 inline-block rounded-md bg-slate-100 px-2 py-0.5 text-[0.6875rem] font-semibold text-slate-700">
+                      <span className="mt-1.5 inline-block rounded-md bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-700">
                         For: {a.familyMemberName}
                       </span>
                     )}

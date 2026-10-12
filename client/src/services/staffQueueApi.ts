@@ -110,4 +110,11 @@ export class StaffQueueApiService {
     const response = await apiClient.patch<StaffQueueResponse<{ ticket: StaffQueueTicket }>>(`/queue/${ticketId}/resume`);
     return response.data.data.ticket;
   }
+
+  static async cancelTicket(ticketId: string): Promise<StaffQueueTicket> {
+    const response = await apiClient.delete<StaffQueueResponse<{ ticket: StaffQueueTicket }>>(
+      `/queue/${ticketId}`
+    );
+    return response.data.data.ticket;
+  }
 }

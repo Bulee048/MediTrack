@@ -17,7 +17,7 @@ export function InAppAlerts() {
     for (const item of notifications.data) {
       if (seen.current.has(item._id)) continue;
       seen.current.add(item._id);
-      const queue = ['QUEUE_CREATED', 'QUEUE_UPDATE', 'ALMOST_TURN', 'YOUR_TURN'].includes(item.category);
+      const queue = ['QUEUE_CREATED', 'QUEUE_UPDATE', 'QUEUE_CANCELLED', 'ALMOST_TURN', 'YOUR_TURN'].includes(item.category);
       if (!item.isRead && preferences.data.inAppAlerts && (!queue || preferences.data.queueAlerts)) toast(item.title, { description: item.message });
     }
   }, [notifications.data, preferences.data]);

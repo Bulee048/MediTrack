@@ -203,7 +203,7 @@ export default function EditProfile() {
           />
         </div>
 
-        <p className="pt-2 text-[0.6875rem] font-extrabold uppercase tracking-wide text-ink-muted">
+        <p className="pt-2 text-xs font-extrabold uppercase tracking-wide text-ink-muted">
           Emergency Contact
         </p>
 

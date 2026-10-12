@@ -9,7 +9,7 @@ const schema = z.object({
   appointmentDate: z.string().refine(value => !Number.isNaN(Date.parse(value)) && new Date(value).toISOString().slice(0, 10) === value.slice(0, 10), 'Invalid appointment date'),
   timeSlot: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d(?:\s*-\s*([01]\d|2[0-3]):[0-5]\d)?$/),
   status: z.enum(['BOOKED', 'RESCHEDULED', 'CANCELLED', 'COMPLETED']),
-  queueTicket: z.unknown().optional(), reason: z.string().optional(), createdAt: z.string(), updatedAt: z.string(),
+  queueTicket: z.union([z.string(), z.object({ _id: z.string() }), z.null()]).optional(), reason: z.string().optional(), createdAt: z.string(), updatedAt: z.string(),
 });
 export type BackendAppointment = z.infer<typeof schema>;
 const statuses: Record<BackendAppointment['status'], AppointmentStatus> = {

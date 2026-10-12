@@ -3,8 +3,10 @@ import { useState } from 'react';
 import { InAppAlerts } from '@/features/notifications/InAppAlerts';
 import { useEffect } from 'react';
 import { BookingPatientProvider } from '@/features/family/context/BookingPatientContext';
-import { NavLink, Navigate, Outlet, useLocation } from 'react-router-dom';
-import { CalendarDays, Home, User, Users, Clock3 } from 'lucide-react';
+import { NavLink, Navigate, Outlet, useLocation, Link } from 'react-router-dom';
+import { CalendarDays, Home, User, Users, Clock3, Bell, SlidersHorizontal } from 'lucide-react';
+import { Brand } from '@/components/ui/brand';
+import { ErrorState, LoadingState } from '@/components/ui/feedback';
 import { getAccessToken, useAuthSession } from '@/config/api';
 import { useProfile } from '@/features/profile/context/ProfileContext';
 const links = [
@@ -29,17 +31,18 @@ export default function PatientShell() {
     return () => observer.disconnect();
   }, [location.pathname, settings.screenReader, loading]);
   if (!getAccessToken()) return <Navigate to="/login" state={{ from: location.pathname }} replace />;
-  if (loading || !user) return <main className="min-h-svh bg-canvas p-5"><p role={loading ? 'status' : 'alert'}>{loading ? 'Loading patient account…' : error}</p>{!loading && <button type="button" onClick={() => void refreshProfile()}>Try again</button>}</main>;
+  if (loading || !user) return <main className="ambient-background min-h-svh p-5"><div className="mx-auto mt-10 max-w-md"><Brand /><div className="mt-6">{loading ? <LoadingState label="Loading patient account…" /> : <ErrorState message={error} retry={() => void refreshProfile()} />}</div></div></main>;
   if (user.role !== 'PATIENT') return <main><p role="alert">This portal is for patient accounts.</p></main>;
   return (
-    <BookingPatientProvider key={session}><InAppAlerts /><p className="sr-only" role="status" aria-live="polite">{pageAnnouncement}</p><div className="flex h-svh flex-col bg-canvas">
-      <a href="#patient-content" className="sr-only focus:not-sr-only focus:p-3">Skip to content</a>
-      <div id="patient-content" tabIndex={-1} className="min-h-0 min-w-0 flex-1 overflow-y-auto"><Outlet key={session} /></div>
-      <nav aria-label="Patient navigation" className="z-40 shrink-0 border-t border-line bg-white pb-[env(safe-area-inset-bottom)]">
-        <div className="mx-auto grid max-w-xl grid-cols-5">
+    <BookingPatientProvider key={session}><InAppAlerts /><p className="sr-only" role="status" aria-live="polite">{pageAnnouncement}</p><div className="patient-shell ambient-background">
+      <a href="#patient-content" className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:rounded-xl focus:bg-white focus:p-3">Skip to content</a>
+      <aside className="patient-desktop-nav"><Link to="/app/home" className="px-3"><Brand /></Link><p className="mb-3 mt-10 px-3 text-xs font-semibold uppercase tracking-widest text-ink-muted">Patient workspace</p><nav aria-label="Desktop patient navigation">{links.map(({to,label,icon:Icon})=><NavLink key={to} to={to} className="nav-item"><Icon size={20} aria-hidden="true" />{label}</NavLink>)}<NavLink to="/notifications" className="nav-item"><Bell size={20} aria-hidden="true" />Notifications</NavLink><NavLink to="/app/settings" className="nav-item"><SlidersHorizontal size={20} aria-hidden="true" />Preferences</NavLink></nav><div className="mt-auto rounded-2xl border border-line bg-canvas p-4"><p className="text-xs text-ink-muted">Signed in as</p><p className="mt-1 break-words text-sm font-bold">{user.name}</p><p className="mt-1 text-xs text-brand-700">Patient account</p></div></aside>
+      <div id="patient-content" tabIndex={-1} className="patient-content"><Outlet key={session} /></div>
+      <nav aria-label="Patient navigation" className="patient-bottom-nav glass-surface">
+        <div>
           {links.map(({ to, label, icon: Icon }) => <NavLink key={to} to={to}
-            className={({ isActive }) => `flex min-h-14 min-w-0 flex-col items-center justify-center gap-1 px-1 text-xs ${isActive ? 'font-bold text-brand-700' : 'text-ink-muted'}`}>
-            <Icon size={19} aria-hidden="true" /><span>{label}</span>
+            className={({ isActive }) => isActive ? 'is-active' : ''}>
+            <Icon size={21} aria-hidden="true" /><span>{label}</span>
           </NavLink>)}
         </div>
       </nav>

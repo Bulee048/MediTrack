@@ -4,7 +4,7 @@ import { Doctor } from '../models/Doctor.js';
 import { QueueTicket, IQueueTicket, QueueTicketStatus } from '../models/QueueTicket.js';
 import { Appointment } from '../models/Appointment.js';
 import { Department } from '../models/Department.js';
-import { User } from '../models/User.js';
+import { User, UserRole } from '../models/User.js';
 import { QueueCalculationService } from './queueCalculation.service.js';
 import { Notification } from '../models/Notification.js';
 import { NotificationService } from './notification.service.js';
@@ -302,6 +302,48 @@ export class QueueService {
 
   static async resume(ticketId: string): Promise<IQueueTicket> {
     return this.transitionTicket(ticketId, 'WAITING');
+  }
+
+  /**
+   * DELETE /api/queue/:id
+   * Patients cancel their own WAITING/HELD ticket; staff/admin cancel any
+   * ticket that has not been COMPLETED. Unlinking the appointment lets the
+   * patient check in again.
+   */
+  static async cancelTicket(ticketId: string, requesterId: string, requesterRole: UserRole): Promise<IQueueTicket> {
+    validateObjectId(ticketId, 'queue ticket ID');
+    validateObjectId(requesterId, 'requester ID');
+
+    const transactionStarted = performance.now();
+    await mongoose.connection.transaction(async session => {
+      const ticket = await QueueTicket.findById(ticketId).session(session);
+      if (!ticket) throw new AppError('Queue ticket not found', 404);
+
+      if (requesterRole === 'PATIENT') {
+        if (ticket.patient.toString() !== requesterId)
+          throw new AppError('You can only cancel your own queue ticket', 403);
+        if (!['WAITING', 'HELD'].includes(ticket.status))
+          throw new AppError(`Only a waiting or held queue ticket can be cancelled; this ticket is ${ticket.status.toLowerCase().replace(/_/g, ' ')}`, 409);
+      } else if (ticket.status === 'COMPLETED') {
+        throw new AppError('Completed queue tickets cannot be cancelled', 409);
+      }
+
+      ticket.status = 'CANCELLED';
+      ticket.currentPosition = 0;
+      ticket.estimatedWaitMins = 0;
+      await ticket.save({ session });
+
+      // Unlink the appointment so the patient can check in again.
+      await Appointment.findByIdAndUpdate(ticket.appointment, { $set: { queueTicket: null } }, { session });
+
+      await NotificationService.createNotification({ userId: ticket.patient.toString(),
+        queueTicketId: ticket._id.toString(), appointmentId: ticket.appointment.toString(), category: 'QUEUE_CANCELLED',
+        title: 'Queue ticket cancelled',
+        message: `Your queue ticket ${ticket.ticketNumber} has been cancelled. Check in again from your appointment if you still need to be seen.` }, session);
+    });
+    logQueueTransaction('cancel', transactionStarted);
+    return (await QueueTicket.findById(ticketId).populate('patient', 'name email phone')
+      .populate('doctor', 'name title roomNumber').populate('department', 'name code roomNumber'))!;
   }
 
   /**

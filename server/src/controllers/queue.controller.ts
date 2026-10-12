@@ -150,5 +150,13 @@ export class QueueController {
       res.status(200).json({ success: true, message: 'Held ticket returned to its original queue order', data: { ticket } });
     } catch (error) { next(error); }
   }
+
+  static async cancelTicket(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const ticketId = req.params.id as string;
+      const ticket = await QueueService.cancelTicket(ticketId, req.user!.id, req.user!.role);
+      res.status(200).json({ success: true, message: 'Queue ticket cancelled', data: { ticket } });
+    } catch (error) { next(error); }
+  }
 }
 

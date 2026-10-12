@@ -14,6 +14,7 @@ export interface NotificationData {
     | 'APPOINTMENT_CANCELLED'
     | 'QUEUE_CREATED'
     | 'QUEUE_UPDATE'
+    | 'QUEUE_CANCELLED'
     | 'ALMOST_TURN'
     | 'YOUR_TURN'
     | 'SYSTEM';

@@ -74,19 +74,19 @@ export default function RegisterScreen() {
             Already have an account?{' '}
             <a
               href="/login"
-              className="font-semibold text-[#0E8B7C] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16A794] rounded-sm"
+              className="font-semibold text-brand-600 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 rounded-sm"
             >
               Login
             </a>
           </>
         }
       >
-        <div role="status" className="rounded-2xl border border-[#2FBF71]/30 bg-[#E8F9F0] px-4 py-3 text-sm font-semibold text-[#2FBF71]">
+        <div role="status" className="rounded-2xl border border-success/30 bg-success-soft px-4 py-3 text-sm font-semibold text-success">
           Account created successfully.
         </div>
         <Button
           type="button"
-          className="h-12 min-h-[44px] w-full bg-[#0E8B7C] font-bold text-white hover:bg-[#0C6F64] focus-visible:ring-2 focus-visible:ring-[#16A794]"
+          className="h-12 min-h-[44px] w-full bg-brand-600 font-bold text-white hover:bg-brand-700 focus-visible:ring-2 focus-visible:ring-brand-500"
           onClick={() => (window.location.href = '/login')}
         >
           Go to Login
@@ -104,7 +104,7 @@ export default function RegisterScreen() {
           Already have an account?{' '}
           <a
             href="/login"
-            className="font-semibold text-[#0E8B7C] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16A794] rounded-sm"
+            className="font-semibold text-brand-600 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 rounded-sm"
           >
             Login
           </a>
@@ -113,14 +113,14 @@ export default function RegisterScreen() {
     >
       <div>
         <div className="flex items-center justify-between">
-          <p className="text-sm font-semibold text-[#101A2E]">{stepTitle}</p>
-          <p className="text-xs font-semibold text-[#0E8B7C]" aria-live="polite">
+          <p className="text-sm font-semibold text-ink">{stepTitle}</p>
+          <p className="text-xs font-semibold text-brand-600" aria-live="polite">
             Step {step} of 2
           </p>
         </div>
         <div className="mt-2.5 flex gap-1.5" role="progressbar" aria-valuenow={step} aria-valuemin={1} aria-valuemax={2} aria-label="Registration progress">
-          <span className="h-1.5 flex-1 rounded-full bg-[#0E8B7C]" />
-          <span className={`h-1.5 flex-1 rounded-full ${step === 2 ? 'bg-[#0E8B7C]' : 'bg-[#E6ECF3]'}`} />
+          <span className="h-1.5 flex-1 rounded-full bg-brand-600" />
+          <span className={`h-1.5 flex-1 rounded-full ${step === 2 ? 'bg-brand-600' : 'bg-line'}`} />
         </div>
       </div>
 
@@ -128,83 +128,85 @@ export default function RegisterScreen() {
         {step === 1 ? (
           <>
             <div className="space-y-2">
-              <Label htmlFor="name" className="text-[#101A2E]">Full Name</Label>
+              <Label htmlFor="name" className="text-ink">Full Name</Label>
               <div className="relative">
-                <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-[#6C7A90]">
+                <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-ink-muted">
                   <User className="h-4 w-4" />
                 </span>
                 <Input
                   id="name"
                   {...register('name')}
                   placeholder="e.g. Sarah Williams"
-                  className="h-12 min-h-[44px] border-[#E6ECF3] bg-white pl-10 text-[#101A2E] placeholder:text-[#6C7A90] focus-visible:ring-2 focus-visible:ring-[#16A794]"
+                  className="h-12 min-h-[44px] border-line bg-white pl-10 text-ink placeholder:text-ink-muted focus-visible:ring-2 focus-visible:ring-brand-500"
                   autoComplete="name"
                   aria-invalid={Boolean(errors.name)}
                   aria-describedby={errors.name ? 'name-error' : undefined}
                 />
               </div>
               {errors.name ? (
-                <p id="name-error" role="alert" className="text-xs font-medium text-[#E8455F]">
+                <p id="name-error" role="alert" className="text-xs font-medium text-danger">
                   {errors.name.message}
                 </p>
               ) : null}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-[#101A2E]">Email Address</Label>
+              <Label htmlFor="email" className="text-ink">Email Address</Label>
               <div className="relative">
-                <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-[#6C7A90]">
+                <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-ink-muted">
                   <Mail className="h-4 w-4" />
                 </span>
                 <Input
                   id="email"
+                  type="email" inputMode="email"
                   {...register('email')}
                   placeholder="you@email.com"
-                  className="h-12 min-h-[44px] border-[#E6ECF3] bg-white pl-10 text-[#101A2E] placeholder:text-[#6C7A90] focus-visible:ring-2 focus-visible:ring-[#16A794]"
+                  className="h-12 min-h-[44px] border-line bg-white pl-10 text-ink placeholder:text-ink-muted focus-visible:ring-2 focus-visible:ring-brand-500"
                   autoComplete="email"
                   aria-invalid={Boolean(errors.email)}
                   aria-describedby={errors.email ? 'email-error' : undefined}
                 />
               </div>
               {errors.email ? (
-                <p id="email-error" role="alert" className="text-xs font-medium text-[#E8455F]">
+                <p id="email-error" role="alert" className="text-xs font-medium text-danger">
                   {errors.email.message}
                 </p>
               ) : null}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="phone" className="text-[#101A2E]">Phone Number</Label>
+              <Label htmlFor="phone" className="text-ink">Phone Number</Label>
               <div className="relative">
-                <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-[#6C7A90]">
+                <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-ink-muted">
                   <Phone className="h-4 w-4" />
                 </span>
                 <Input
                   id="phone"
+                  type="tel" inputMode="tel"
                   {...register('phone')}
                   placeholder="0771234567"
-                  className="h-12 min-h-[44px] border-[#E6ECF3] bg-white pl-10 text-[#101A2E] placeholder:text-[#6C7A90] focus-visible:ring-2 focus-visible:ring-[#16A794]"
+                  className="h-12 min-h-[44px] border-line bg-white pl-10 text-ink placeholder:text-ink-muted focus-visible:ring-2 focus-visible:ring-brand-500"
                   autoComplete="tel"
                   aria-invalid={Boolean(errors.phone)}
                   aria-describedby={errors.phone ? 'phone-error' : undefined}
                 />
               </div>
               {errors.phone ? (
-                <p id="phone-error" role="alert" className="text-xs font-medium text-[#E8455F]">
+                <p id="phone-error" role="alert" className="text-xs font-medium text-danger">
                   {errors.phone.message}
                 </p>
               ) : null}
             </div>
 
             {errors.root ? (
-              <p role="alert" className="rounded-xl border border-[#E8455F]/30 bg-[#FDECEF] px-3 py-2 text-sm font-medium text-[#E8455F]">
+              <p role="alert" className="rounded-xl border border-danger/30 bg-danger-soft px-3 py-2 text-sm font-medium text-danger">
                 {errors.root.message}
               </p>
             ) : null}
 
             <Button
               type="button"
-              className="h-12 min-h-[44px] w-full bg-[#0E8B7C] font-bold text-white hover:bg-[#0C6F64] focus-visible:ring-2 focus-visible:ring-[#16A794]"
+              className="h-12 min-h-[44px] w-full bg-brand-600 font-bold text-white hover:bg-brand-700 focus-visible:ring-2 focus-visible:ring-brand-500"
               onClick={next}
             >
               Save &amp; Continue <ArrowRight className="ml-2 h-4 w-4" />
@@ -213,9 +215,9 @@ export default function RegisterScreen() {
         ) : (
           <>
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-[#101A2E]">Password</Label>
+              <Label htmlFor="password" className="text-ink">Password</Label>
               <div className="relative">
-                <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-[#6C7A90]">
+                <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-ink-muted">
                   <Lock className="h-4 w-4" />
                 </span>
                 <Input
@@ -223,7 +225,7 @@ export default function RegisterScreen() {
                   {...register('password')}
                   type={showPassword ? 'text' : 'password'}
                   placeholder="Create a secure password"
-                  className="h-12 min-h-[44px] border-[#E6ECF3] bg-white pl-10 pr-12 text-[#101A2E] placeholder:text-[#6C7A90] focus-visible:ring-2 focus-visible:ring-[#16A794]"
+                  className="h-12 min-h-[44px] border-line bg-white pl-10 pr-12 text-ink placeholder:text-ink-muted focus-visible:ring-2 focus-visible:ring-brand-500"
                   autoComplete="new-password"
                   aria-invalid={Boolean(errors.password)}
                   aria-describedby={errors.password ? 'password-error' : undefined}
@@ -231,23 +233,23 @@ export default function RegisterScreen() {
                 <button
                   type="button"
                   onClick={() => setShowPassword((value) => !value)}
-                  className="absolute inset-y-0 right-0 flex min-h-[44px] min-w-[44px] items-center justify-center text-[#6C7A90] hover:text-[#101A2E] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#16A794] rounded-r-xl"
+                  className="absolute inset-y-0 right-0 flex min-h-[44px] min-w-[44px] items-center justify-center text-ink-muted hover:text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 rounded-r-xl"
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
               {errors.password ? (
-                <p id="password-error" role="alert" className="text-xs font-medium text-[#E8455F]">
+                <p id="password-error" role="alert" className="text-xs font-medium text-danger">
                   {errors.password.message}
                 </p>
               ) : null}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword" className="text-[#101A2E]">Confirm Password</Label>
+              <Label htmlFor="confirmPassword" className="text-ink">Confirm Password</Label>
               <div className="relative">
-                <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-[#6C7A90]">
+                <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-ink-muted">
                   <Lock className="h-4 w-4" />
                 </span>
                 <Input
@@ -255,21 +257,21 @@ export default function RegisterScreen() {
                   {...register('confirmPassword')}
                   type={showPassword ? 'text' : 'password'}
                   placeholder="Repeat your password"
-                  className="h-12 min-h-[44px] border-[#E6ECF3] bg-white pl-10 text-[#101A2E] placeholder:text-[#6C7A90] focus-visible:ring-2 focus-visible:ring-[#16A794]"
+                  className="h-12 min-h-[44px] border-line bg-white pl-10 text-ink placeholder:text-ink-muted focus-visible:ring-2 focus-visible:ring-brand-500"
                   autoComplete="new-password"
                   aria-invalid={Boolean(errors.confirmPassword)}
                   aria-describedby={errors.confirmPassword ? 'confirm-password-error' : undefined}
                 />
               </div>
               {errors.confirmPassword ? (
-                <p id="confirm-password-error" role="alert" className="text-xs font-medium text-[#E8455F]">
+                <p id="confirm-password-error" role="alert" className="text-xs font-medium text-danger">
                   {errors.confirmPassword.message}
                 </p>
               ) : null}
             </div>
 
             {errors.root ? (
-              <p role="alert" className="rounded-xl border border-[#E8455F]/30 bg-[#FDECEF] px-3 py-2 text-sm font-medium text-[#E8455F]">
+              <p role="alert" className="rounded-xl border border-danger/30 bg-danger-soft px-3 py-2 text-sm font-medium text-danger">
                 {errors.root.message}
               </p>
             ) : null}
@@ -278,7 +280,7 @@ export default function RegisterScreen() {
               <Button
                 type="button"
                 variant="outline"
-                className="h-12 min-h-[44px] border-[#E6ECF3] bg-white text-[#3A465C] hover:bg-[#F4F7FA] focus-visible:ring-2 focus-visible:ring-[#16A794] font-semibold"
+                className="h-12 min-h-[44px] border-line bg-white text-ink-soft hover:bg-canvas focus-visible:ring-2 focus-visible:ring-brand-500 font-semibold"
                 onClick={back}
                 aria-label="Back to step 1 patient details"
               >
@@ -286,7 +288,7 @@ export default function RegisterScreen() {
               </Button>
               <Button
                 type="submit"
-                className="h-12 min-h-[44px] bg-[#0E8B7C] font-bold text-white hover:bg-[#0C6F64] focus-visible:ring-2 focus-visible:ring-[#16A794]"
+                className="h-12 min-h-[44px] bg-brand-600 font-bold text-white hover:bg-brand-700 focus-visible:ring-2 focus-visible:ring-brand-500"
                 disabled={isSubmitting || registerMutation.isPending}
               >
                 {isSubmitting || registerMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
@@ -294,7 +296,7 @@ export default function RegisterScreen() {
               </Button>
             </div>
 
-            <p className="text-center text-xs leading-5 text-[#6C7A90]">
+            <p className="text-center text-xs leading-5 text-ink-muted">
               By creating an account, you agree to use the patient portal for appointment bookings and visit updates.
             </p>
           </>

@@ -84,7 +84,7 @@ export default function CancelAppointment() {
       </div>}
 
       {/* Appointment Summary */}
-      <div className="mt-4 rounded-2xl border border-line bg-white p-5 text-center shadow-card">
+      <div className="mt-4 surface p-5 text-center shadow-card">
         <p className="label">Appointment Summary</p>
         <p className="mt-2 text-[1rem] font-extrabold text-ink">{appt.doctorName}</p>
         <p className="mt-0.5 text-[0.78125rem] text-ink-muted">

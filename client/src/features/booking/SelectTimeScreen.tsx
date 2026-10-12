@@ -1,3 +1,4 @@
+import { BookingSteps } from '@/components/ui/booking-steps';
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { CalendarDays, ChevronLeft, RotateCcw, Star } from 'lucide-react';
@@ -115,12 +116,12 @@ export default function SelectTimeScreen() {
 
   if (loading) {
     return (
-      <main data-feature-accessibility className="min-h-screen bg-[#F4F7FA] px-4 py-6 sm:px-6">
-        <div role="status" aria-label="Loading available time slots" className="mx-auto w-full max-w-md space-y-4">
-          <Skeleton className="h-11 w-28 rounded-xl bg-[#E6ECF3]" />
-          <Skeleton className="h-20 rounded-2xl bg-[#E6ECF3]" />
-          <Skeleton className="h-32 rounded-2xl bg-[#E6ECF3]" />
-          <Skeleton className="h-16 rounded-2xl bg-[#E6ECF3]" />
+      <main data-feature-accessibility className="patient-page page-enter">
+        <div role="status" aria-label="Loading available time slots" className="mx-auto w-full max-w-3xl space-y-4">
+          <Skeleton className="h-11 w-28 rounded-xl bg-line" />
+          <Skeleton className="h-20 rounded-2xl bg-line" />
+          <Skeleton className="h-32 rounded-2xl bg-line" />
+          <Skeleton className="h-16 rounded-2xl bg-line" />
         </div>
       </main>
     );
@@ -128,28 +129,28 @@ export default function SelectTimeScreen() {
 
   if (!doctor || !availability) {
     return (
-      <main data-feature-accessibility className="min-h-screen bg-[#F4F7FA] px-4 py-6 sm:px-6">
-        <div className="mx-auto w-full max-w-md">
+      <main data-feature-accessibility className="patient-page page-enter">
+        <div className="mx-auto w-full max-w-3xl">
           <button
             onClick={() => navigate(-1)}
             aria-label="Go back"
-            className="grid h-11 w-11 min-h-[44px] min-w-[44px] place-items-center rounded-xl border border-[#E6ECF3] bg-white text-[#101A2E] shadow-sm transition hover:bg-[#F4F7FA] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16A794] active:scale-95"
+            className="grid h-11 w-11 min-h-[44px] min-w-[44px] place-items-center rounded-xl border border-line bg-white text-ink shadow-sm transition hover:bg-canvas focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 active:scale-95"
           >
             <ChevronLeft size={20} />
           </button>
-          <div role="alert" className="mt-4 rounded-2xl border border-[#E8455F]/30 bg-[#FDECEF] p-5 text-[#E8455F]">
+          <div role="alert" className="mt-4 rounded-2xl border border-danger/30 bg-danger-soft p-5 text-danger">
             <p className="text-[0.9375rem] font-extrabold">Availability unavailable</p>
             <p className="mt-1 text-[0.78125rem] font-medium">{error || "We could not load the selected doctor's availability."}</p>
             <div className="mt-4 flex gap-3">
               <Button
                 variant="outline"
-                className="h-11 min-h-[44px] flex-1 border-[#E8455F]/40 text-[#E8455F] hover:bg-[#FDECEF] focus-visible:ring-2 focus-visible:ring-[#E8455F] font-semibold"
+                className="h-11 min-h-[44px] flex-1 border-danger/40 text-danger hover:bg-danger-soft focus-visible:ring-2 focus-visible:ring-danger font-semibold"
                 onClick={() => navigate('/app/doctors')}
               >
                 All Doctors
               </Button>
               <Button
-                className="h-11 min-h-[44px] flex-1 bg-[#E8455F] text-white hover:bg-[#D3304A] focus-visible:ring-2 focus-visible:ring-[#E8455F] font-semibold"
+                className="h-11 min-h-[44px] flex-1 bg-danger text-white hover:bg-danger-600 focus-visible:ring-2 focus-visible:ring-danger font-semibold"
                 onClick={loadData}
               >
                 <RotateCcw className="mr-2 h-4 w-4" /> Try Again
@@ -162,41 +163,42 @@ export default function SelectTimeScreen() {
   }
 
   return (
-    <main data-feature-accessibility className="min-h-screen bg-[#F4F7FA] px-4 py-6 sm:px-6">
-      <div className="mx-auto w-full max-w-md space-y-0">
+    <main data-feature-accessibility className="patient-page page-enter">
+      <div className="mx-auto w-full max-w-3xl space-y-0">
+          <BookingSteps step={2}/>
         <div className="flex items-center justify-between pb-3">
           <div>
-            <p className="text-[0.8125rem] font-semibold text-[#6C7A90]">Booking</p>
-            <h1 className="mt-0.5 text-[1.375rem] font-extrabold uppercase tracking-tight text-[#101A2E]">Select Time</h1>
+            <p className="text-[0.8125rem] font-semibold text-ink-muted">Booking</p>
+            <h1 className="mt-0.5 page-title font-extrabold tracking-tight text-ink">Select Time</h1>
           </div>
           <button
             onClick={() => navigate(-1)}
             aria-label="Go back"
-            className="grid h-11 w-11 min-h-[44px] min-w-[44px] shrink-0 place-items-center rounded-xl border border-[#E6ECF3] bg-white text-[#101A2E] shadow-sm transition hover:bg-[#F4F7FA] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16A794] active:scale-95"
+            className="grid h-11 w-11 min-h-[44px] min-w-[44px] shrink-0 place-items-center rounded-xl border border-line bg-white text-ink shadow-sm transition hover:bg-canvas focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 active:scale-95"
           >
             <ChevronLeft size={20} />
           </button>
         </div>
 
-        <div className="rounded-2xl border border-[#E6ECF3] bg-white p-4 text-center shadow-sm">
-          <p className="text-[0.9375rem] font-extrabold text-[#101A2E]">{doctor.name}</p>
-          <p className="mt-0.5 text-[0.78125rem] text-[#6C7A90]">
+        <div className="surface p-4 text-center shadow-sm">
+          <p className="text-[0.9375rem] font-extrabold text-ink">{doctor.name}</p>
+          <p className="mt-0.5 text-[0.78125rem] text-ink-muted">
             {doctor.title || 'Specialist'} · {doctor.experienceYears ? `${doctor.experienceYears} Yrs Exp` : 'Experience not listed'}
           </p>
-          <p className="mt-1 inline-flex items-center gap-1 text-[0.78125rem] font-bold text-[#101A2E]">
-            <Star size={13} className="fill-[#F5A623] text-[#F5A623]" /> {doctor.availabilityStatus ?? 'AVAILABLE'}
+          <p className="mt-1 inline-flex items-center gap-1 text-[0.78125rem] font-bold text-ink">
+            <Star size={13} className="fill-[#F5A623] text-warn" /> {doctor.availabilityStatus ?? 'AVAILABLE'}
           </p>
         </div>
 
-        <div className="mt-4 flex items-center justify-between rounded-2xl border border-[#0E8B7C] bg-[#ECFDF9] px-4 py-3 text-[0.84375rem] font-bold text-[#0C6F64]">
+        <div className="mt-4 flex items-center justify-between rounded-2xl border border-brand-600 bg-brand-50 px-4 py-3 text-[0.84375rem] font-bold text-brand-700">
           <div className="inline-flex items-center gap-2">
-            <CalendarDays size={18} className="text-[#0E8B7C]" />
+            <CalendarDays size={18} className="text-brand-600" />
             <span>{selectedDate ? formatLongDate(selectedDate) : 'Select a date first'}</span>
           </div>
           <Button
             size="sm"
             variant="ghost"
-            className="h-9 min-h-[36px] font-bold text-[#0C6F64] hover:bg-[#D2F5EE]"
+            className="h-9 min-h-[36px] font-bold text-brand-700 hover:bg-brand-100"
             onClick={() => navigate(`/app/book/date/${doctor.id}`, { state: { doctor, date: selectedDate } })}
           >
             Change Date
@@ -204,30 +206,30 @@ export default function SelectTimeScreen() {
         </div>
 
         {error ? (
-          <div role="alert" className="mt-4 rounded-2xl border border-[#E8455F]/30 bg-[#FDECEF] p-4 text-[0.8125rem] font-semibold text-[#E8455F]">
+          <div role="alert" className="mt-4 rounded-2xl border border-danger/30 bg-danger-soft p-4 text-[0.8125rem] font-semibold text-danger">
             {error}
           </div>
         ) : null}
 
         {topDay ? (
-          <div className="mt-4 rounded-2xl border border-[#E6ECF3] bg-white p-4 shadow-sm">
+          <div className="mt-4 surface p-4 shadow-sm">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <h2 className="text-[0.875rem] font-extrabold text-[#101A2E]">Available Slots</h2>
-                <p className="mt-0.5 text-[0.75rem] text-[#6C7A90]">{topDay.capacityLeft} slots remain open on this date</p>
+                <h2 className="text-[0.875rem] font-extrabold text-ink">Available Slots</h2>
+                <p className="mt-0.5 text-[0.75rem] text-ink-muted">{topDay.capacityLeft} slots remain open on this date</p>
               </div>
-              <span className="rounded-full bg-[#F4F7FA] px-2.5 py-1 text-[0.6875rem] font-bold text-[#3A465C]">
+              <span className="rounded-full bg-canvas px-2.5 py-1 text-xs font-bold text-ink-soft">
                 {topDay.totalCapacity} total
               </span>
             </div>
 
             {groupedSlots.length === 0 ? (
-              <div className="mt-4 rounded-xl border border-dashed border-[#E6ECF3] p-6 text-center text-[#6C7A90]">
-                <p className="text-[0.875rem] font-bold text-[#101A2E]">No time slots available</p>
+              <div className="mt-4 rounded-xl border border-dashed border-line p-6 text-center text-ink-muted">
+                <p className="text-[0.875rem] font-bold text-ink">No time slots available</p>
                 <p className="mt-1 text-xs">All appointments for this date are fully booked.</p>
                 <Button
                   size="sm"
-                  className="mt-3 h-11 min-h-[44px] bg-[#0E8B7C] font-bold text-white hover:bg-[#0C6F64]"
+                  className="mt-3 h-11 min-h-[44px] bg-brand-600 font-bold text-white hover:bg-brand-700"
                   onClick={() => navigate(`/app/book/date/${doctor.id}`, { state: { doctor } })}
                 >
                   Choose Another Date
@@ -237,7 +239,7 @@ export default function SelectTimeScreen() {
               <div className="mt-4 space-y-4">
                 {groupedSlots.map((group) => (
                   <div key={group.period}>
-                    <p className="mb-2 text-[0.71875rem] font-bold uppercase tracking-wide text-[#6C7A90]">{group.period}</p>
+                    <p className="mb-2 text-[0.71875rem] font-bold uppercase tracking-wide text-ink-muted">{group.period}</p>
                     <div className="grid grid-cols-2 gap-2.5">
                       {group.slots.map((slot) => (
                         <button
@@ -248,22 +250,22 @@ export default function SelectTimeScreen() {
                           aria-label={`${slot.label}, ${
                             slot.available ? `${slot.capacity - slot.bookedCount} slots left` : 'Fully booked'
                           }`}
-                          className={`min-h-[52px] rounded-xl border px-3 py-3 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16A794] ${
+                          className={`min-h-[52px] rounded-xl border px-3 py-3 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 ${
                             !slot.available
-                              ? 'cursor-not-allowed border-[#E6ECF3] bg-[#F4F7FA] text-[#6C7A90]/60 line-through'
+                              ? 'cursor-not-allowed border-line bg-canvas text-ink-muted/60 line-through'
                               : selectedSlotId === slot.id
-                                ? 'border-[#0E8B7C] bg-[#0E8B7C] text-white shadow-sm font-bold'
-                                : 'border-[#E6ECF3] bg-white text-[#3A465C] hover:border-[#A7EADD]'
+                                ? 'border-brand-600 bg-brand-600 text-white shadow-sm font-bold'
+                                : 'border-line bg-white text-ink-soft hover:border-brand-200'
                           }`}
                         >
                           <span className="block text-[0.78125rem] font-bold">{slot.label}</span>
                           <span
-                            className={`mt-1 block text-[0.6875rem] ${
+                            className={`mt-1 block text-xs ${
                               slot.available
                                 ? selectedSlotId === slot.id
                                   ? 'text-white/80'
-                                  : 'text-[#6C7A90]'
-                                : 'text-[#6C7A90]'
+                                  : 'text-ink-muted'
+                                : 'text-ink-muted'
                             }`}
                           >
                             {slot.available ? `${slot.capacity - slot.bookedCount} slots left` : 'Fully booked'}
@@ -278,9 +280,9 @@ export default function SelectTimeScreen() {
           </div>
         ) : null}
 
-        <div className="mt-6 rounded-2xl border border-[#E6ECF3] bg-white p-4 shadow-sm">
-          <p className="text-[0.75rem] font-semibold uppercase tracking-wide text-[#6C7A90]">Patient guidance</p>
-          <p className="mt-2 text-[0.8125rem] leading-relaxed text-[#3A465C]">
+        <div className="mt-6 surface p-4 shadow-sm">
+          <p className="text-[0.75rem] font-semibold uppercase tracking-wide text-ink-muted">Patient guidance</p>
+          <p className="mt-2 text-[0.8125rem] leading-relaxed text-ink-soft">
             Unavailable or full times are disabled. Pick a visible slot to continue to appointment review.
           </p>
         </div>
@@ -288,13 +290,13 @@ export default function SelectTimeScreen() {
         <div className="mt-7 flex gap-3">
           <Button
             variant="outline"
-            className="h-12 min-h-[44px] flex-1 border-[#E6ECF3] bg-white text-[#3A465C] hover:bg-[#F4F7FA] focus-visible:ring-2 focus-visible:ring-[#16A794] font-bold"
+            className="h-12 min-h-[44px] flex-1 border-line bg-white text-ink-soft hover:bg-canvas focus-visible:ring-2 focus-visible:ring-brand-500 font-bold"
             onClick={() => navigate(-1)}
           >
             Back
           </Button>
           <Button
-            className="h-12 min-h-[44px] flex-1 bg-[#0E8B7C] font-bold text-white hover:bg-[#0C6F64] disabled:bg-[#E6ECF3] disabled:text-[#6C7A90] focus-visible:ring-2 focus-visible:ring-[#16A794]"
+            className="h-12 min-h-[44px] flex-1 bg-brand-600 font-bold text-white hover:bg-brand-700 disabled:bg-line disabled:text-ink-muted focus-visible:ring-2 focus-visible:ring-brand-500"
             disabled={!selectedSlot?.available}
             onClick={continueTo}
           >

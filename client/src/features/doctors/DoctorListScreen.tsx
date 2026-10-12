@@ -14,9 +14,9 @@ type LoadState = {
 };
 
 const AVAILABILITY_STYLES: Record<string, string> = {
-  AVAILABLE: 'bg-[#E8F9F0] text-[#2FBF71] border-[#2FBF71]/30',
-  LIMITED: 'bg-[#FFF6E6] text-[#F5A623] border-[#F5A623]/30',
-  UNAVAILABLE: 'bg-[#F4F7FA] text-[#6C7A90] border-[#E6ECF3]',
+  AVAILABLE: 'bg-success-soft text-success border-success/30',
+  LIMITED: 'bg-warn-soft text-warn border-warn/30',
+  UNAVAILABLE: 'bg-canvas text-ink-muted border-line',
 };
 
 const AVAILABILITY_LABELS: Record<string, string> = {
@@ -81,17 +81,17 @@ export default function DoctorListScreen() {
   };
 
   return (
-    <main data-feature-accessibility className="min-h-screen bg-[#F4F7FA] px-4 py-6 sm:px-6">
-      <div className="mx-auto w-full max-w-md space-y-0">
+    <main data-feature-accessibility className="patient-page page-enter">
+      <div className="mx-auto w-full max-w-3xl space-y-0">
         <div className="flex items-center justify-between pb-3">
           <div>
-            <p className="text-[0.8125rem] font-semibold text-[#6C7A90]">Browse</p>
-            <h1 className="mt-0.5 text-[1.375rem] font-extrabold uppercase tracking-tight text-[#101A2E]">{departmentName}</h1>
+            <p className="text-[0.8125rem] font-semibold text-ink-muted">Browse</p>
+            <h1 className="mt-0.5 page-title font-extrabold tracking-tight text-ink">{departmentName}</h1>
           </div>
           <button
             onClick={() => navigate(-1)}
             aria-label="Go back"
-            className="grid h-11 w-11 min-h-[44px] min-w-[44px] shrink-0 place-items-center rounded-xl border border-[#E6ECF3] bg-white text-[#101A2E] shadow-sm transition hover:bg-[#F4F7FA] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16A794] active:scale-95"
+            className="grid h-11 w-11 min-h-[44px] min-w-[44px] shrink-0 place-items-center rounded-xl border border-line bg-white text-ink shadow-sm transition hover:bg-canvas focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 active:scale-95"
           >
             <ChevronLeft size={20} />
           </button>
@@ -99,7 +99,7 @@ export default function DoctorListScreen() {
 
         <div className="flex gap-2.5">
           <div className="relative flex-1">
-            <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-[#6C7A90]">
+            <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-ink-muted">
               <Search size={18} />
             </span>
             <Input
@@ -107,14 +107,14 @@ export default function DoctorListScreen() {
               onChange={(e) => setQ(e.target.value)}
               placeholder="Search doctor…"
               aria-label="Search doctor by name or specialty"
-              className="h-12 min-h-[44px] border-[#E6ECF3] bg-white pl-10 pr-10 text-[#101A2E] placeholder:text-[#6C7A90] focus-visible:ring-2 focus-visible:ring-[#16A794]"
+              className="h-12 min-h-[44px] border-line bg-white pl-10 pr-10 text-ink placeholder:text-ink-muted focus-visible:ring-2 focus-visible:ring-brand-500"
             />
             {q ? (
               <button
                 type="button"
                 onClick={() => setQ('')}
                 aria-label="Clear doctor search"
-                className="absolute inset-y-0 right-0 flex min-h-[44px] min-w-[44px] items-center justify-center text-[#6C7A90] hover:text-[#101A2E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16A794] rounded-r-md"
+                className="absolute inset-y-0 right-0 flex min-h-[44px] min-w-[44px] items-center justify-center text-ink-muted hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 rounded-r-md"
               >
                 <X size={16} />
               </button>
@@ -125,9 +125,9 @@ export default function DoctorListScreen() {
             <button
               onClick={() => setMinRating(null)}
               aria-label={`Clear rating filter ${minRating} stars`}
-              className="flex h-12 min-h-[44px] shrink-0 items-center gap-1.5 rounded-xl border border-[#0E8B7C] bg-[#ECFDF9] px-3.5 text-[0.78125rem] font-bold text-[#0C6F64] hover:bg-[#D2F5EE] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16A794]"
+              className="flex h-12 min-h-[44px] shrink-0 items-center gap-1.5 rounded-xl border border-brand-600 bg-brand-50 px-3.5 text-[0.78125rem] font-bold text-brand-700 hover:bg-brand-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
             >
-              <Star size={13} className="fill-[#F5A623] text-[#F5A623]" /> {minRating}+ <X size={13} />
+              <Star size={13} className="fill-[#F5A623] text-warn" /> {minRating}+ <X size={13} />
             </button>
           ) : null}
         </div>
@@ -136,10 +136,10 @@ export default function DoctorListScreen() {
           <button
             onClick={() => setAvailableOnly((value) => !value)}
             aria-pressed={availableOnly}
-            className={`min-h-[44px] shrink-0 rounded-full border px-3.5 py-2.5 text-[0.78125rem] font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16A794] ${
+            className={`min-h-[44px] shrink-0 rounded-full border px-3.5 py-2.5 text-[0.78125rem] font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 ${
               availableOnly
-                ? 'border-[#0E8B7C] bg-[#0E8B7C] text-white'
-                : 'border-[#E6ECF3] bg-white text-[#3A465C] hover:border-[#A7EADD]'
+                ? 'border-brand-600 bg-brand-600 text-white'
+                : 'border-line bg-white text-ink-soft hover:border-brand-200'
             }`}
           >
             {availableOnly ? 'Available only' : 'Any status'}
@@ -149,17 +149,17 @@ export default function DoctorListScreen() {
             <button
               onClick={resetFilters}
               aria-label="Reset all filters"
-              className="min-h-[44px] shrink-0 rounded-full border border-[#E6ECF3] bg-white px-3.5 py-2.5 text-[0.78125rem] font-bold text-[#3A465C] hover:border-[#A7EADD] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16A794]"
+              className="min-h-[44px] shrink-0 rounded-full border border-line bg-white px-3.5 py-2.5 text-[0.78125rem] font-bold text-ink-soft hover:border-brand-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
             >
               Reset
             </button>
           ) : null}
         </div>
 
-        <div className="mt-5 rounded-2xl bg-[#0E8B7C] p-4 text-white shadow-md">
+        <div className="mt-5 rounded-2xl bg-brand-600 p-4 text-white shadow-md">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[0.65625rem] font-extrabold uppercase tracking-wider text-[#D2F5EE]">Doctors</p>
+              <p className="text-xs font-extrabold uppercase tracking-wider text-brand-100">Doctors</p>
               <p className="mt-1 text-[0.9375rem] font-extrabold">Find the right specialist for your visit</p>
             </div>
             <Stethoscope size={20} className="opacity-90" />
@@ -170,7 +170,7 @@ export default function DoctorListScreen() {
         </div>
 
         {result.fallbackReason ? (
-          <div role="note" className="mt-3 rounded-2xl border border-[#F5A623]/30 bg-[#FFF6E6] px-4 py-3 text-[0.78125rem] font-semibold text-[#F5A623]">
+          <div role="note" className="mt-3 rounded-2xl border border-warn/30 bg-warn-soft px-4 py-3 text-[0.78125rem] font-semibold text-warn">
             {result.fallbackReason}
           </div>
         ) : null}
@@ -178,49 +178,49 @@ export default function DoctorListScreen() {
         {loading ? (
           <div role="status" aria-label="Loading doctors" className="mt-5 space-y-3.5">
             {Array.from({ length: 3 }).map((_, index) => (
-              <div key={index} className="rounded-2xl border border-[#E6ECF3] bg-white shadow-sm">
+              <div key={index} className="surface shadow-sm">
                 <div className="p-4">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0 flex-1 space-y-2">
-                      <Skeleton className="h-4 w-40 bg-[#E6ECF3]" />
-                      <Skeleton className="h-3.5 w-56 bg-[#E6ECF3]" />
-                      <Skeleton className="h-3.5 w-28 bg-[#E6ECF3]" />
+                      <Skeleton className="h-4 w-40 bg-line" />
+                      <Skeleton className="h-3.5 w-56 bg-line" />
+                      <Skeleton className="h-3.5 w-28 bg-line" />
                     </div>
-                    <Skeleton className="h-6 w-14 rounded-full bg-[#E6ECF3]" />
+                    <Skeleton className="h-6 w-14 rounded-full bg-line" />
                   </div>
                 </div>
-                <div className="border-t border-[#E6ECF3] px-4 py-3.5">
+                <div className="border-t border-line px-4 py-3.5">
                   <div className="flex items-center justify-between gap-3">
                     <div className="space-y-2">
-                      <Skeleton className="h-3.5 w-20 bg-[#E6ECF3]" />
-                      <Skeleton className="h-4 w-32 bg-[#E6ECF3]" />
+                      <Skeleton className="h-3.5 w-20 bg-line" />
+                      <Skeleton className="h-4 w-32 bg-line" />
                     </div>
-                    <Skeleton className="h-11 w-24 rounded-xl bg-[#E6ECF3]" />
+                    <Skeleton className="h-11 w-24 rounded-xl bg-line" />
                   </div>
                 </div>
               </div>
             ))}
           </div>
         ) : error ? (
-          <div role="alert" className="mt-5 rounded-2xl border border-[#E8455F]/30 bg-[#FDECEF] p-5 text-[#E8455F]">
+          <div role="alert" className="mt-5 rounded-2xl border border-danger/30 bg-danger-soft p-5 text-danger">
             <p className="text-[0.875rem] font-extrabold">Could not load doctors</p>
             <p className="mt-1 text-[0.78125rem] font-medium">{error}</p>
             <Button
               size="sm"
               variant="outline"
-              className="mt-3 h-11 min-h-[44px] border-[#E8455F]/40 text-[#E8455F] hover:bg-[#FDECEF] focus-visible:ring-2 focus-visible:ring-[#E8455F] font-semibold"
+              className="mt-3 h-11 min-h-[44px] border-danger/40 text-danger hover:bg-danger-soft focus-visible:ring-2 focus-visible:ring-danger font-semibold"
               onClick={loadDoctors}
             >
               <RotateCcw className="mr-2 h-4 w-4" /> Try Again
             </Button>
           </div>
         ) : doctors.length === 0 ? (
-          <div className="mt-5 rounded-2xl border border-dashed border-[#E6ECF3] bg-white/70 p-6 text-center">
-            <p className="text-[0.875rem] font-bold text-[#101A2E]">No doctors match your search.</p>
-            <p className="mt-1 text-[0.78125rem] text-[#6C7A90]">Try a different name or department filter.</p>
+          <div className="mt-5 rounded-2xl border border-dashed border-line bg-white/70 p-6 text-center">
+            <p className="text-[0.875rem] font-bold text-ink">No doctors match your search.</p>
+            <p className="mt-1 text-[0.78125rem] text-ink-muted">Try a different name or department filter.</p>
             <Button
               size="sm"
-              className="mt-4 h-11 min-h-[44px] bg-[#0E8B7C] font-bold text-white hover:bg-[#0C6F64] focus-visible:ring-2 focus-visible:ring-[#16A794]"
+              className="mt-4 h-11 min-h-[44px] bg-brand-600 font-bold text-white hover:bg-brand-700 focus-visible:ring-2 focus-visible:ring-brand-500"
               onClick={resetFilters}
             >
               Clear Filters
@@ -232,16 +232,16 @@ export default function DoctorListScreen() {
               const status = doctor.availabilityStatus ?? (doctor.nextSlot ? 'AVAILABLE' : 'UNAVAILABLE');
 
               return (
-                <div key={doctor.id} className="overflow-hidden rounded-2xl border border-[#E6ECF3] bg-white shadow-sm transition hover:shadow-md">
+                <div key={doctor.id} className="overflow-hidden surface shadow-sm transition hover:shadow-md">
                   <button
                     onClick={() => navigate(`/app/doctor/${doctor.id}`)}
                     aria-label={`View profile of ${doctor.name}, ${doctor.title || 'Specialist'}`}
-                    className="w-full px-4 pt-4 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16A794] rounded-t-2xl"
+                    className="w-full px-4 pt-4 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 rounded-t-2xl"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <p className="text-[0.96875rem] font-extrabold tracking-tight text-[#101A2E]">{doctor.name}</p>
-                        <p className="mt-0.5 text-[0.78125rem] text-[#6C7A90]">
+                        <p className="text-[0.96875rem] font-extrabold tracking-tight text-ink">{doctor.name}</p>
+                        <p className="mt-0.5 text-[0.78125rem] text-ink-muted">
                           {doctor.title || 'Specialist'} · {doctor.department}
                         </p>
                       </div>
@@ -254,31 +254,31 @@ export default function DoctorListScreen() {
                           <Star size={12} className="fill-current" />
                           {AVAILABILITY_LABELS[status] ?? status}
                         </span>
-                        <p className="mt-1 text-[0.65625rem] font-semibold text-[#6C7A90]">{doctor.reviews ?? 'Not available'} reviews</p>
+                        {doctor.reviews!==undefined&&<p className="mt-1 text-xs font-semibold text-ink-muted">{doctor.reviews} reviews</p>}
                       </div>
                     </div>
 
-                    <div className="mt-2.5 flex flex-wrap items-center gap-2 text-[0.78125rem] text-[#3A465C]">
-                      <span className="inline-flex items-center gap-1 rounded-full bg-[#F4F7FA] px-2.5 py-1 font-semibold text-[#3A465C]">
+                    <div className="mt-2.5 flex flex-wrap items-center gap-2 text-[0.78125rem] text-ink-soft">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-canvas px-2.5 py-1 font-semibold text-ink-soft">
                         <Building2 size={12} /> {doctor.department}
                       </span>
-                      <span className="inline-flex items-center gap-1 rounded-full bg-[#F4F7FA] px-2.5 py-1 font-semibold text-[#3A465C]">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-canvas px-2.5 py-1 font-semibold text-ink-soft">
                         <MapPin size={12} /> Room {doctor.room}
                       </span>
                     </div>
                   </button>
 
-                  <div className="mt-3.5 flex items-center justify-between gap-3 border-t border-[#E6ECF3] px-4 py-3.5">
+                  <div className="mt-3.5 flex items-center justify-between gap-3 border-t border-line px-4 py-3.5">
                     <div className="min-w-0">
-                      <p className="text-[0.6875rem] font-bold uppercase tracking-wide text-[#6C7A90]">Experience</p>
-                      <p className={`mt-0.5 text-[0.84375rem] font-extrabold ${doctor.experienceYears ? 'text-[#101A2E]' : 'text-[#6C7A90]'}`}>
+                      <p className="text-xs font-bold uppercase tracking-wide text-ink-muted">Experience</p>
+                      <p className={`mt-0.5 text-[0.84375rem] font-extrabold ${doctor.experienceYears ? 'text-ink' : 'text-ink-muted'}`}>
                         {doctor.experienceYears ? `${doctor.experienceYears} Yrs Exp` : 'Not listed'}
                       </p>
                     </div>
                     <Button
                       size="sm"
                       disabled={status === 'UNAVAILABLE'}
-                      className="h-11 min-h-[44px] shrink-0 bg-[#0E8B7C] px-6 font-bold text-white hover:bg-[#0C6F64] disabled:bg-[#E6ECF3] disabled:text-[#6C7A90] focus-visible:ring-2 focus-visible:ring-[#16A794]"
+                      className="h-11 min-h-[44px] shrink-0 bg-brand-600 px-6 font-bold text-white hover:bg-brand-700 disabled:bg-line disabled:text-ink-muted focus-visible:ring-2 focus-visible:ring-brand-500"
                       onClick={() => navigate(`/app/book/date/${doctor.id}`)}
                     >
                       Book OPD

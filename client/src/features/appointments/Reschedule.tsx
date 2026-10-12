@@ -132,7 +132,7 @@ export default function Reschedule() {
       {!datesLoading && !slotError && availableDates.length === 0 && <p role="status" className="mb-3 text-sm">No bookable dates currently published. Try refreshing availability.</p>}
       {datesLoading && <p role="status" className="mb-3 text-sm">Loading published dates…</p>}
       {/* 1. CURRENT APPOINTMENT (Clearly Shown) */}
-      <div className="rounded-2xl border border-line bg-white p-4 shadow-card">
+      <div className="surface p-4 shadow-card">
         <p className="label">Current Appointment</p>
         <div className="mt-2 flex items-start justify-between">
           <div>
@@ -159,8 +159,9 @@ export default function Reschedule() {
       </div>
 
       {/* 2. SELECT NEW DATE */}
-      <div className="mt-4 rounded-2xl border border-line bg-white p-4 shadow-card">
-        <div className="flex items-center justify-between">
+      <div className="mt-4 surface p-4 shadow-card">
+        <label className="calendar-compact-only text-sm font-semibold">Select New Date<select className="field" value={date} disabled={busy||datesLoading} onChange={e=>setDate(e.target.value)}><option value="">Choose a date</option>{availableDates.filter(day=>day>=todayISO()).map(day=><option key={day} value={day}>{fmtMediumDate(day)}</option>)}</select></label>
+        <div className="calendar-wide-only flex items-center justify-between">
           <p className="text-[0.90625rem] font-extrabold text-ink">Select New Date</p>
           <div className="flex items-center gap-2">
             <span className="text-[0.78125rem] font-bold text-brand-600">
@@ -170,7 +171,7 @@ export default function Reschedule() {
               type="button"
               onClick={() => setMonthOffset((m) => Math.max(0, m - 1))}
               disabled={monthOffset === 0}
-              className="grid h-7 w-7 place-items-center rounded-md border border-line text-[0.75rem] font-bold disabled:opacity-30 hover:bg-slate-50 min-h-0"
+              className="grid h-11 w-11 place-items-center rounded-md border border-line text-[0.75rem] font-bold disabled:opacity-30 hover:bg-slate-50 min-h-0"
               aria-label="Previous month"
             >
               ‹
@@ -179,7 +180,7 @@ export default function Reschedule() {
               type="button"
               onClick={() => setMonthOffset((m) => m + 1)}
               disabled={busy}
-              className="grid h-7 w-7 place-items-center rounded-md border border-line text-[0.75rem] font-bold disabled:opacity-30 hover:bg-slate-50 min-h-0"
+              className="grid h-11 w-11 place-items-center rounded-md border border-line text-[0.75rem] font-bold disabled:opacity-30 hover:bg-slate-50 min-h-0"
               aria-label="Next month"
             >
               ›
@@ -187,9 +188,9 @@ export default function Reschedule() {
           </div>
         </div>
 
-        <div className="mt-4 grid grid-cols-7 gap-1 text-center">
+        <div className="calendar-wide-only mt-4 grid grid-cols-7 gap-1 text-center">
           {DOW_SHORT.map((d) => (
-            <span key={d} className="pb-1 text-[0.6875rem] font-bold text-ink-muted">
+            <span key={d} className="pb-1 text-xs font-bold text-ink-muted">
               {d}
             </span>
           ))}
@@ -207,7 +208,7 @@ export default function Reschedule() {
                 disabled={!enabled}
                 onClick={() => setDate(cell.iso)}
                 className={cn(
-                  'mx-auto grid h-8 w-8 place-items-center rounded-full text-[0.78125rem] font-semibold transition min-h-0',
+                  'mx-auto grid min-h-11 w-full min-w-0 place-items-center rounded-full text-[0.78125rem] font-semibold transition min-h-0',
                   isSelected
                     ? 'bg-brand-600 text-white font-extrabold shadow-soft'
                     : enabled

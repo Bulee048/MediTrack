@@ -14,7 +14,7 @@ const labels={WAITING:'Waiting',ALMOST_TURN:'Almost your turn',CALLING:"It&#x27;
 for(const [status,label] of Object.entries(labels))test(`actual patient queue renders ${status} without an incorrect turn announcement`,()=>{
   const html=render({...fixture,status});
   assert.ok(html.includes(label));assert.match(html,/Q-123/);
-  if(status==='CALLING'){assert.match(html,/Please proceed now/);assert.match(html,/aria-live="assertive"/);}
+  if(status==='CALLING'){assert.match(html,/Please proceed now/);assert.match(html,/aria-live="polite"/);}
   else assert.doesNotMatch(html,/Your Turn!/);
   if(['WAITING','ALMOST_TURN'].includes(status)){assert.match(html,/~0 mins/);assert.match(html,/Approximate time/);}
   else {assert.match(html,/Not waiting/);assert.doesNotMatch(html,/~0 mins/);}

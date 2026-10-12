@@ -25,17 +25,17 @@ export const Switch: React.FC<SwitchProps> = ({
       disabled={disabled}
       onClick={() => onChange(!checked)}
       className={cn(
-        'relative inline-flex h-[26px] w-[46px] shrink-0 cursor-pointer items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500/30 disabled:cursor-not-allowed disabled:opacity-50 min-h-0',
-        checked ? 'bg-brand-600' : 'bg-slate-300',
+        'relative inline-flex h-11 w-12 shrink-0 cursor-pointer items-center justify-center rounded-xl bg-transparent focus:outline-none focus:ring-2 focus:ring-brand-500/30 disabled:cursor-not-allowed disabled:opacity-50',
         className
       )}
     >
-      <span
+      <span aria-hidden="true" className={cn('relative inline-flex h-[26px] w-[46px] items-center rounded-full transition-colors',checked?'bg-brand-600':'bg-slate-300')}><span
         className={cn(
           'inline-block h-5 w-5 transform rounded-full bg-white shadow transition duration-200 ease-in-out',
           checked ? 'translate-x-[23px]' : 'translate-x-[3px]'
         )}
       />
+      </span>
     </button>
   );
 };

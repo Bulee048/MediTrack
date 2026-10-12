@@ -63,4 +63,11 @@ export class QueueApiService {
     if (!ticket) throw new Error('Queue ticket could not be loaded. Please refresh the queue.');
     return ticket;
   }
+
+  static async cancelTicket(ticketId: string): Promise<QueueTicketData> {
+    const response = await apiClient.delete<QueueApiResponse>(`/queue/${ticketId}`);
+    const ticket = response.data.data?.ticket;
+    if (!ticket) throw new Error('Queue ticket could not be cancelled. Please refresh and try again.');
+    return ticket;
+  }
 }

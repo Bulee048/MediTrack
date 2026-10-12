@@ -7,8 +7,7 @@ export function QueueCallControl({ doctorSelected, isToday, busy, loading, pendi
     : waiting === 0 ? 'No waiting patients for this doctor. Check in an appointment to add a patient.'
     : pending ? 'Saving queue change…' : '';
   return <>
-    <button type="button" className="rounded-xl bg-brand-700 px-4 py-3 font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
-      disabled={Boolean(reason)} aria-describedby="queue-call-guidance" onClick={onCall}>Call Next</button>
-    <p id="queue-call-guidance" role="status" className="text-sm">{reason || 'Calls the next waiting patient for the selected doctor. The patient queue updates automatically.'}</p>
+    <button type="button" className="button" disabled={Boolean(reason)} aria-describedby="queue-call-guidance" onClick={onCall}>Call Next</button>
+    <p id="queue-call-guidance" role="status" className="mt-2 text-sm leading-relaxed text-ink-muted">{reason || 'Calls the next waiting patient for the selected doctor. The patient queue updates automatically.'}</p>
   </>;
 }

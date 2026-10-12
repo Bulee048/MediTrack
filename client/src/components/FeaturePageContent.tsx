@@ -7,14 +7,14 @@ export function FeaturePageContent({ children, title, back, action }: {
 }) {
   const navigate = useNavigate();
   return (
-    <main data-feature-accessibility className="mx-auto w-full max-w-xl bg-canvas px-5 py-4">
-      <header className="mb-4 flex items-center gap-3">
+    <main data-feature-accessibility className="patient-page page-enter">
+      <header className="page-header">
         {back && <button type="button" aria-label="Go back"
           onClick={() => typeof back === 'function' ? back() : navigate(-1)}
-          className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-line bg-white text-ink shadow-soft">
+          className="icon-button">
           <ChevronLeft size={19} />
         </button>}
-        <h1 className="min-w-0 flex-1 text-[1.1875rem] font-extrabold tracking-tight text-ink">{title}</h1>
+        <h1 className="page-title min-w-0 flex-1 text-ink">{title}</h1>
         {action}
       </header>
       {children}

@@ -1,5 +1,6 @@
+import PortalSelection from '@/features/auth/PortalSelection';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { BrowserRouter, Routes, Route, Link, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from '@/components/ui/sonner';
 import StaffDashboard from '@/features/staff/StaffDashboard';
 import LoginScreen from '@/features/auth/LoginScreen';
@@ -15,19 +16,6 @@ import ReviewAppointmentScreen from '@/features/booking/ReviewAppointmentScreen'
 import BookingConfirmedScreen from '@/features/booking/BookingConfirmedScreen'; // NEW
 import { PatientLiveQueue } from '@/features/queue/PatientLiveQueue';
 import { NotificationsList } from '@/features/notifications/NotificationsList';
-import {
-  Activity,
-  Hospital,
-  UserCheck,
-  Clock,
-  CalendarDays,
-  Users,
-  User,
-  Sliders,
-  ChevronRight,
-} from 'lucide-react';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 
 // Feature Contexts
 import { AccessibilityProvider } from '@/features/accessibility/context/AccessibilityContext';
@@ -53,178 +41,6 @@ const queryClient = new QueryClient({
   },
 });
 
-function Home() {
-  return (
-    <main className="min-h-screen bg-canvas p-6 md:p-12">
-      <div className="max-w-4xl mx-auto space-y-8">
-        <header className="flex items-center justify-between border-b border-line pb-6">
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-brand-600 text-white rounded-xl shadow-md">
-              <Hospital className="h-8 w-8" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-extrabold text-ink tracking-tight">MediTrack</h1>
-              <p className="text-ink-muted font-medium text-sm">
-                OPD Appointment Booking &amp; Queue Management System
-              </p>
-            </div>
-          </div>
-          <Badge className="bg-brand-50 text-brand-700 border-brand-200 text-sm px-3 py-1">
-            Patient &amp; Staff Portals
-          </Badge>
-        </header>
-
-        <nav aria-label="Patient account access" className="flex flex-wrap gap-4">
-          <Link to="/login" className="font-bold text-brand-700 underline">Sign in</Link>
-          <Link to="/staff/login" className="font-bold text-brand-700 underline">Staff portal</Link>
-          <Link to="/register" className="font-bold text-brand-700 underline">Register</Link>
-          <Link to="/app/home" className="font-bold text-brand-700 underline">Patient home</Link>
-        </nav>
-
-        {/* Patient Portal Services (Appointment Management, Family Booking, Profile, Accessibility) */}
-        <section className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-xl font-extrabold text-ink tracking-tight">
-                Patient &amp; Appointment Portal
-              </h2>
-              <p className="text-sm text-ink-muted">
-                Appointment Management, Family Booking, Profile and Accessibility
-              </p>
-            </div>
-          </div>
-
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Link
-              to="/app/appointments"
-              className="group flex flex-col justify-between rounded-2xl border border-line bg-white p-5 shadow-card transition hover:border-brand-300 hover:shadow-md"
-            >
-              <div>
-                <div className="mb-3 inline-flex p-2.5 rounded-xl bg-brand-50 text-brand-600 group-hover:bg-brand-600 group-hover:text-white transition">
-                  <CalendarDays className="h-5 w-5" />
-                </div>
-                <h3 className="font-extrabold text-ink group-hover:text-brand-700">My Appointments</h3>
-                <p className="mt-1 text-xs text-ink-muted leading-relaxed">
-                  Upcoming, past, reschedule &amp; cancellation with live status
-                </p>
-              </div>
-              <div className="mt-4 flex items-center gap-1 text-xs font-bold text-brand-600">
-                <span>View appointments</span>
-                <ChevronRight size={14} />
-              </div>
-            </Link>
-
-            {/* Book for Family Member - CLEARLY VISIBLE */}
-            <Link
-              to="/app/book/family"
-              className="group flex flex-col justify-between rounded-2xl border-2 border-brand-200 bg-brand-50/40 p-5 shadow-card transition hover:border-brand-500 hover:shadow-md"
-            >
-              <div>
-                <div className="mb-3 inline-flex p-2.5 rounded-xl bg-brand-600 text-white shadow-soft">
-                  <Users className="h-5 w-5" />
-                </div>
-                <div className="flex items-center gap-2">
-                  <h3 className="font-extrabold text-ink group-hover:text-brand-700">Book for Family</h3>
-                  <span className="rounded-full bg-brand-600 text-white text-[10px] font-bold px-2 py-0.5">
-                    Family
-                  </span>
-                </div>
-                <p className="mt-1 text-xs text-ink-muted leading-relaxed">
-                  Easily register and schedule OPD slots for loved ones
-                </p>
-              </div>
-              <div className="mt-4 flex items-center gap-1 text-xs font-bold text-brand-700">
-                <span>Manage &amp; book family</span>
-                <ChevronRight size={14} />
-              </div>
-            </Link>
-
-            <Link
-              to="/app/profile"
-              className="group flex flex-col justify-between rounded-2xl border border-line bg-white p-5 shadow-card transition hover:border-brand-300 hover:shadow-md"
-            >
-              <div>
-                <div className="mb-3 inline-flex p-2.5 rounded-xl bg-brand-50 text-brand-600 group-hover:bg-brand-600 group-hover:text-white transition">
-                  <User className="h-5 w-5" />
-                </div>
-                <h3 className="font-extrabold text-ink group-hover:text-brand-700">Patient Profile</h3>
-                <p className="mt-1 text-xs text-ink-muted leading-relaxed">
-                  Personal details and patient account information
-                </p>
-              </div>
-              <div className="mt-4 flex items-center gap-1 text-xs font-bold text-brand-600">
-                <span>View profile</span>
-                <ChevronRight size={14} />
-              </div>
-            </Link>
-
-            <Link
-              to="/app/settings"
-              className="group flex flex-col justify-between rounded-2xl border border-line bg-white p-5 shadow-card transition hover:border-brand-300 hover:shadow-md"
-            >
-              <div>
-                <div className="mb-3 inline-flex p-2.5 rounded-xl bg-brand-50 text-brand-600 group-hover:bg-brand-600 group-hover:text-white transition">
-                  <Sliders className="h-5 w-5" />
-                </div>
-                <h3 className="font-extrabold text-ink group-hover:text-brand-700">Accessibility</h3>
-                <p className="mt-1 text-xs text-ink-muted leading-relaxed">
-                  Local text size, contrast and reduced-motion preferences
-                </p>
-              </div>
-              <div className="mt-4 flex items-center gap-1 text-xs font-bold text-brand-600">
-                <span>Customize app</span>
-                <ChevronRight size={14} />
-              </div>
-            </Link>
-          </div>
-        </section>
-
-        {/* System Core Architecture */}
-        <section className="grid md:grid-cols-3 gap-6 pt-4 border-t border-line">
-          <Card className="hover:shadow-md transition-shadow">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Digital Queue</CardTitle>
-              <Activity className="h-4 w-4 text-brand-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-slate-900">FR-02 &amp; FR-03</div>
-              <CardDescription className="mt-1 text-slate-600">
-                Digital Queue Ticket Generation &amp; Live Position Tracking
-              </CardDescription>
-            </CardContent>
-          </Card>
-
-          <Card className="hover:shadow-md transition-shadow">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Wait Time Engine</CardTitle>
-              <Clock className="h-4 w-4 text-indigo-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-slate-900">FR-04 &amp; FR-05</div>
-              <CardDescription className="mt-1 text-slate-600">
-                Estimated Delay Calculation &amp; Turn Approaching Alerts
-              </CardDescription>
-            </CardContent>
-          </Card>
-
-          <Card className="hover:shadow-md transition-shadow">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Staff Controller</CardTitle>
-              <UserCheck className="h-4 w-4 text-emerald-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-slate-900">FR-10 to FR-12</div>
-              <CardDescription className="mt-1 text-slate-600">
-                Walk-in Registration, Queue Calling &amp; Consultation Workflow
-              </CardDescription>
-            </CardContent>
-          </Card>
-        </section>
-      </div>
-    </main>
-  );
-}
-
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
@@ -232,7 +48,7 @@ export default function App() {
         <BrowserRouter>
           <Routes>
               {/* Landing & Home */}
-              <Route path="/" element={<Home />} />
+              <Route path="/" element={<PortalSelection />} />
               <Route path="/login" element={<LoginScreen />} />
               <Route path="/staff/login" element={<LoginScreen staff />} />
               <Route path="/staff/*" element={<StaffDashboard />} />
@@ -258,8 +74,8 @@ export default function App() {
               <Route path="/app/settings/accessibility" element={<SettingsAccessibility />} />
               <Route path="/app/settings" element={<Navigate to="/app/settings/accessibility" replace />} />
 
-          <Route path="/queue" element={<main data-feature-accessibility className="min-h-full bg-slate-50 p-6"><PatientLiveQueue /></main>} />
-          <Route path="/notifications" element={<main data-feature-accessibility className="min-h-full bg-slate-50 p-6"><NotificationsList /></main>} />
+          <Route path="/queue" element={<main data-feature-accessibility className="patient-page page-enter"><PatientLiveQueue /></main>} />
+          <Route path="/notifications" element={<main data-feature-accessibility className="patient-page page-enter"><NotificationsList /></main>} />
 
 
           <Route path="/app/queue" element={<Navigate to="/queue" replace />} />

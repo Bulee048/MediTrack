@@ -48,11 +48,11 @@ const AlertDialog: React.FC<AlertDialogProps> = ({
     <dialog ref={dialog} aria-labelledby={titleId} aria-describedby={descriptionId}
       onCancel={(e) => { e.preventDefault(); close(); }}
       onClick={(e) => { if (e.target === dialog.current) close(); }}
-      className="m-auto w-[calc(100%-2rem)] max-w-md rounded-lg border border-border bg-background p-6 shadow-lg backdrop:bg-black/50">
+      className="ui-dialog" role="alertdialog">
         <h3 id={titleId} className="text-lg font-bold text-foreground">{title}</h3>
         <p id={descriptionId} className="mt-2 text-sm text-muted-foreground">{description}</p>
-        <div className="mt-6 flex justify-end gap-3">
-          <Button variant="outline" onClick={close}>
+        <div className="mt-6 flex flex-wrap justify-end gap-3">
+          <Button variant="outline" autoFocus onClick={close}>
             {cancelText}
           </Button>
           <Button

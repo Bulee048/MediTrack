@@ -42,13 +42,13 @@ export default function Profile() {
       }
     >
       {/* Identity Card */}
-      <div className="mt-1 flex items-center gap-4 rounded-2xl bg-brand-600 p-5 text-white shadow-card">
+      <div className="mt-1 flex items-center gap-4 rounded-3xl bg-gradient-to-br from-brand-700 to-brand-900 p-6 text-white shadow-card">
         <span className="grid h-16 w-16 shrink-0 place-items-center rounded-full bg-white/95 text-[1.1875rem] font-extrabold text-brand-600 ring-4 ring-white/20">
           {initials(user?.name || 'Patient')}
         </span>
         <div className="min-w-0">
-          <p className="truncate text-[1.0625rem] font-extrabold tracking-tight">{user?.name}</p>
-          <p className="mt-1 truncate text-[0.75rem] text-white/80 font-medium">
+          <p className="break-words text-xl font-extrabold tracking-tight">{user?.name}</p>
+          <p className="mt-1 break-words text-xs text-white/80 font-medium">
             ID: {user?.displayId}
           </p>
         </div>
@@ -144,8 +144,8 @@ export default function Profile() {
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="mt-5 rounded-2xl border border-line bg-white p-5 shadow-card">
-      <h3 className="text-[0.6875rem] font-extrabold uppercase tracking-wide text-ink-muted">{title}</h3>
+    <section className="mt-5 surface p-5 shadow-card">
+      <h3 className="text-xs font-extrabold uppercase tracking-wide text-ink-muted">{title}</h3>
       <div className="mt-3 divide-y divide-line">{children}</div>
     </section>
   );
