@@ -182,13 +182,14 @@ async function main() {
     }
   } finally {
     if (mongoose.connection.readyState === 1) {
+      // Remove reminder sources before jobs: the live worker may still schedule owned appointments.
+      await Appointment.deleteMany({ patient: { $in: ownerIds } });
+      await User.deleteMany({ _id: { $in: [...ownerIds, staffId] } });
       await AppointmentReminder.deleteMany({ user: { $in: ownerIds } });
       await Notification.deleteMany({ user: { $in: ownerIds } });
       await QueueTicket.deleteMany({ patient: { $in: ownerIds } });
       await QueueCounter.deleteMany({ scopeKey: { $in: [today, future].map(day => `DEPT:${code}:${day}`) } });
-      await Appointment.deleteMany({ patient: { $in: ownerIds } });
       await FamilyMember.deleteMany({ owner: { $in: ownerIds } });
-      await User.deleteMany({ _id: { $in: [...ownerIds, staffId] } });
       await Doctor.deleteOne({ _id: doctorId }); await Department.deleteOne({ _id: departmentId });
       for (const [model, filter] of [[AppointmentReminder, { user: { $in: ownerIds } }], [Notification, { user: { $in: ownerIds } }], [QueueTicket, { patient: { $in: ownerIds } }],
         [Appointment, { patient: { $in: ownerIds } }], [FamilyMember, { owner: { $in: ownerIds } }]] as const)

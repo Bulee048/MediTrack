@@ -14,7 +14,7 @@ export async function connectDatabase(): Promise<typeof mongoose> {
   if (env.NODE_ENV === 'production' && env.MONGODB_DB_NAME) throw new Error('Demo database cannot be used in production mode');
   try {
     const conn = await mongoose.connect(env.MONGODB_URI, { ...(env.MONGODB_DB_NAME ? {dbName:env.MONGODB_DB_NAME} : {}), lookup: databaseLookup });
-    console.log(`[Database] MongoDB connected successfully to host: ${conn.connection.host}`);
+    console.log(`[Database] MongoDB connected successfully: ${conn.connection.name} on host ${conn.connection.host}`);
     return conn;
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown database connection error';

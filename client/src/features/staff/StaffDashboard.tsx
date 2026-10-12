@@ -16,6 +16,8 @@ import { StaffQueueApiService } from '@/services/staffQueueApi';
 import StaffAccount, { useStaffProfile } from './StaffAccount';
 import TeamAccess from './TeamAccess';
 import DoctorRoster from './DoctorRoster';
+import { useHospitalQueueDate } from './useHospitalQueueDate';
+import { QueueCallControl } from './QueueCallControl';
 
 interface Appointment { familyMember?:{name:string}|null; _id: string; patient: { name: string; phone: string } | null; doctor: { _id: string; name: string } | null; appointmentDate: string; timeSlot: string; status: string; queueTicket?: string; }
 
@@ -23,7 +25,7 @@ export default function StaffDashboard() {
 
   const session = useAuthSession();
   const path=useLocation().pathname;
-  const [date,setDate]=useState(hospitalDate());
+  const { date, setDate, today } = useHospitalQueueDate();
   const [appointmentStatus,setAppointmentStatus]=useState('');
   const [queueStatus,setQueueStatus]=useState('');
   const queueView=path==='/staff/queue'||path==='/staff/flow'||path.startsWith('/staff/queue/');
@@ -48,7 +50,7 @@ export default function StaffDashboard() {
   const refresh=(profile.data?.staffPreferences?.refreshSeconds??15)*1000;
   const appointments = useQuery({ queryKey: ['staffAppointments', session, date], queryFn: async () => (await apiClient.get<{data:{appointments:Appointment[]}}>('/appointments',{params:{date}})).data.data.appointments, enabled: authorized, refetchInterval: refresh });
 
-  const queue = useQuery({ queryKey: ['staffQueue', session, doctorId, date], queryFn: () => StaffQueueApiService.getAllForStaff({doctorId:doctorId||undefined,date}), enabled: authorized, refetchInterval: refresh });
+  const queue = useQuery({ queryKey: ['staffQueue', session, doctorId, date], queryFn: () => StaffQueueApiService.getAllForStaff({doctorId:doctorId||undefined,date}), enabled: authorized, refetchInterval: refresh, refetchIntervalInBackground: true, refetchOnWindowFocus: 'always' });
 
   const roster=useQuery({queryKey:['staffRoster',session],queryFn:async()=>(await apiClient.get<{data:{doctors:{_id:string;name:string;availabilityStatus:string;roomNumber?:string}[]}}>('/doctors')).data.data.doctors,enabled:authorized,refetchInterval:refresh});
   const action = useMutation({ mutationFn: async ({ operation, id }: { operation: string; id?: string }) => {
@@ -61,6 +63,7 @@ export default function StaffDashboard() {
     if(operation==='start-consultation')return StaffQueueApiService.startConsultation(id);
     if(operation==='complete')return StaffQueueApiService.completeConsultation(id);
     if(operation==='hold')return StaffQueueApiService.hold(id);
+    if(operation==='resume')return StaffQueueApiService.resume(id);
     if(operation==='skip')return StaffQueueApiService.skip(id);
     throw new Error('Unsupported queue operation.');
 
@@ -107,13 +110,14 @@ export default function StaffDashboard() {
       </section>
 
       </>}
-      {queueView&&<section className="rounded-2xl border border-line bg-white p-4"><h2 className="text-xl font-bold">Queue</h2><div className="my-3 flex flex-wrap items-end gap-3"><label className="min-w-0 w-full sm:w-auto">Doctor<select className="mt-1 block w-full max-w-full rounded border p-3 sm:ml-2 sm:mt-0 sm:inline-block sm:w-auto" value={doctorId} onChange={e=>setDoctorId(e.target.value)}><option value="">All doctors</option>{Array.from(doctors).map(([id,name])=><option key={id} value={id}>{name}</option>)}</select></label><button className="rounded-xl bg-brand-700 px-4 py-3 font-bold text-white" disabled={action.isPending||date!==hospitalDate()||!doctorId||doctorBusy||Boolean(selectedTicket)} onClick={()=>action.mutate({operation:'call-next'})}>Call Next</button>{!doctorId&&<p className="text-sm">Select a doctor to call the next patient.</p>}{doctorBusy&&<p className="text-sm" role="status">Finish or skip the current called patient before calling next. An active consultation must be completed.</p>}</div>
+      {queueView&&date!==today&&<div role="status" className="rounded-xl border border-amber-300 bg-amber-50 p-4"><p>Viewing {date}. Patient live queues show today's tickets ({today}); this date is read-only.</p><button className="mt-2 rounded-xl bg-brand-700 px-4 py-2 font-bold text-white" onClick={()=>setDate(today)}>Show today's queue</button></div>}
+      {queueView&&<section className="rounded-2xl border border-line bg-white p-4"><h2 className="text-xl font-bold">Queue</h2><div className="my-3 flex flex-wrap items-end gap-3"><label className="min-w-0 w-full sm:w-auto">Doctor<select className="mt-1 block w-full max-w-full rounded border p-3 sm:ml-2 sm:mt-0 sm:inline-block sm:w-auto" value={doctorId} onChange={e=>setDoctorId(e.target.value)}><option value="">All doctors</option>{Array.from(doctors).map(([id,name])=><option key={id} value={id}>{name}</option>)}</select></label><QueueCallControl doctorSelected={Boolean(doctorId)} isToday={date===today} busy={doctorBusy} loading={queue.isFetching || queue.isError} pending={action.isPending} waiting={queue.data?.filter(t=>['WAITING','ALMOST_TURN'].includes(t.status)).length??0} onCall={()=>action.mutate({operation:'call-next'})}/></div>
 
         {queue.isError && <p role="alert">{queue.error.message}<button onClick={()=>void queue.refetch()}>Retry</button></p>}
 
         {queue.isLoading && <p role="status">Loading queue…</p>}
 
-        <div className="space-y-3">{queue.data?.filter(t=>(!selectedTicket||t._id===selectedTicket)&&(!status||t.status===status)&&(profile.data?.staffPreferences?.showCompletedTickets!==false||!['COMPLETED','CANCELLED'].includes(t.status))).map(t=><article key={t._id} className="rounded-xl border border-line p-3"><h3 className="font-bold"><Link className="underline" to={`/staff/queue/${t._id}`}>{t.ticketNumber} · {t.appointment?.familyMember?.name??t.patient?.name}</Link></h3><p>{t.doctor?.name} · {t.status}</p><p>Waiting position: {t.currentPosition||'—'} · Estimated wait: {t.estimatedWaitMins} minutes</p><div className="mt-2 flex flex-wrap gap-2">{[['start-consultation','Start consultation',t.status==='CALLING'],['complete','Complete',t.status==='IN_CONSULTATION'],['hold','Hold',['WAITING','ALMOST_TURN'].includes(t.status)],['skip','Skip',['WAITING','ALMOST_TURN','CALLING'].includes(t.status)]].map(([op,label,valid])=>valid && <button className="rounded border border-brand-700 px-3 py-2 text-brand-700" key={String(op)} disabled={action.isPending||date!==hospitalDate()} onClick={()=>action.mutate({operation:String(op),id:t._id})}>{label}</button>)}</div></article>)}</div>
+        <div className="space-y-3">{queue.data?.filter(t=>(!selectedTicket||t._id===selectedTicket)&&(!status||t.status===status)&&(profile.data?.staffPreferences?.showCompletedTickets!==false||!['COMPLETED','CANCELLED'].includes(t.status))).map(t=><article key={t._id} className="rounded-xl border border-line p-3"><h3 className="font-bold"><Link className="underline" to={`/staff/queue/${t._id}`}>{t.ticketNumber} · {t.appointment?.familyMember?.name??t.patient?.name}</Link></h3><p>{t.doctor?.name} · {t.status.replaceAll('_',' ')}</p>{!doctorId&&t.doctor&&<Link className="inline-block py-2 font-semibold text-brand-700 underline" to={`/staff/queue?doctorId=${t.doctor._id}`}>Manage doctor queue</Link>}<p>Waiting position: {t.currentPosition||'—'} · Estimated wait: {t.estimatedWaitMins} minutes</p><div className="mt-2 flex flex-wrap gap-2">{[['start-consultation','Start consultation',t.status==='CALLING'],['complete','Complete',t.status==='IN_CONSULTATION'],['hold','Hold',['WAITING','ALMOST_TURN'].includes(t.status)],['resume','Resume waiting',t.status==='HELD'],['skip','Skip',['WAITING','ALMOST_TURN','CALLING'].includes(t.status)]].map(([op,label,valid])=>valid && <button className="rounded border border-brand-700 px-3 py-2 text-brand-700" key={String(op)} disabled={action.isPending||date!==hospitalDate()} onClick={()=>action.mutate({operation:String(op),id:t._id})}>{label}</button>)}</div></article>)}</div>
 
         {queue.data&&!queue.data.some(t=>(!selectedTicket||t._id===selectedTicket)&&(!status||t.status===status)&&(profile.data?.staffPreferences?.showCompletedTickets!==false||!['COMPLETED','CANCELLED'].includes(t.status)))&&<p>No queue tickets match these filters.</p>}
 

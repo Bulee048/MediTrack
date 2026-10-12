@@ -29,7 +29,7 @@ From the repository root:
 npm run dev
 ```
 
-The root launcher starts both official services, chooses the isolated `meditrack_demo` database, sets matching API/CORS origins and fails clearly if a port is occupied. Ctrl+C stops its child services. This development launcher defaults `TEST_DNS_SERVERS` to `8.8.8.8,1.1.1.1` for Atlas discovery and an OS lookup fallback; set it explicitly to your preferred resolvers. Production initialization keeps the system resolver and never enables that fallback.
+The root launcher starts both official services using the database configured in `MONGODB_URI` (the current official database is `meditrack`), sets matching API/CORS origins and fails clearly if a port is occupied. It does not seed/reset data or copy demo accounts. Ctrl+C stops its child services. This development launcher defaults `TEST_DNS_SERVERS` to `8.8.8.8,1.1.1.1` for Atlas discovery and an OS lookup fallback; set it explicitly to your preferred resolvers. Production initialization keeps the system resolver and never enables that fallback. Startup logs identify the connected database.
 
 - Patient: http://localhost:5184/login
 - Staff: http://localhost:5184/staff/login
@@ -39,7 +39,7 @@ Open both portals in separate tabs. Patient and staff tokens use separate storag
 
 ## Development data
 
-The development seed is opt-in, production-refused and restricted to `meditrack_demo`:
+Demo accounts and disposable test fixtures belong to the separate `meditrack_demo` database. To run against that data explicitly, use `npm run dev:demo`. Official patient/staff accounts must sign in against the official database; a demo login is not an official account. The development seed is opt-in, production-refused and restricted to `meditrack_demo`:
 
 ```sh
 # Set DEMO_ENV=true and MONGODB_DB_NAME=meditrack_demo in your shell first.
@@ -58,6 +58,7 @@ npm --prefix client run test:appointments
 npm --prefix client run test:staff
 npm --prefix client run test:queue
 npm --prefix client run test:profile-recovery
+npm --prefix client run test:queue-controls
 npm --prefix server run typecheck
 npm --prefix server run build
 ```
@@ -103,3 +104,5 @@ The follow-up audit, endpoint/control inventory and verification limits are reco
 Original staff reference preservation: `origin/feature/staff-opd`, commit `f943d3a`, under `docs/staff-reference/`. The original `app/` files are unchanged. Patient module history is preserved through the verified develop ancestry on `integration/full-app`.
 
 Transient initial account-load failures recover automatically with 5/10/20/30-second capped backoff and immediate focus/online recovery. Authentication failures still require sign-in. Staff queue calculations share one fresh active snapshot per response instead of loading the same queue per ticket. Same-doctor/day service admission remains exclusive even after a department reassignment.
+
+Staff queue controls require a selected doctor and today's hospital date. Use **Manage doctor queue** on a ticket to select its doctor. **Resume waiting** returns only today's HELD ticket with an active same-day appointment to its original queue order; its number stays unchanged and the patient receives a persisted update. SKIPPED/COMPLETED/CANCELLED tickets cannot be resumed. Historical queues are read-only in the staff client, with a **Show today's queue** shortcut. A live date follows Colombo midnight; deliberately selected historical/future dates remain selected. Patient live queue displays today's checked-in tickets, so book/check in today's appointment to create a current ticket.

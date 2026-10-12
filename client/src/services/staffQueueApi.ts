@@ -105,4 +105,9 @@ export class StaffQueueApiService {
     );
     return response.data.data.ticket;
   }
+
+  static async resume(ticketId: string): Promise<StaffQueueTicket> {
+    const response = await apiClient.patch<StaffQueueResponse<{ ticket: StaffQueueTicket }>>(`/queue/${ticketId}/resume`);
+    return response.data.data.ticket;
+  }
 }

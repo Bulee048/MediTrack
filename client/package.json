@@ -12,7 +12,8 @@
     "test:appointments": "node --test tests/appointment.test.mjs",
     "test:staff": "node --test tests/staff-components.test.mjs",
     "test:queue": "node --test tests/queue-components.test.mjs",
-    "test:profile-recovery": "node --test tests/profile-recovery.test.mjs"
+    "test:profile-recovery": "node --test tests/profile-recovery.test.mjs",
+    "test:queue-controls": "node --test tests/queue-controls.test.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^4.1.3",

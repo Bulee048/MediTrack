@@ -19,6 +19,7 @@ router.post('/call-next', authorizeRoles('STAFF', 'ADMIN'), QueueController.call
 router.patch('/:id/start-consultation', authorizeRoles('STAFF', 'ADMIN'), QueueController.startConsultation);
 router.patch('/:id/complete', authorizeRoles('STAFF', 'ADMIN'), QueueController.completeConsultation);
 router.patch('/:id/hold', authorizeRoles('STAFF', 'ADMIN'), QueueController.hold);
+router.patch('/:id/resume', authorizeRoles('STAFF', 'ADMIN'), QueueController.resume);
 router.patch('/:id/skip', authorizeRoles('STAFF', 'ADMIN'), QueueController.skip);
 
 export default router;

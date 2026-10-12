@@ -12,6 +12,7 @@ import { AppError } from '../utils/AppError.js';
 import { validateObjectId } from '../utils/objectId.js';
 
 const transitionSources: Partial<Record<QueueTicketStatus, QueueTicketStatus[]>> = {
+  WAITING: ['HELD'],
   CALLING: ['WAITING', 'ALMOST_TURN'],
   IN_CONSULTATION: ['CALLING'],
   COMPLETED: ['IN_CONSULTATION'],
@@ -299,6 +300,10 @@ export class QueueService {
     return this.transitionTicket(ticketId, 'HELD');
   }
 
+  static async resume(ticketId: string): Promise<IQueueTicket> {
+    return this.transitionTicket(ticketId, 'WAITING');
+  }
+
   /**
    * Staff PATCH /api/queue/:id/skip
    */
@@ -317,16 +322,23 @@ export class QueueService {
     const transactionStarted = performance.now();
     await mongoose.connection.transaction(async session => {
       const ticket = await QueueTicket.findOneAndUpdate(
-        { _id: ticketId, status: { $in: sources } },
+        { _id: ticketId, status: { $in: sources }, ...(target === 'WAITING' ? { createdAt: QueueCalculationService.getQueueDayRange() } : {}) },
         { $set: { ...timestamps, status: target, currentPosition: 0, estimatedWaitMins: 0 } }, { new: true, session });
       if (!ticket) {
         const existing = await QueueTicket.findById(ticketId).session(session);
         if (!existing) throw new AppError('Queue ticket not found', 404);
+        if (target === 'WAITING' && hospitalDate(existing.createdAt) !== hospitalDate())
+          throw new AppError("Only today's held tickets can return to the waiting queue; arrange a new appointment for another day", 409);
         throw new AppError(`Cannot transition queue ticket from ${existing.status} to ${target}; expected ${sources.join(' or ')}`, 409);
       }
       if (target === 'COMPLETED') {
         const appointment = await Appointment.findByIdAndUpdate(ticket.appointment, { status: 'COMPLETED' }, { session });
         if (!appointment) throw new AppError('Linked appointment not found', 409);
+      }
+      if (target === 'WAITING') {
+        const appointment = await Appointment.findById(ticket.appointment).session(session);
+        if (!appointment || !['BOOKED', 'RESCHEDULED'].includes(appointment.status) || hospitalDate(appointment.appointmentDate) !== hospitalDate())
+          throw new AppError('Only a held ticket with an active appointment can return to the queue', 409);
       }
       await NotificationService.createNotification({ userId: ticket.patient.toString(),
         queueTicketId: ticket._id.toString(), appointmentId: ticket.appointment.toString(), category: 'QUEUE_UPDATE',

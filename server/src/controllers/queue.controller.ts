@@ -143,5 +143,12 @@ export class QueueController {
       next(error);
     }
   }
+
+  static async resume(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const ticket = await QueueService.resume(req.params.id as string);
+      res.status(200).json({ success: true, message: 'Held ticket returned to its original queue order', data: { ticket } });
+    } catch (error) { next(error); }
+  }
 }
 
