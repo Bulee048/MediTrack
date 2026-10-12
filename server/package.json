@@ -14,7 +14,8 @@
     "seed:demo:reset": "tsx scripts/seed-demo.ts --reset",
     "test:reminders": "tsx tests/reminder.integration.ts",
     "test:staff-settings": "tsx tests/staff-settings.integration.ts",
-    "test:demo-seed": "tsx tests/demo-seed.integration.ts"
+    "test:demo-seed": "tsx tests/demo-seed.integration.ts",
+    "test:queue-audit": "tsx tests/queue-audit.integration.ts"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

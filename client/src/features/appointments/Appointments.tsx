@@ -1,5 +1,7 @@
 import { hospitalDate } from '@/lib/hospitalDate';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { useAuthSession } from '@/config/api';
 import { Link } from 'react-router-dom';
 import { ChevronRight, Clock3, Users } from 'lucide-react';
 import { FeaturePageContent } from '@/components/FeaturePageContent';
@@ -12,22 +14,12 @@ type Tab = 'upcoming' | 'past' | 'cancelled';
 
 export default function Appointments() {
   const [tab, setTab] = useState<Tab>('upcoming');
-  const [items, setItems] = useState<Appointment[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [retry, setRetry] = useState(0);
-
-  useEffect(() => {
-    let active = true;
-    setLoading(true);
-    setError(''); setItems([]);
-    appointmentsApi
-      .list(tab)
-      .then((items) => { if (active) setItems(items); })
-      .catch((e) => { if (active) setError((e as Error).message); })
-      .finally(() => { if (active) setLoading(false); });
-    return () => { active = false; };
-  }, [tab, retry]);
+  const session = useAuthSession();
+  const { data: items = [], isPending: loading, error: queryError, refetch } = useQuery<Appointment[]>({
+    queryKey: ['patientAppointments', session, tab], queryFn: () => appointmentsApi.list(tab),
+    refetchInterval: 15000, refetchIntervalInBackground: true, refetchOnWindowFocus: 'always',
+  });
+  const error = queryError?.message ?? '';
 
   return (
     <FeaturePageContent title="My Appointments" back>
@@ -80,7 +72,7 @@ export default function Appointments() {
           </div>
         )}
 
-        {error && <div><p role="alert" className="rounded-xl border border-danger/20 bg-danger-soft p-4 text-sm">{error}</p><button type="button" className="mt-3 underline" onClick={() => setRetry(n => n + 1)}>Try again</button></div>}
+        {error && <div><p role="alert" className="rounded-xl border border-danger/20 bg-danger-soft p-4 text-sm">{error}</p><button type="button" className="mt-3 underline" onClick={() => void refetch()}>Try again</button></div>}
         {!loading && !error && items.length === 0 && (
           <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-line bg-white/60 px-6 py-12 text-center">
             <p className="text-sm font-bold text-ink">No appointments here</p>

@@ -6,6 +6,7 @@ import { Appointment } from '../models/Appointment.js';
 import { Department } from '../models/Department.js';
 import { User } from '../models/User.js';
 import { QueueCalculationService } from './queueCalculation.service.js';
+import { Notification } from '../models/Notification.js';
 import { NotificationService } from './notification.service.js';
 import { AppError } from '../utils/AppError.js';
 import { validateObjectId } from '../utils/objectId.js';
@@ -16,6 +17,12 @@ const transitionSources: Partial<Record<QueueTicketStatus, QueueTicketStatus[]>>
   COMPLETED: ['IN_CONSULTATION'],
   HELD: ['WAITING', 'ALMOST_TURN'],
   SKIPPED: ['WAITING', 'ALMOST_TURN', 'CALLING'],
+};
+
+// Explicit development-only timing opt-in; never logs credentials or payloads.
+const logQueueTransaction = (operation: string, started: number) => {
+  if (process.env.NODE_ENV !== 'production' && process.env.QUEUE_AUDIT_TIMINGS === 'true')
+    console.info(`QUEUE_TRANSACTION ${operation} completedAt=${new Date().toISOString()} durationMs=${(performance.now() - started).toFixed(1)}`);
 };
 
 export class QueueService {
@@ -129,6 +136,7 @@ export class QueueService {
     validateObjectId(appointmentId, 'appointment ID');
 
     let createdId = '';
+    const transactionStarted = performance.now();
     await mongoose.connection.transaction(async session => {
       // Coordinate check-in with booking/account operations and concurrent check-ins.
       const patient = await User.findOneAndUpdate({ _id: patientId, role: 'PATIENT', isActive: true },
@@ -161,6 +169,7 @@ export class QueueService {
         category: 'QUEUE_CREATED', title: 'Queue Check-In Successful', message: `Your queue ticket ${ticketNumber} has been issued for ${department.name}.` }, session);
       createdId = ticket._id.toString();
     });
+    logQueueTransaction('check-in', transactionStarted);
     return (await QueueTicket.findById(createdId).populate('patient', 'name email phone')
       .populate('doctor', 'name title roomNumber').populate('department', 'name code roomNumber'))!;
   }
@@ -204,8 +213,11 @@ export class QueueService {
     // Recalculate positions from the complete waiting scope, even when the
     // requested list filters out some statuses. Keep stored status unchanged:
     // ALMOST_TURN persistence and notification creation belong to queue/me.
+    const { status: _status, ...scope } = filter;
+    const snapshot = tickets.some(ticket => !['COMPLETED', 'CANCELLED'].includes(ticket.status))
+      ? await QueueCalculationService.loadLiveTickets(scope) : [];
     await Promise.all(tickets.map(async ticket => {
-      const live = await QueueCalculationService.calculateLiveQueueState(ticket);
+      const live = await QueueCalculationService.calculateLiveQueueState(ticket, snapshot);
       ticket.currentPosition = live.currentPosition;
       ticket.estimatedWaitMins = live.estimatedWaitMins;
     }));
@@ -231,38 +243,33 @@ export class QueueService {
       filter.department = params.departmentId;
     }
 
-    // Atomically find next ticket in sequence and set status CALLING
-    const ticket = await QueueTicket.findOneAndUpdate(
-      filter,
-      {
-        $set: {
-          status: 'CALLING',
-          calledAt: new Date(),
-          currentPosition: 0,
-          estimatedWaitMins: 0,
-        },
-      },
-      { sort: { sequenceNumber: 1 }, new: true }
-    )
-      .populate('patient', 'name email phone')
-      .populate('doctor', 'name title roomNumber')
-      .populate('department', 'name code roomNumber');
-
-    if (!ticket) {
-      throw new AppError('No eligible waiting patients in queue to call', 404);
-    }
-
-    // Create YOUR_TURN notification for called patient
-    await NotificationService.createNotification({
-      userId: ticket.patient._id.toString(),
-      title: "It's Your Turn!",
-      message: `Queue ticket ${ticket.ticketNumber} is now being called. Please proceed immediately to room ${(ticket.doctor as any).roomNumber || (ticket.department as any).roomNumber}.`,
-      category: 'YOUR_TURN',
-      queueTicketId: ticket._id.toString(),
-      appointmentId: ticket.appointment?.toString(),
+    // Serialize calls for the selected doctor across application instances.
+    // A ticket update alone prevents duplicate selection, but can call two
+    // different patients concurrently unless the entire service scope is locked.
+    await Notification.init();
+    let calledId = '';
+    const transactionStarted = performance.now();
+    await mongoose.connection.transaction(async session => {
+      const candidate = await QueueTicket.findOne(filter).sort({ sequenceNumber: 1 }).session(session);
+      if (!candidate) throw new AppError('No eligible waiting patients in queue to call', 404);
+      const doctor = await Doctor.findOneAndUpdate({ _id: candidate.doctor },
+        { $inc: { __v: 1 } }, { session, new: true, timestamps: false });
+      if (!doctor) throw new AppError('Doctor not found', 404);
+      const busy = await QueueTicket.exists({ doctor: candidate.doctor,
+        createdAt: QueueCalculationService.getQueueDayRange(), status: { $in: ['CALLING', 'IN_CONSULTATION'] } }).session(session);
+      if (busy) throw new AppError('This doctor already has a called patient or consultation in progress', 409);
+      const ticket = await QueueTicket.findOneAndUpdate({ _id: candidate._id, status: { $in: transitionSources.CALLING } },
+        { $set: { status: 'CALLING', calledAt: new Date(), currentPosition: 0, estimatedWaitMins: 0 } },
+        { session, new: true });
+      if (!ticket) throw new AppError('Queue changed; refresh before calling next', 409);
+      await NotificationService.createNotification({ userId: ticket.patient.toString(), title: "It's Your Turn!",
+        message: `Queue ticket ${ticket.ticketNumber} is now being called. Please proceed immediately to room ${doctor.roomNumber || 'the OPD room'}.`,
+        category: 'YOUR_TURN', queueTicketId: ticket._id.toString(), appointmentId: ticket.appointment.toString() }, session);
+      calledId = ticket._id.toString();
     });
-
-    return ticket;
+    logQueueTransaction('call-next', transactionStarted);
+    return (await QueueTicket.findById(calledId).populate('patient', 'name email phone')
+      .populate('doctor', 'name title roomNumber').populate('department', 'name code roomNumber'))!;
   }
 
   /**
@@ -281,11 +288,6 @@ export class QueueService {
     const ticket = await this.transitionTicket(ticketId, 'COMPLETED', {
       completedAt: new Date(),
     });
-
-    // Optionally update linked appointment status to COMPLETED
-    if (ticket.appointment) {
-      await Appointment.findByIdAndUpdate(ticket.appointment, { status: 'COMPLETED' });
-    }
 
     return ticket;
   }
@@ -312,27 +314,26 @@ export class QueueService {
     validateObjectId(ticketId, 'queue ticket ID');
 
     const sources = transitionSources[target]!;
-    const ticket = await QueueTicket.findOneAndUpdate(
-      { _id: ticketId, status: { $in: sources } },
-      { $set: { ...timestamps, status: target, currentPosition: 0, estimatedWaitMins: 0 } },
-      { new: true }
-    )
-      .populate('patient', 'name email phone')
-      .populate('doctor', 'name title roomNumber')
-      .populate('department', 'name code roomNumber');
-
-    if (!ticket) {
-      const existing = await QueueTicket.findById(ticketId);
-      if (!existing) throw new AppError('Queue ticket not found', 404);
-      throw new AppError(
-        `Cannot transition queue ticket from ${existing.status} to ${target}; expected ${sources.join(' or ')}`,
-        409
-      );
-    }
-
-    await NotificationService.createNotification({ userId: ticket.patient._id.toString(),
-      queueTicketId: ticket._id.toString(), appointmentId: ticket.appointment.toString(), category: 'QUEUE_UPDATE',
-      title: 'Queue status updated', message: `Your ticket ${ticket.ticketNumber} is now ${target.toLowerCase().replace(/_/g, ' ')}.` });
-    return ticket;
+    const transactionStarted = performance.now();
+    await mongoose.connection.transaction(async session => {
+      const ticket = await QueueTicket.findOneAndUpdate(
+        { _id: ticketId, status: { $in: sources } },
+        { $set: { ...timestamps, status: target, currentPosition: 0, estimatedWaitMins: 0 } }, { new: true, session });
+      if (!ticket) {
+        const existing = await QueueTicket.findById(ticketId).session(session);
+        if (!existing) throw new AppError('Queue ticket not found', 404);
+        throw new AppError(`Cannot transition queue ticket from ${existing.status} to ${target}; expected ${sources.join(' or ')}`, 409);
+      }
+      if (target === 'COMPLETED') {
+        const appointment = await Appointment.findByIdAndUpdate(ticket.appointment, { status: 'COMPLETED' }, { session });
+        if (!appointment) throw new AppError('Linked appointment not found', 409);
+      }
+      await NotificationService.createNotification({ userId: ticket.patient.toString(),
+        queueTicketId: ticket._id.toString(), appointmentId: ticket.appointment.toString(), category: 'QUEUE_UPDATE',
+        title: 'Queue status updated', message: `Your ticket ${ticket.ticketNumber} is now ${target.toLowerCase().replace(/_/g, ' ')}.` }, session);
+    });
+    logQueueTransaction(`transition:${target}`, transactionStarted);
+    return (await QueueTicket.findById(ticketId).populate('patient', 'name email phone')
+      .populate('doctor', 'name title roomNumber').populate('department', 'name code roomNumber'))!;
   }
 }

@@ -56,6 +56,8 @@ npm --prefix client run build
 npm --prefix client run lint
 npm --prefix client run test:appointments
 npm --prefix client run test:staff
+npm --prefix client run test:queue
+npm --prefix client run test:profile-recovery
 npm --prefix server run typecheck
 npm --prefix server run build
 ```
@@ -67,6 +69,7 @@ npm --prefix server run test:appointments
 npm --prefix server run test:patient-app
 npm --prefix server run test:reminders
 npm --prefix server run test:staff-settings
+npm --prefix server run test:queue-audit
 npm --prefix server run test:demo-seed
 ```
 
@@ -82,6 +85,12 @@ Staff profile/preferences are `/api/staff/profile` and `/api/staff/preferences`.
 
 In-app notifications and reminders persist in the backend. Queue refresh is polling, not server push. SMS/email delivery, automatic calling, clinical record editing and OTP delivery consoles are not implemented; the UI does not simulate them. Analytics uses recorded daily counts, not inferred growth.
 
+Patient queue, notifications, appointment lists and appointment details poll every 15 seconds, including background tabs, and refetch on focus. Staff polling uses its saved 15/30/60-second preference. These intervals are scheduling intervals; network/database latency adds to the time before an update is visible.
+
+Waiting estimates are approximate: `ceil(waiting patients ahead * 6 + remaining current service minutes)`. Only WAITING and ALMOST_TURN count as waiting. CALLING contributes six minutes; IN_CONSULTATION contributes `max(0, 6 - elapsed consultation minutes)`. Six minutes is an explicit fallback because doctors have no configured consultation duration. An overrun can reach an estimated zero while consultation remains active; zero never means the ticket is being called. Call Next permits one active called/consulting patient per doctor/day, and queue transitions, linked completion and notifications are transactional.
+
+The follow-up audit, endpoint/control inventory and verification limits are recorded in `docs/full-app-functional-audit.md`.
+
 ## Troubleshooting
 
 - Connection refused: wait for both launcher readiness messages and check the health URL.
@@ -92,3 +101,5 @@ In-app notifications and reminders persist in the backend. Queue refresh is poll
 - 409 conflicts: refresh the data and follow the valid queue or booking lifecycle.
 
 Original staff reference preservation: `origin/feature/staff-opd`, commit `f943d3a`, under `docs/staff-reference/`. The original `app/` files are unchanged. Patient module history is preserved through the verified develop ancestry on `integration/full-app`.
+
+Transient initial account-load failures recover automatically with 5/10/20/30-second capped backoff and immediate focus/online recovery. Authentication failures still require sign-in. Staff queue calculations share one fresh active snapshot per response instead of loading the same queue per ticket. Same-doctor/day service admission remains exclusive even after a department reassignment.

@@ -8,9 +8,12 @@ export interface LiveQueueCalculationResult {
   patientsAhead: number;   // Patients strictly ahead in active waiting states
   nowServingTicket: string | null;
   nowServingStatus: QueueTicketStatus | null;
-  estimatedWaitMins: number; // Patients ahead * 6 mins
+  estimatedWaitMins: number; // Waiting patients ahead plus current service estimate
   status: QueueTicketStatus;
 }
+
+type QueueSnapshotTicket = Pick<IQueueTicket, 'doctor' | 'department' | 'createdAt' | 'status' | 'sequenceNumber' | 'ticketNumber' | 'updatedAt' | 'consultationStartedAt'>;
+const referenceId = (value: unknown) => value && typeof value === 'object' && '_id' in value ? String(value._id) : String(value);
 
 export class QueueCalculationService {
   static getQueueDayRange(date: Date = new Date()) {
@@ -42,7 +45,12 @@ export class QueueCalculationService {
   /**
    * Calculates live position, now serving, and estimated wait for a specific ticket
    */
-  static async calculateLiveQueueState(ticket: IQueueTicket): Promise<LiveQueueCalculationResult> {
+  static async loadLiveTickets(scope: Record<string, unknown>): Promise<QueueSnapshotTicket[]> {
+    return QueueTicket.find({ ...scope, status: { $in: ['WAITING', 'ALMOST_TURN', 'CALLING', 'IN_CONSULTATION'] } })
+      .select('doctor department createdAt status sequenceNumber ticketNumber updatedAt consultationStartedAt').lean();
+  }
+
+  static async calculateLiveQueueState(ticket: IQueueTicket, snapshot?: readonly QueueSnapshotTicket[]): Promise<LiveQueueCalculationResult> {
     // If ticket is already finished or cancelled
     if (['COMPLETED', 'CANCELLED'].includes(ticket.status)) {
       return {
@@ -61,20 +69,19 @@ export class QueueCalculationService {
       createdAt: this.getQueueDayRange(ticket.createdAt ?? ticket.checkedInAt ?? new Date()),
     };
 
-    // Prefer a calling ticket, even when a consultation was updated more recently.
-    const nowServing = await QueueTicket.findOne({ ...context, status: 'CALLING' })
-      .sort({ updatedAt: -1 })
-      ?? await QueueTicket.findOne({ ...context, status: 'IN_CONSULTATION' })
-        .sort({ updatedAt: -1 });
-
+    // One narrow queue read per scope, or a shared staff-board snapshot. Avoid
+    // two service lookups and a count query for every returned ticket.
+    const candidates = snapshot ?? await this.loadLiveTickets(context);
+    const scoped = candidates.filter(item =>
+      referenceId(item.doctor) === referenceId(ticket.doctor) &&
+      referenceId(item.department) === referenceId(ticket.department) &&
+      item.createdAt >= context.createdAt.$gte && item.createdAt < context.createdAt.$lt);
+    const recent = (items: readonly QueueSnapshotTicket[]) => [...items].sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())[0];
+    const nowServing = recent(scoped.filter(item => item.status === 'CALLING'))
+      ?? recent(scoped.filter(item => item.status === 'IN_CONSULTATION'));
     const isWaiting = ticket.status === 'WAITING' || ticket.status === 'ALMOST_TURN';
-
-    // Count tickets strictly ahead in queue that are active (WAITING / ALMOST_TURN)
-    const activeAheadCount = isWaiting ? await QueueTicket.countDocuments({
-      ...context,
-      status: { $in: ['WAITING', 'ALMOST_TURN'] },
-      sequenceNumber: { $lt: ticket.sequenceNumber },
-    }) : 0;
+    const activeAheadCount = isWaiting ? scoped.filter(item =>
+      ['WAITING', 'ALMOST_TURN'].includes(item.status) && item.sequenceNumber < ticket.sequenceNumber).length : 0;
 
     const currentPosition = isWaiting ? activeAheadCount + 1 : 0;
     let computedStatus = ticket.status;
@@ -85,7 +92,17 @@ export class QueueCalculationService {
       computedStatus = 'WAITING';
     }
 
-    const estimatedWaitMins = activeAheadCount * 6; // 6 mins per patient estimate
+    // No configured consultation duration exists in the doctor schema. Keep
+    // the six-minute fallback explicit and add remaining current service time.
+    const typicalMinutes = 6;
+    let remainingService = 0;
+    if (isWaiting && nowServing) {
+      const started = nowServing.consultationStartedAt?.getTime();
+      const elapsed = nowServing.status === 'IN_CONSULTATION' && started !== undefined && Number.isFinite(started)
+        ? Math.max(0, (Date.now() - started) / 60000) : 0;
+      remainingService = Math.max(0, typicalMinutes - elapsed);
+    }
+    const estimatedWaitMins = isWaiting ? Math.ceil(activeAheadCount * typicalMinutes + remainingService) : 0;
 
     return {
       currentPosition,

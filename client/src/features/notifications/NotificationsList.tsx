@@ -51,7 +51,7 @@ export function NotificationsList() {
     return () => window.clearInterval(timer);
   }, []);
   const { data: notifications = [], isLoading, isFetching, isError, error, refetch } = useQuery<NotificationData[]>({
-    queryKey, queryFn: () => NotificationApiService.getUserNotifications(), refetchInterval: 15000,
+    queryKey, queryFn: () => NotificationApiService.getUserNotifications(), refetchInterval: 15000, refetchIntervalInBackground: true, refetchOnWindowFocus: 'always',
   });
   const markRead = useMutation({
     mutationFn: NotificationApiService.markAsRead,

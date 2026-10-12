@@ -1,7 +1,8 @@
+import { useAuthSession } from '@/config/api';
 import { hospitalDate } from '@/lib/hospitalDate';
 import { QueueApiService } from '@/services/queueApi';
-import { useQueryClient } from '@tanstack/react-query';
-import { useEffect, useRef, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Building2, Clock3, Timer } from 'lucide-react';
 import { FeaturePageContent } from '@/components/FeaturePageContent';
@@ -19,24 +20,14 @@ export default function AppointmentDetails() {
   const pending = useRef(false);
   const [checkingIn, setCheckingIn] = useState(false);
   const [checkInError, setCheckInError] = useState('');
-  const [appt, setAppt] = useState<Appointment | null>(null);
-  const [error, setError] = useState('');
-  const [retry, setRetry] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const session = useAuthSession();
+  const { data: appt, isPending: loading, error: queryError, refetch } = useQuery<Appointment>({
+    queryKey: ['patientAppointment', session, id], queryFn: () => appointmentsApi.detail(id), enabled: Boolean(id),
+    refetchInterval: 15000, refetchIntervalInBackground: true, refetchOnWindowFocus: 'always',
+  });
+  const error = queryError?.message ?? '';
 
-  useEffect(() => {
-    let active = true;
-    setAppt(null); setError('');
-    setLoading(true);
-    appointmentsApi
-      .detail(id)
-      .then((appointment) => { if (active) setAppt(appointment); })
-      .catch((e) => { if (active) setError((e as Error).message); })
-      .finally(() => { if (active) setLoading(false); });
-    return () => { active = false; };
-  }, [id, retry]);
-
-  if (error) return <FeaturePageContent title="Appointment Details" back><p role="alert" className="rounded-xl border border-danger/20 bg-danger-soft p-4 text-sm">{error}</p><button type="button" className="mt-3 underline" onClick={() => setRetry(n => n + 1)}>Try again</button></FeaturePageContent>;
+  if (error) return <FeaturePageContent title="Appointment Details" back><p role="alert" className="rounded-xl border border-danger/20 bg-danger-soft p-4 text-sm">{error}</p><button type="button" className="mt-3 underline" onClick={() => void refetch()}>Try again</button></FeaturePageContent>;
 
   if (loading || !appt) {
     return (

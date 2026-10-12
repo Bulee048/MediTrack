@@ -24,7 +24,11 @@ export default function StaffDashboard() {
   const session = useAuthSession();
   const path=useLocation().pathname;
   const [date,setDate]=useState(hospitalDate());
-  const [status,setStatus]=useState('');
+  const [appointmentStatus,setAppointmentStatus]=useState('');
+  const [queueStatus,setQueueStatus]=useState('');
+  const queueView=path==='/staff/queue'||path==='/staff/flow'||path.startsWith('/staff/queue/');
+  const status=queueView?queueStatus:appointmentStatus;
+  const setStatus=queueView?setQueueStatus:setAppointmentStatus;
 
   const cache = useQueryClient();
 
@@ -72,8 +76,8 @@ export default function StaffDashboard() {
 
   const links=[...staffPages,...(account.data?.user.role==='ADMIN'?[['/staff/team','Team access']]:[])];
   const title=links.find(([url])=>url===path)?.[1]??(path==='/staff/team'?'Team access':path.startsWith('/staff/queue/')?'Patient queue details':'Staff page');
-  const queueView=path==='/staff/queue'||path==='/staff/flow'||path.startsWith('/staff/queue/');
   const selectedTicket=path.startsWith('/staff/queue/')?path.split('/')[3]:undefined;
+  const doctorBusy=Boolean(doctorId && queue.data?.some(ticket=>ticket.doctor?._id===doctorId && ['CALLING','IN_CONSULTATION'].includes(ticket.status)));
   return <StaffShell name={profile.data?.name??account.data?.user.name} role={account.data!.user.role} title={title} date={hospitalDate()} onLogout={logoutPatient}>
       <p className="text-sm">Appointments and queue updates come from the same backend as the patient portal. Check-in is available only on the appointment day in Asia/Colombo.</p>
 
@@ -103,7 +107,7 @@ export default function StaffDashboard() {
       </section>
 
       </>}
-      {queueView&&<section className="rounded-2xl border border-line bg-white p-4"><h2 className="text-xl font-bold">Queue</h2><div className="my-3 flex flex-wrap items-end gap-3"><label>Doctor<select className="ml-2 rounded border p-3" value={doctorId} onChange={e=>setDoctorId(e.target.value)}><option value="">All doctors</option>{Array.from(doctors).map(([id,name])=><option key={id} value={id}>{name}</option>)}</select></label><button className="rounded-xl bg-brand-700 px-4 py-3 font-bold text-white" disabled={action.isPending||date!==hospitalDate()||!doctorId||Boolean(selectedTicket)} onClick={()=>action.mutate({operation:'call-next'})}>Call Next</button>{!doctorId&&<p className="text-sm">Select a doctor to call the next patient.</p>}</div>
+      {queueView&&<section className="rounded-2xl border border-line bg-white p-4"><h2 className="text-xl font-bold">Queue</h2><div className="my-3 flex flex-wrap items-end gap-3"><label className="min-w-0 w-full sm:w-auto">Doctor<select className="mt-1 block w-full max-w-full rounded border p-3 sm:ml-2 sm:mt-0 sm:inline-block sm:w-auto" value={doctorId} onChange={e=>setDoctorId(e.target.value)}><option value="">All doctors</option>{Array.from(doctors).map(([id,name])=><option key={id} value={id}>{name}</option>)}</select></label><button className="rounded-xl bg-brand-700 px-4 py-3 font-bold text-white" disabled={action.isPending||date!==hospitalDate()||!doctorId||doctorBusy||Boolean(selectedTicket)} onClick={()=>action.mutate({operation:'call-next'})}>Call Next</button>{!doctorId&&<p className="text-sm">Select a doctor to call the next patient.</p>}{doctorBusy&&<p className="text-sm" role="status">Finish or skip the current called patient before calling next. An active consultation must be completed.</p>}</div>
 
         {queue.isError && <p role="alert">{queue.error.message}<button onClick={()=>void queue.refetch()}>Retry</button></p>}
 

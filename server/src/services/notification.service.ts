@@ -40,11 +40,11 @@ export class NotificationService {
         return (await Notification.findOneAndUpdate(
           scope,
           { $setOnInsert: fields },
-          { upsert: true, new: true, runValidators: true }
+          { upsert: true, new: true, runValidators: true, session }
         ))!;
       } catch (error: unknown) {
         // A concurrent upsert may win the unique-index race. Return its notification.
-        if ((error as { code?: number }).code === 11000) {
+        if (!session && (error as { code?: number }).code === 11000) {
           const existing = await Notification.findOne(scope);
           if (existing) return existing;
         }

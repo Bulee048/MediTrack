@@ -2,7 +2,7 @@ import { Appointment } from '../models/Appointment.js';
 import { AppError } from '../utils/AppError.js';
 import { Request, Response, NextFunction } from 'express';
 import { QueueService } from '../services/queue.service.js';
-import { checkInSchema } from '../validators/queue.validator.js';
+import { checkInSchema, callNextSchema, queueFiltersSchema } from '../validators/queue.validator.js';
 
 export class QueueController {
   static async staffCheckIn(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -58,14 +58,7 @@ export class QueueController {
 
   static async getAllForStaff(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { departmentId, doctorId, status, date } = req.query;
-
-      const tickets = await QueueService.getAllForStaff({
-        departmentId: typeof departmentId === 'string' ? departmentId : undefined,
-        doctorId: typeof doctorId === 'string' ? doctorId : undefined,
-        status: typeof status === 'string' ? (status as any) : undefined,
-        date: typeof date === 'string' ? date : undefined,
-      });
+      const tickets = await QueueService.getAllForStaff(queueFiltersSchema.parse(req.query));
 
       res.status(200).json({
         success: true,
@@ -79,12 +72,7 @@ export class QueueController {
 
   static async callNext(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { doctorId, departmentId } = req.body;
-
-      const ticket = await QueueService.callNext({
-        doctorId: typeof doctorId === 'string' ? doctorId : undefined,
-        departmentId: typeof departmentId === 'string' ? departmentId : undefined,
-      });
+      const ticket = await QueueService.callNext(callNextSchema.parse(req.body));
 
       res.status(200).json({
         success: true,

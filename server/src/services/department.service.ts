@@ -8,7 +8,7 @@ export class DepartmentService {
     const filter: Record<string, unknown> = { isActive: true };
 
     if (search && search.trim()) {
-      const regex = new RegExp(search.trim(), 'i');
+      const regex = new RegExp(search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
       filter.$or = [{ name: regex }, { code: regex }, { description: regex }];
     }
 

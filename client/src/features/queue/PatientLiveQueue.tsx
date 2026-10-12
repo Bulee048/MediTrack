@@ -36,7 +36,7 @@ export function PatientLiveQueue({ onCheckInClick }: PatientLiveQueueProps) {
   const { data: ticket, isLoading, isFetching, error, refetch } = useQuery<QueueTicketData | null>({
     queryKey: ['myActiveQueueTicket', authSession],
     queryFn: QueueApiService.getMyActiveTicket,
-    refetchInterval: 15000,
+    refetchInterval: 15000, refetchIntervalInBackground: true, refetchOnWindowFocus: 'always',
     staleTime: 10000,
   });
 
@@ -134,6 +134,7 @@ export function PatientLiveQueue({ onCheckInClick }: PatientLiveQueueProps) {
                 </div>
               </div>
             </dl>
+            {isWaiting && <p className="mt-3 text-center text-xs text-slate-600">Approximate time based on six minutes per patient and the current consultation. Actual waiting time may vary.</p>}
             <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-xs font-semibold">
               <span className="rounded-full bg-teal-50 px-3 py-1.5 text-teal-800">{statusLabels[ticket.status]}</span>
               {checkedIn && <span className="rounded-full bg-slate-100 px-3 py-1.5 text-slate-700">Checked in {checkedIn}</span>}

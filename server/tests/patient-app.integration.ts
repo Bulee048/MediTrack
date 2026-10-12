@@ -31,7 +31,7 @@ async function main() {
   const future = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
   const phones = Array.from({ length: 4 }, (_, i) => `${i + 5}${Date.now()}`);
   let checks = 0;
-  const server = app.listen(process.env.BROWSER_FIXTURE_PATH ? 5004 : 0, '127.0.0.1');
+  const server = app.listen(0, '127.0.0.1');
   await new Promise<void>((resolve, reject) => { server.once('listening', resolve); server.once('error', reject); });
   const address = server.address();
   assert.ok(address && typeof address !== 'string');
@@ -127,11 +127,20 @@ async function main() {
       check((await request(path, a, method, body)).status === 403, `patient staff action ${path} rejected`);
     check((await request(`/queue/${ticketA._id}/start-consultation`, staff, 'PATCH')).status === 409, 'waiting start rejected');
     check((await request('/queue', staff)).body.data.tickets.every((item: { createdAt: string }) => hospitalDate(new Date(item.createdAt)) === today), 'staff queue date scope');
-    check((await request('/queue/call-next', staff, 'POST', { doctorId: String(doctorId) })).body.data.ticket._id === ticketA._id, 'staff calls next in sequence');
+    const concurrentCalls = await Promise.all([request('/queue/call-next', staff, 'POST', { doctorId: String(doctorId) }), request('/queue/call-next', staff, 'POST', { doctorId: String(doctorId) })]);
+    check(concurrentCalls.map(item=>item.status).sort().join(',')==='200,409', 'concurrent calls admit one active patient per doctor');
+    check(concurrentCalls.find(item=>item.status===200)!.body.data.ticket._id === ticketA._id, 'staff calls next in sequence');
+    check(await QueueTicket.countDocuments({doctor:doctorId,createdAt:{$gte:new Date(today+'T00:00:00+05:30')},status:{$in:['CALLING','IN_CONSULTATION']}})===1,'exactly one active service ticket persists');
     const liveB = (await request('/queue/me', b)).body.data.ticket;
     check(liveB.nowServing === ticketA.ticketNumber && liveB.currentPosition === 1 && liveB.status === 'ALMOST_TURN', 'calling shown separately from waiting position one');
+    check(liveB.estimatedWaitMins === 6, 'first waiting patient includes six-minute current call estimate');
+    check((await request('/queue/call-next',staff,'POST',{doctorId:String(doctorId)})).status===409,'busy doctor rejects another call');
     check((await request(`/queue/${ticketA._id}/complete`, staff, 'PATCH')).status === 409, 'calling complete rejected');
     check((await request(`/queue/${ticketA._id}/start-consultation`, staff, 'PATCH')).status === 200, 'calling starts consultation');
+    await QueueTicket.updateOne({_id:ticketA._id},{$set:{consultationStartedAt:new Date(Date.now()-3*60000)}});
+    const duringConsultation=(await request('/queue/me',b)).body.data.ticket;
+    check(duringConsultation.nowServingStatus==='IN_CONSULTATION'&&duringConsultation.estimatedWaitMins>0&&duringConsultation.estimatedWaitMins<=3,'consultation remaining time contributes to live estimate');
+    check((await request('/queue/call-next',staff,'POST',{doctorId:String(doctorId)})).status===409,'consulting doctor rejects another call');
     check((await request(`/queue/${ticketA._id}/complete`, staff, 'PATCH')).status === 200, 'consultation completes');
     check((await Appointment.findById(ids[0]))?.status === 'COMPLETED', 'queue completion updates appointment history');
     for (const action of ['hold', 'skip', 'start-consultation', 'complete'])
@@ -167,7 +176,7 @@ async function main() {
     console.log(`RESULT ${checks} patient application API/Atlas assertions passed`);
     if (process.env.BROWSER_FIXTURE_PATH) {
       await writeFile(process.env.BROWSER_FIXTURE_PATH, JSON.stringify({ phone: phones[0], password, date: today, future,
-        doctorId: String(doctorId), departmentId: String(departmentId), familyMemberId: familyId, foreignId: ids[1], staffToken: staff }));
+        doctorId: String(doctorId), departmentId: String(departmentId), familyMemberId: familyId, foreignId: ids[1], staffToken: staff, staffPhone: staffUser!.phone, users: phones.map((phone,i)=>({phone,id:String(ownerIds[i])})), appointmentIds: ids, code }));
       console.log('BROWSER_FIXTURES_READY');
       await new Promise<void>(resolve => process.stdin.once('data', () => { process.stdin.pause(); resolve(); }));
     }
@@ -181,12 +190,12 @@ async function main() {
       await FamilyMember.deleteMany({ owner: { $in: ownerIds } });
       await User.deleteMany({ _id: { $in: [...ownerIds, staffId] } });
       await Doctor.deleteOne({ _id: doctorId }); await Department.deleteOne({ _id: departmentId });
-      for (const [model, filter] of [[Notification, { user: { $in: ownerIds } }], [QueueTicket, { patient: { $in: ownerIds } }],
+      for (const [model, filter] of [[AppointmentReminder, { user: { $in: ownerIds } }], [Notification, { user: { $in: ownerIds } }], [QueueTicket, { patient: { $in: ownerIds } }],
         [Appointment, { patient: { $in: ownerIds } }], [FamilyMember, { owner: { $in: ownerIds } }]] as const)
         assert.equal(await model.countDocuments(filter), 0);
       assert.equal(await User.countDocuments({ _id: { $in: [...ownerIds, staffId] } }), 0);
       assert.equal(await Doctor.countDocuments({ _id: doctorId }), 0); assert.equal(await Department.countDocuments({ _id: departmentId }), 0);
-      assert.equal(await QueueCounter.countDocuments({ scopeKey: `DEPT:${code}:${today}` }), 0);
+      assert.equal(await QueueCounter.countDocuments({ scopeKey: { $in: [today, future].map(day => `DEPT:${code}:${day}`) } }), 0);
       console.log('CLEANUP: all isolated patient-app fixtures removed and verified');
     }
     if (process.env.BROWSER_FIXTURE_PATH) await unlink(process.env.BROWSER_FIXTURE_PATH).catch(() => {});
