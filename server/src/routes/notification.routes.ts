@@ -10,5 +10,7 @@ router.use(authenticate);
 router.get('/', authorizeRoles('PATIENT'), NotificationController.getUserNotifications);
 router.patch('/read-all', authorizeRoles('PATIENT'), NotificationController.markAllAsRead);
 router.patch('/:id/read', authorizeRoles('PATIENT'), NotificationController.markAsRead);
+router.patch('/:id/dismiss', authorizeRoles('PATIENT'), NotificationController.dismiss);
+router.patch('/:id/restore', authorizeRoles('PATIENT'), NotificationController.restore);
 
 export default router;

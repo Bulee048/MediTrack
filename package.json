@@ -3,6 +3,7 @@
   "private": true,
   "scripts": {
     "dev": "node scripts/dev.mjs",
+    "dev:standard": "node scripts/dev-standard.mjs",
     "dev:demo": "node scripts/dev.mjs --demo",
     "seed:demo": "npm --prefix server run seed:demo",
     "seed:demo:reset": "npm --prefix server run seed:demo:reset"

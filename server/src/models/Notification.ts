@@ -21,6 +21,7 @@ export interface INotification extends Document {
   message: string;
   category: NotificationCategory;
   isRead: boolean;
+  isDismissed?: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -69,6 +70,10 @@ const notificationSchema = new Schema<INotification>(
       required: [true, 'Category is required'],
     },
     isRead: {
+      type: Boolean,
+      default: false,
+    },
+    isDismissed: {
       type: Boolean,
       default: false,
     },

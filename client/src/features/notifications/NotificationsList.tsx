@@ -1,171 +1,244 @@
-import { LoadingState } from '@/components/ui/feedback';
-import { useEffect, useState } from 'react';
+import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Bell, CalendarDays, CheckCircle2, Clock3, AlertCircle, Info, CheckCheck, Ticket } from 'lucide-react';
+import {
+  Bell,
+  CheckCircle2,
+  Clock3,
+  Ticket,
+  CheckCheck,
+  RotateCcw,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { NotificationApiService, type NotificationData } from '@/services/notificationApi';
-import { getAuthErrorStatus, useAuthSession } from '@/config/api';
-
-type Filter = 'all' | 'queue' | 'appointment' | 'system';
-const filters: { value: Filter; label: string }[] = [
-  { value: 'all', label: 'All' }, { value: 'queue', label: 'Queue' },
-  { value: 'appointment', label: 'Appointment' }, { value: 'system', label: 'System' },
-];
-const categories = {
-  QUEUE_CREATED: { group: 'queue', label: 'Queue ticket', icon: Ticket, tone: 'bg-brand-50 text-brand-700' },
-  QUEUE_UPDATE: { group: 'queue', label: 'Queue update', icon: Clock3, tone: 'bg-info-soft text-info' },
-  QUEUE_CANCELLED: { group: 'queue', label: 'Queue cancelled', icon: AlertCircle, tone: 'bg-slate-100 text-ink-soft' },
-  ALMOST_TURN: { group: 'queue', label: 'Almost your turn', icon: Bell, tone: 'bg-amber-50 text-amber-800' },
-  YOUR_TURN: { group: 'queue', label: 'Your turn', icon: CheckCircle2, tone: 'bg-brand-100 text-brand-800' },
-  APPOINTMENT_REMINDER: { group: 'appointment', label: 'Appointment reminder', icon: Bell, tone: 'bg-amber-50 text-amber-800' },
-  APPOINTMENT_CREATED: { group: 'appointment', label: 'Appointment created', icon: CalendarDays, tone: 'bg-info-soft text-info' },
-  APPOINTMENT_UPDATED: { group: 'appointment', label: 'Appointment updated', icon: CalendarDays, tone: 'bg-info-soft text-info' },
-  APPOINTMENT_CANCELLED: { group: 'appointment', label: 'Appointment cancelled', icon: CalendarDays, tone: 'bg-slate-100 text-ink-soft' },
-  SYSTEM: { group: 'system', label: 'System', icon: Info, tone: 'bg-slate-100 text-ink-soft' },
-} as const;
-const cardStyle = 'surface p-5';
-
-/** Uses the notification's actual timestamp; older items retain local date and time. */
-export function notificationTime(createdAt: string, now: number): string {
-  const date = new Date(createdAt);
-  if (Number.isNaN(date.getTime())) return 'Time unavailable';
-  const elapsed = now - date.getTime();
-  const localTime = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  if (elapsed >= 0 && elapsed < 60000) return 'Just now';
-  if (elapsed >= 60000 && elapsed < 3600000) return `${Math.floor(elapsed / 60000)} min ago`;
-  const today = new Date(now);
-  const yesterday = new Date(now);
-  yesterday.setDate(yesterday.getDate() - 1);
-  if (elapsed >= 0 && date.toDateString() === today.toDateString()) return `${Math.floor(elapsed / 3600000)} hr ago`;
-  if (date.toDateString() === yesterday.toDateString()) return `Yesterday, ${localTime}`;
-  return `${date.toLocaleDateString([], { month: 'short', day: 'numeric', ...(date.getFullYear() !== today.getFullYear() ? { year: 'numeric' } : {}) })}, ${localTime}`;
-}
+import { useAuthSession } from '@/config/api';
+import { LoadingState } from '@/components/ui/feedback';
+import { SwipeableNotificationCard } from './components/SwipeableNotificationCard';
 
 export function NotificationsList() {
   const authSession = useAuthSession();
   const queryKey = ['myNotifications', authSession];
   const queryClient = useQueryClient();
-  const [filter, setFilter] = useState<Filter>('all');
-  const [feedback, setFeedback] = useState<{ error: boolean; message: string } | null>(null);
-  const [now, setNow] = useState(Date.now);
-  useEffect(() => {
-    const timer = window.setInterval(() => setNow(Date.now()), 60000);
-    return () => window.clearInterval(timer);
-  }, []);
-  const { data: notifications = [], isLoading, isFetching, isError, error, refetch } = useQuery<NotificationData[]>({
-    queryKey, queryFn: () => NotificationApiService.getUserNotifications(), refetchInterval: 15000, refetchIntervalInBackground: true, refetchOnWindowFocus: 'always',
+  const [filter, setFilter] = useState<'all' | 'unread'>('all');
+
+  // Dismissed items tracking for instant optimistic UI + Undo snackbar
+  const [dismissedNotification, setDismissedNotification] = useState<NotificationData | null>(null);
+  const [dismissingIds, setDismissingIds] = useState<Set<string>>(new Set());
+  const undoTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const {
+    data: notifications = [],
+    isLoading,
+  } = useQuery<NotificationData[]>({
+    queryKey,
+    queryFn: () => NotificationApiService.getUserNotifications(),
+    refetchInterval: 12000,
+    refetchIntervalInBackground: true,
+    refetchOnWindowFocus: 'always',
   });
+
   const markRead = useMutation({
     mutationFn: NotificationApiService.markAsRead,
-    onMutate: () => setFeedback(null),
     onSuccess: (notification) => {
-      // Update only from the server-confirmed response, without assuming ownership.
-      queryClient.setQueryData<NotificationData[]>(queryKey, items => items?.map(item => item._id === notification._id ? notification : item));
-      setFeedback({ error: false, message: 'Notification marked as read.' });
+      queryClient.setQueryData<NotificationData[]>(queryKey, (items) =>
+        items?.map((item) => (item._id === notification._id ? notification : item))
+      );
       void queryClient.invalidateQueries({ queryKey });
     },
-    onError: () => setFeedback({ error: true, message: 'Could not mark the notification as read. Please try again.' }),
   });
+
   const markAll = useMutation({
     mutationFn: NotificationApiService.markAllAsRead,
-    onMutate: () => setFeedback(null),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey });
-      setFeedback({ error: false, message: 'All notifications marked as read.' });
     },
-    onError: () => setFeedback({ error: true, message: 'Could not mark all notifications as read. Please try again.' }),
   });
-  const pending = markRead.isPending || markAll.isPending;
-  const authError = getAuthErrorStatus(error);
-  const unread = notifications.filter(item => !item.isRead).length;
-  const filtered = notifications.filter(item => filter === 'all' || categories[item.category].group === filter)
+
+  const dismissMutation = useMutation({
+    mutationFn: (id: string) => NotificationApiService.dismiss(id),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey });
+    },
+  });
+
+  const restoreMutation = useMutation({
+    mutationFn: (id: string) => NotificationApiService.restore(id),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey });
+    },
+  });
+
+  const handleDismiss = (item: NotificationData) => {
+    // Add to dismissing set for animation collapse
+    setDismissingIds((prev) => new Set(prev).add(item._id));
+    setDismissedNotification(item);
+
+    // Call backend dismiss
+    dismissMutation.mutate(item._id);
+
+    // Setup auto-dismiss snackbar timer (6 seconds)
+    if (undoTimeoutRef.current) clearTimeout(undoTimeoutRef.current);
+    undoTimeoutRef.current = setTimeout(() => {
+      setDismissedNotification(null);
+    }, 6000);
+  };
+
+  const handleUndo = () => {
+    if (!dismissedNotification) return;
+    const restoredItem = dismissedNotification;
+    if (undoTimeoutRef.current) clearTimeout(undoTimeoutRef.current);
+
+    // Remove from dismissing state
+    setDismissingIds((prev) => {
+      const next = new Set(prev);
+      next.delete(restoredItem._id);
+      return next;
+    });
+    setDismissedNotification(null);
+
+    // Call backend restore
+    restoreMutation.mutate(restoredItem._id);
+  };
+
+  // Exclude actively dismissing items from visible list
+  const activeNotifications = notifications.filter(
+    (item) => !dismissingIds.has(item._id) && !item.isDismissed
+  );
+
+  const unreadCount = activeNotifications.filter((item) => !item.isRead).length;
+
+  const filtered = activeNotifications
+    .filter((item) => filter === 'all' || !item.isRead)
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
+  const getCategoryTheme = (category: string) => {
+    switch (category) {
+      case 'YOUR_TURN':
+        return { icon: CheckCircle2, tone: 'bg-[#20A779]/10 text-[#20A779]', label: 'Your Turn' };
+      case 'ALMOST_TURN':
+        return { icon: Bell, tone: 'bg-[#E9A23B]/10 text-[#E9A23B]', label: 'Almost Your Turn' };
+      case 'QUEUE_CREATED':
+      case 'QUEUE_UPDATE':
+        return { icon: Ticket, tone: 'bg-[#146C94]/10 text-[#146C94]', label: 'Queue Update' };
+      default:
+        return { icon: Clock3, tone: 'bg-[#64798B]/10 text-[#64798B]', label: 'Notification' };
+    }
+  };
+
   return (
-    <div className="mx-auto w-full min-w-0 max-w-3xl space-y-5 text-ink">
-      <header>
-        <h1 className="page-title font-extrabold tracking-tight">Notifications</h1>
-        <div className="mt-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-          <p className="text-sm font-semibold text-ink-muted">{isLoading ? 'Checking for updates…' : isError && (authError || !notifications.length) ? 'Updates unavailable' : `${unread} unread`}</p>
-          <Button variant="ghost" disabled={!unread || pending || isLoading || Boolean(authError)} onClick={() => markAll.mutate()}
-            loading={markAll.isPending} className="min-h-11 whitespace-normal px-2 text-sm font-bold text-brand-700 hover:bg-brand-50 hover:text-brand-800 focus-visible:ring-brand-700">
-            <CheckCheck aria-hidden="true" className="mr-1.5 h-4 w-4 shrink-0" />
-            {markAll.isPending ? 'Marking all…' : 'Mark all read'}
-          </Button>
+    <div className="relative mx-auto w-full max-w-md space-y-4 pb-28">
+      {/* Header */}
+      <header className="flex items-center justify-between pb-1">
+        <div>
+          <h1 className="text-xl font-black text-[#183247]">Notifications</h1>
+          <p className="text-xs font-semibold text-[#64798B]">
+            {unreadCount > 0 ? `${unreadCount} unread updates` : 'All caught up'}
+          </p>
         </div>
+
+        {unreadCount > 0 && (
+          <Button
+            variant="ghost"
+            disabled={markAll.isPending}
+            onClick={() => markAll.mutate()}
+            className="text-xs font-bold text-[#146C94] hover:bg-[#EBF5FB]"
+          >
+            <CheckCheck size={14} className="mr-1.5" />
+            Mark all read
+          </Button>
+        )}
       </header>
-      <div role="group" aria-label="Filter notifications" className="notification-filters">
-        {filters.map(item => (
-          <button key={item.value} type="button" aria-pressed={filter === item.value} onClick={() => setFilter(item.value)}
-            className={`min-h-11 rounded-xl border px-3.5 py-2 text-sm font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-700 focus-visible:ring-offset-2 ${filter === item.value ? 'border-brand-700 bg-brand-700 text-white' : 'border-slate-300 bg-white text-ink-soft hover:bg-brand-50'}`}>
-            {item.label}
-          </button>
-        ))}
+
+      {/* Filter Tabs: All vs Unread */}
+      <div className="flex rounded-2xl bg-[#EBF2F6] p-1 text-xs font-bold text-[#64798B]">
+        <button
+          type="button"
+          onClick={() => setFilter('all')}
+          className={`flex-1 rounded-xl py-2 transition-all ${
+            filter === 'all' ? 'bg-white text-[#146C94] shadow-sm' : 'hover:text-[#183247]'
+          }`}
+        >
+          All ({activeNotifications.length})
+        </button>
+        <button
+          type="button"
+          onClick={() => setFilter('unread')}
+          className={`flex-1 rounded-xl py-2 transition-all ${
+            filter === 'unread' ? 'bg-white text-[#146C94] shadow-sm' : 'hover:text-[#183247]'
+          }`}
+        >
+          Unread ({unreadCount})
+        </button>
       </div>
-      <div role="status" aria-live="polite" aria-atomic="true">
-        {feedback && <p className={`rounded-xl border p-3 text-sm ${feedback.error ? 'border-rose-200 bg-danger-soft text-danger-600' : 'border-brand-200 bg-brand-50 text-brand-900'}`}>{feedback.message}</p>}
+
+      {/* Swipe Tip Banner */}
+      <div className="flex items-center justify-between rounded-2xl bg-[#EBF5FB] px-4 py-2 text-[0.6875rem] font-bold text-[#146C94]">
+        <span>💡 Tip: Swipe card left or right to dismiss</span>
       </div>
-      {isError && (
-        <section role="alert" className={`${cardStyle} border-rose-200 text-center`}>
-          <AlertCircle aria-hidden="true" className="mx-auto h-8 w-8 text-danger" />
-          <h2 className="mt-3 text-base font-bold">{authError === 401 ? 'Sign in to view notifications' : authError === 403 ? 'Notification access unavailable' : 'Unable to load notifications'}</h2>
-          <p className="mt-2 text-sm leading-relaxed text-ink-muted">{authError === 401 ? 'Your session is missing or has expired. Please sign in, then try again.' : authError === 403 ? 'This page is available to patient accounts.' : notifications.length ? 'Your last notifications are shown below. Please try refreshing.' : 'Please check your connection and try again.'}</p>
-          <Button variant="outline" disabled={isFetching} aria-label="Retry loading notifications" onClick={() => void refetch()}
-            className="mt-4 min-h-11 rounded-xl text-brand-700 focus-visible:ring-brand-700">{isFetching ? 'Retrying…' : 'Try again'}</Button>
-        </section>
-      )}
+
       {isLoading ? (
-        <LoadingState label="Loading notifications"/>
-      ) : filtered.length && !authError ? (
-        <ul aria-label="Notifications, newest first" className="space-y-3">
-          {filtered.map(item => (
-            <li key={item._id}>
-              <NotificationCard notification={item} now={now} disabled={pending}
-                pending={markAll.isPending || (markRead.isPending && markRead.variables === item._id)}
-                onRead={() => markRead.mutate(item._id)} />
-            </li>
-          ))}
-        </ul>
-      ) : !isError && (
-        <section className={`${cardStyle} py-9 text-center`}>
-          <Bell aria-hidden="true" className="mx-auto h-9 w-9 text-brand-700" />
-          <h2 className="mt-4 text-base font-extrabold">{notifications.length ? `No ${filter} notifications` : 'Nothing new'}</h2>
-          <p className="mt-2 text-sm leading-relaxed text-ink-muted">{notifications.length ? 'Choose another filter to see your other updates.' : 'Queue and appointment updates will appear here.'}</p>
-        </section>
+        <LoadingState label="Loading CareFlow notifications..." />
+      ) : filtered.length === 0 ? (
+        <div className="rounded-3xl border border-[#DCE8EE] bg-white p-8 text-center shadow-sm">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#F6FAFD] text-[#64798B]">
+            <Bell size={24} />
+          </div>
+          <h2 className="mt-4 text-base font-bold text-[#183247]">No notifications</h2>
+          <p className="mt-1 text-xs text-[#64798B]">
+            {filter === 'unread' ? 'You have read all notifications.' : 'Queue and appointment updates will appear here.'}
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-0">
+          {filtered.map((item) => {
+            const { icon, tone, label } = getCategoryTheme(item.category);
+            const formattedTime = new Date(item.createdAt).toLocaleTimeString([], {
+              hour: '2-digit',
+              minute: '2-digit',
+            });
+            const formattedDate = new Date(item.createdAt).toLocaleDateString([], {
+              day: '2-digit',
+              month: 'short',
+            });
+
+            return (
+              <SwipeableNotificationCard
+                key={item._id}
+                notification={item}
+                categoryIcon={icon}
+                categoryTone={tone}
+                categoryLabel={label}
+                formattedDate={formattedDate}
+                formattedTime={formattedTime}
+                isDismissing={dismissingIds.has(item._id)}
+                onRead={() => markRead.mutate(item._id)}
+                onDismiss={() => handleDismiss(item)}
+              />
+            );
+          })}
+        </div>
+      )}
+
+      {/* Floating Undo Snackbar */}
+      {dismissedNotification && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed bottom-20 left-4 right-4 z-50 mx-auto max-w-sm flex items-center justify-between rounded-2xl bg-[#183247] px-4 py-3 text-white shadow-2xl animate-in slide-in-from-bottom-5 duration-300"
+        >
+          <div className="flex items-center gap-2 text-xs font-semibold">
+            <span>Notification dismissed</span>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleUndo}
+            className="flex items-center gap-1.5 rounded-xl bg-white/15 px-3 py-1.5 text-xs font-bold text-[#18A6A6] hover:bg-white/25 active:scale-95 transition"
+          >
+            <RotateCcw size={13} />
+            <span>Undo</span>
+          </button>
+        </div>
       )}
     </div>
-  );
-}
-
-function NotificationCard({ notification: item, now, disabled, pending, onRead }: {
-  notification: NotificationData; now: number; disabled: boolean; pending: boolean; onRead: () => void;
-}) {
-  const category = categories[item.category];
-  const Icon = category.icon;
-  const validTime = !Number.isNaN(new Date(item.createdAt).getTime());
-  return (
-    <article aria-busy={pending} className={`${cardStyle} ${item.isRead ? '' : 'border-brand-300 ring-1 ring-brand-100'}`}>
-      <div className="flex min-w-0 items-start gap-3">
-        <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${category.tone}`}>
-          <Icon aria-hidden="true" className="h-5 w-5" />
-        </span>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-start justify-between gap-2">
-            <h2 className="break-words text-sm font-extrabold leading-snug">{item.title}</h2>
-            {!item.isRead && <span aria-hidden="true" className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-brand-700" />}
-          </div>
-          <p className="mt-1 break-words text-sm leading-relaxed text-ink-muted [overflow-wrap:anywhere]">{item.message}</p>
-          <p className="mt-2 break-words text-xs font-semibold text-ink-muted">{category.label} · {item.isRead ? 'Read' : 'Unread'}</p>
-          <time dateTime={validTime ? item.createdAt : undefined} title={validTime ? new Date(item.createdAt).toLocaleString() : undefined}
-            className="mt-1 block text-xs leading-relaxed text-ink-muted">{notificationTime(item.createdAt, now)}</time>
-          {!item.isRead && (
-            <button type="button" disabled={disabled} onClick={onRead} aria-label={`Mark notification as read: ${item.title}`}
-              className="mt-3 min-h-11 rounded-lg px-3 py-2 text-sm font-bold text-brand-700 hover:bg-brand-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-700 disabled:cursor-wait disabled:opacity-60">
-              {pending ? 'Marking as read…' : 'Mark as read'}
-            </button>
-          )}
-        </div>
-      </div>
-    </article>
   );
 }

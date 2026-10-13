@@ -23,7 +23,7 @@ router.patch('/:id/resume', authorizeRoles('STAFF', 'ADMIN'), QueueController.re
 router.patch('/:id/skip', authorizeRoles('STAFF', 'ADMIN'), QueueController.skip);
 
 // Patient cancels their own ticket; staff/admin can cancel any non-completed ticket.
-router.delete('/:id', authenticate, QueueController.cancelTicket);
+router.delete('/:id', QueueController.cancelTicket);
 
 export default router;
 

@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { apiClient } from '@/config/api';
+import type { StaffQueueTicket } from './staffQueueApi';
 
 export interface QueueTicketData {
   ticketId: string;
@@ -64,8 +65,9 @@ export class QueueApiService {
     return ticket;
   }
 
-  static async cancelTicket(ticketId: string): Promise<QueueTicketData> {
-    const response = await apiClient.delete<QueueApiResponse>(`/queue/${ticketId}`);
+  static async cancelTicket(ticketId: string): Promise<StaffQueueTicket> {
+    // Mutations return a saved ticket document; only GET /me returns live metrics.
+    const response = await apiClient.delete<{ data: { ticket: StaffQueueTicket } }>(`/queue/${ticketId}`);
     const ticket = response.data.data?.ticket;
     if (!ticket) throw new Error('Queue ticket could not be cancelled. Please refresh and try again.');
     return ticket;

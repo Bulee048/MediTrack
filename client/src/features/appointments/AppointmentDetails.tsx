@@ -53,6 +53,8 @@ export default function AppointmentDetails() {
     try {
       await QueueApiService.checkIn(appt.id);
       await Promise.all([queryClient.invalidateQueries({ queryKey: ['myActiveQueueTicket'] }),
+        queryClient.invalidateQueries({ queryKey: ['patientAppointment'] }),
+        queryClient.invalidateQueries({ queryKey: ['patientAppointments'] }),
         queryClient.invalidateQueries({ queryKey: ['myNotifications'] })]);
       navigate('/queue');
     } catch (e) { setCheckInError((e as Error).message); }

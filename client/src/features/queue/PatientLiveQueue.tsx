@@ -1,199 +1,426 @@
-import { StatusBadge } from '@/components/ui/status-badge';
-import { LoadingState } from '@/components/ui/feedback';
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Bell, CheckCircle2, Clock, Hospital, Pause, RefreshCw, XCircle } from 'lucide-react';
+import {
+  Clock,
+  Hospital,
+  RefreshCw,
+  QrCode,
+  ShieldAlert,
+  Radio,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { QueueApiService, type QueueTicketData } from '@/services/queueApi';
-import { QueueStatusProgress } from './components/QueueStatusProgress';
 import { getAuthErrorStatus, useAuthSession } from '@/config/api';
+import { CircularProgress } from './components/CircularProgress';
+import { QueueProgressTimeline } from './components/QueueProgressTimeline';
+import { DigitalQueueTicketModal } from './components/DigitalQueueTicketModal';
+import { ApproachingTurnCard, CalledTurnCard } from './components/TurnStatusAlerts';
+import { LoadingState } from '@/components/ui/feedback';
 
-type QueueStatus = QueueTicketData['status'];
+type PatientTab = 'dashboard' | 'ticket' | 'live' | 'progress';
 
-interface PatientLiveQueueProps {
-  // Supplied only by a parent with a real appointment/check-in context.
-  onCheckInClick?: () => void;
-}
-
-const cardStyle = 'surface';
-const labelStyle = 'text-xs font-semibold uppercase tracking-wide text-ink-muted';
-const statusLabels: Record<QueueStatus, string> = {
-  WAITING: 'Waiting',
-  ALMOST_TURN: 'Almost your turn',
-  CALLING: "It's Your Turn!",
-  IN_CONSULTATION: 'Consultation in progress',
-  HELD: 'Queue ticket on hold',
-  SKIPPED: 'Queue ticket skipped',
-  COMPLETED: 'Consultation completed',
-  CANCELLED: 'Queue ticket cancelled',
-};
-
-function formatTime(value: string | undefined) {
-  if (!value) return null;
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? null : date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-}
-
-export function PatientLiveQueue({ onCheckInClick }: PatientLiveQueueProps) {
+export function PatientLiveQueue({ onCheckInClick }: { onCheckInClick?: () => void }) {
   const authSession = useAuthSession();
   const queryClient = useQueryClient();
+  const [activeTab, setActiveTab] = useState<PatientTab>('dashboard');
+  const [showTicketModal, setShowTicketModal] = useState(false);
   const [cancelError, setCancelError] = useState('');
-  const [cancelConfirmed, setCancelConfirmed] = useState(false);
+  const [cancelSuccess, setCancelSuccess] = useState(false);
+
   const { data: ticket, isLoading, isFetching, error, refetch } = useQuery<QueueTicketData | null>({
     queryKey: ['myActiveQueueTicket', authSession],
     queryFn: QueueApiService.getMyActiveTicket,
-    refetchInterval: 15000, refetchIntervalInBackground: true, refetchOnWindowFocus: 'always',
-    staleTime: 10000,
+    refetchInterval: 12000,
+    refetchIntervalInBackground: true,
+    refetchOnWindowFocus: 'always',
+    staleTime: 8000,
   });
 
   const cancel = useMutation({
     mutationFn: (ticketId: string) => QueueApiService.cancelTicket(ticketId),
-    onMutate: () => { setCancelError(''); setCancelConfirmed(false); },
-    onSuccess: async () => {
-      setCancelConfirmed(true);
-      await queryClient.invalidateQueries({ queryKey: ['myActiveQueueTicket', authSession] });
+    onMutate: () => {
+      setCancelError('');
+      setCancelSuccess(false);
     },
-    onError: (mutationError: Error) => setCancelError(mutationError.message),
+    onSuccess: async () => {
+      setCancelSuccess(true);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['myActiveQueueTicket'] }),
+        queryClient.invalidateQueries({ queryKey: ['patientAppointment'] }),
+        queryClient.invalidateQueries({ queryKey: ['patientAppointments'] }),
+        queryClient.invalidateQueries({ queryKey: ['myNotifications'] }),
+      ]);
+    },
+    onError: (err: Error) => setCancelError(err.message),
   });
 
-  const isWaiting = ticket?.status === 'WAITING' || ticket?.status === 'ALMOST_TURN';
-  const canCancel = ticket?.status === 'WAITING' || ticket?.status === 'HELD';
   const authError = getAuthErrorStatus(error);
-  const room = ticket?.doctor?.roomNumber || ticket?.department?.roomNumber;
-  const checkedIn = formatTime(ticket?.checkedInAt);
-  const updated = formatTime(ticket?.lastUpdated);
+  const room = ticket?.doctor?.roomNumber || ticket?.department?.roomNumber || 'Room 03';
+  const isCalling = ticket?.status === 'CALLING';
+  const isAlmostTurn = ticket?.status === 'ALMOST_TURN';
+  const canCancel = ticket?.status === 'WAITING' || ticket?.status === 'HELD';
+
+  // Compute animated progress:
+  // Position 1 means 80-90% progressed toward being seen; total queue size approximation
+  const position = ticket?.currentPosition ?? 1;
+  const ahead = ticket?.patientsAhead ?? 0;
+  const totalInLine = position + ahead;
+  const progressPercent = totalInLine > 0 ? Math.round(Math.max(15, ((totalInLine - position + 1) / totalInLine) * 100)) : 24;
+
+  if (isLoading) {
+    return (
+      <div className="mx-auto w-full max-w-md py-12 text-center">
+        <LoadingState label="Loading your CareFlow queue ticket..." />
+      </div>
+    );
+  }
+
+  if (error && (!ticket || authError)) {
+    return (
+      <div className="mx-auto w-full max-w-md rounded-3xl border border-[#DCE8EE] bg-white p-8 text-center shadow-sm">
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#DE6470]/10 text-[#DE6470]">
+          <ShieldAlert size={28} />
+        </div>
+        <h2 className="mt-4 text-lg font-black text-[#183247]">
+          {authError === 401 ? 'Please Sign In' : 'Queue Access Unavailable'}
+        </h2>
+        <p className="mt-2 text-xs leading-relaxed text-[#64798B]">
+          {authError === 401
+            ? 'Sign in with your patient account to view real-time OPD tracking.'
+            : 'Unable to connect to the hospital queue server. Please check your internet.'}
+        </p>
+        <Button
+          onClick={() => void refetch()}
+          disabled={isFetching}
+          className="mt-6 rounded-2xl bg-[#146C94] px-6 py-2.5 text-xs font-bold text-white hover:bg-[#105779]"
+        >
+          <RefreshCw className={`mr-2 h-3.5 w-3.5 ${isFetching ? 'animate-spin' : ''}`} />
+          Retry Connection
+        </Button>
+      </div>
+    );
+  }
+
+  if (!ticket) {
+    return (
+      <div className="mx-auto w-full max-w-md rounded-3xl border border-[#DCE8EE] bg-white p-8 text-center shadow-sm">
+        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-[#18A6A6] to-[#146C94] text-white shadow-md">
+          <Hospital size={32} />
+        </div>
+        <h2 className="mt-5 text-xl font-black text-[#183247]">You are not in a queue yet</h2>
+        <p className="mt-2 text-xs leading-relaxed text-[#64798B]">
+          Check in to your today&apos;s appointment to receive your live digital token and turn notifications.
+        </p>
+        {onCheckInClick ? (
+          <Button
+            onClick={onCheckInClick}
+            className="mt-6 w-full rounded-2xl bg-gradient-to-r from-[#146C94] to-[#18A6A6] py-3 text-sm font-bold text-white shadow-md"
+          >
+            Check in to my appointment
+          </Button>
+        ) : (
+          <Button
+            onClick={() => { window.location.href = '/app/appointments'; }}
+            className="mt-6 w-full rounded-2xl bg-gradient-to-r from-[#146C94] to-[#18A6A6] py-3 text-sm font-bold text-white shadow-md"
+          >
+            Go to Appointments
+          </Button>
+        )}
+      </div>
+    );
+  }
 
   return (
-    <div className="mx-auto w-full min-w-0 max-w-3xl space-y-5 text-ink">
-      <header className="flex min-w-0 items-center justify-between gap-3 pb-1">
-        <h1 className="min-w-0 page-title font-extrabold tracking-tight">Live OPD Ticket</h1>
-        <Button
-          variant="outline"
-          size="icon"
-          aria-label="Refresh queue status"
-          disabled={isFetching}
-          onClick={() => void refetch()}
-          className="shrink-0 rounded-xl border-line bg-white text-brand-700 hover:bg-brand-50 focus-visible:ring-brand-700"
-        >
-          <RefreshCw aria-hidden="true" className={`h-4 w-4 ${isFetching ? 'motion-safe:animate-spin' : ''}`} />
-        </Button>
+    <div className="mx-auto w-full max-w-md space-y-4 pb-20">
+      {/* Top Header Bar */}
+      <header className="flex items-center justify-between pb-1">
+        <div className="flex items-center gap-2">
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-[#18A6A6] via-[#146C94] to-[#105779] text-white shadow-sm">
+            <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" stroke="currentColor" strokeWidth="2.5">
+              <path d="M12 4v16m-8-8h16" />
+            </svg>
+          </span>
+          <div>
+            <h1 className="text-base font-black text-[#183247] leading-none">CareFlow</h1>
+            <p className="text-[0.6875rem] font-semibold text-[#64798B]">Smart OPD Queue</p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-[#E8F8F2] px-2.5 py-1 text-[0.6875rem] font-bold text-[#20A779]">
+            <Radio size={12} className="animate-pulse" />
+            Live
+          </span>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => void refetch()}
+            disabled={isFetching}
+            aria-label="Refresh Queue"
+            className="h-8 w-8 rounded-full border border-[#DCE8EE] text-[#146C94]"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${isFetching ? 'animate-spin' : ''}`} />
+          </Button>
+        </div>
       </header>
 
-      {isLoading ? (
-        <LoadingState label="Loading your queue" />
-      ) : error && (!ticket || authError) ? (
-        <section className={`${cardStyle} border-rose-200 px-5 py-8 text-center`} role="alert">
-          <XCircle aria-hidden="true" className="mx-auto h-9 w-9 text-danger" />
-          <h2 className="mt-4 text-lg font-bold">{authError === 401 ? 'Sign in to view your queue' : authError === 403 ? 'Queue access unavailable' : 'Unable to load your queue'}</h2>
-          <p className="mt-2 text-sm leading-relaxed text-ink-muted">{authError === 401 ? 'Your session is missing or has expired. Please sign in, then try again.' : authError === 403 ? 'This page is available to patient accounts.' : 'Please check your connection and try again.'}</p>
-          <Button onClick={() => void refetch()} disabled={isFetching} aria-label="Retry loading queue status"
-            className="mt-5 rounded-xl bg-brand-700 text-white hover:bg-teal-800 focus-visible:ring-brand-700">
-            <RefreshCw aria-hidden="true" className="mr-2 h-4 w-4" /> Try again
-          </Button>
-        </section>
-      ) : !ticket ? (
-        <section className={`${cardStyle} px-5 py-8 text-center`}>
-          <span className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-brand-50 text-brand-700">
-            <Hospital aria-hidden="true" className="h-7 w-7" />
-          </span>
-          <h2 className="mt-5 text-lg font-extrabold">You are not in a queue yet</h2>
-          <p className="mt-2 text-sm leading-relaxed text-ink-muted">
-            Check in to your appointment to receive your queue ticket and waiting-time updates.
-          </p>
-          {onCheckInClick && (
-            <Button onClick={onCheckInClick} className="mt-5 h-auto w-full whitespace-normal rounded-xl bg-brand-700 px-4 py-3 text-white hover:bg-teal-800 focus-visible:ring-brand-700">
-              Check in to my appointment
-            </Button>
-          )}
-        </section>
-      ) : (
-        <>
-          {error && (
-            <p role="alert" className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-              Updates are temporarily unavailable. Your last queue information is shown; use Refresh to try again.
-            </p>
-          )}
-          <section className="glass-surface rounded-3xl p-5 sm:p-7" aria-labelledby="queue-number-label">
-            <div className="flex flex-wrap items-center justify-between gap-3"><h2 id="queue-number-label" className={labelStyle}>Your queue number</h2><StatusBadge status={ticket.status}/></div>
-            <div className="py-6 text-center"><p className="queue-number text-brand-800">{ticket.ticketNumber}</p><p className="mt-3 break-words text-lg font-bold">{ticket.department?.name || 'OPD'}{room ? ` — Room ${room}` : ''}</p>{ticket.doctor?.name&&<p className="mt-1 text-sm text-ink-muted">{ticket.doctor.name}</p>}</div>
-            <dl className="queue-metrics">
-              <div><dt>Current position</dt><dd>{isWaiting?ticket.currentPosition:<span className="text-sm">Not waiting</span>}</dd></div>
-              <div><dt>Now serving</dt><dd>{ticket.nowServing||'—'}</dd></div>
-              <div><dt>Estimated wait</dt><dd>{isWaiting?`~${ticket.estimatedWaitMins} mins`:'—'}</dd></div>
-            </dl>
-            {isWaiting&&<p className="mt-4 text-center text-xs leading-relaxed text-ink-muted">Approximate time based on six minutes per patient and the current consultation. Actual waiting time may vary.</p>}
-            {checkedIn&&<p className="mt-3 text-center text-xs text-ink-muted">Checked in {checkedIn}</p>}
-          </section>
+      {/* Screen 6: It's Your Turn Urgent Banner */}
+      {isCalling && (
+        <CalledTurnCard
+          ticket={ticket}
+          onAcknowledge={() => setActiveTab('live')}
+        />
+      )}
 
-          <QueueStatusCard key={ticket.status} status={ticket.status} room={room} position={ticket.currentPosition} />
-          <QueueStatusProgress status={ticket.status} />
+      {/* Screen 5: Almost Your Turn Warning Banner */}
+      {isAlmostTurn && !isCalling && (
+        <ApproachingTurnCard ticket={ticket} />
+      )}
 
-          {canCancel && (
-            <section className="rounded-2xl border border-line p-5 text-center">
-              <h2 className="text-sm font-extrabold text-ink">Need to cancel your ticket?</h2>
-              <p className="mt-2 text-sm leading-relaxed text-ink-muted">You can cancel while you are still waiting. You will be able to check in again from your appointment.</p>
-              <Button
-                variant="outline"
-                className="mt-4 border-danger text-danger-600 hover:bg-danger-soft font-bold"
-                disabled={cancel.isPending}
-                onClick={() => cancel.mutate(ticket.ticketId)}
+      {/* Screen Selector Tabs (Screen 1 vs Screen 3 vs Screen 4) */}
+      <div className="flex rounded-2xl bg-[#EBF2F6] p-1 text-xs font-bold text-[#64798B]">
+        <button
+          type="button"
+          onClick={() => setActiveTab('dashboard')}
+          className={`flex-1 rounded-xl py-2 transition-all ${
+            activeTab === 'dashboard' ? 'bg-white text-[#146C94] shadow-sm' : 'hover:text-[#183247]'
+          }`}
+        >
+          My Queue
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('live')}
+          className={`flex-1 rounded-xl py-2 transition-all ${
+            activeTab === 'live' ? 'bg-white text-[#146C94] shadow-sm' : 'hover:text-[#183247]'
+          }`}
+        >
+          Live Tracking
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('progress')}
+          className={`flex-1 rounded-xl py-2 transition-all ${
+            activeTab === 'progress' ? 'bg-white text-[#146C94] shadow-sm' : 'hover:text-[#183247]'
+          }`}
+        >
+          Progress
+        </button>
+      </div>
+
+      {/* SCREEN 1: MY QUEUE DASHBOARD */}
+      {activeTab === 'dashboard' && (
+        <div className="space-y-4 animate-in fade-in duration-200">
+          {/* Patient greeting & Doctor Info Card */}
+          <div className="rounded-3xl border border-[#DCE8EE] bg-white p-5 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-[0.6875rem] font-bold uppercase tracking-wider text-[#64798B]">
+                  Assigned OPD Visit
+                </p>
+                <h2 className="text-sm font-extrabold text-[#183247]">
+                  {ticket.department?.name || 'General Medicine'}
+                </h2>
+                <p className="text-xs font-semibold text-[#146C94]">
+                  {ticket.doctor?.name || 'Assigned Consultant'} · Room {room}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowTicketModal(true)}
+                className="flex items-center gap-1 rounded-2xl border border-[#DCE8EE] bg-[#F6FAFD] px-3 py-2 text-xs font-bold text-[#146C94] hover:bg-[#EBF5FB]"
               >
-                {cancel.isPending ? 'Cancelling…' : 'Cancel queue ticket'}
-              </Button>
-              {cancelError && <p role="alert" className="mt-3 text-sm font-semibold text-danger-600">{cancelError}</p>}
-            </section>
-          )}
+                <QrCode size={16} />
+                <span>Ticket</span>
+              </button>
+            </div>
 
-          {cancelConfirmed && (
-            <p role="status" className="rounded-xl border border-brand-200 bg-brand-50 p-4 text-center text-sm font-semibold text-brand-800">
-              Your queue ticket was cancelled. The queue above shows the latest status.
-            </p>
-          )}
+            {/* Token Highlight Banner */}
+            <div className="mt-4 rounded-2xl bg-gradient-to-r from-[#146C94] to-[#18A6A6] p-5 text-center text-white shadow-md shadow-[#146C94]/20">
+              <p className="text-xs font-bold uppercase tracking-widest text-white/80">
+                Your Queue Number
+              </p>
+              <p className="mt-1 text-4xl font-black tracking-tight">{ticket.ticketNumber}</p>
+            </div>
 
-          {isWaiting && (
-            <aside className="rounded-2xl border border-brand-200 bg-brand-50/60 p-5 text-center">
-              <h2 className="text-sm font-extrabold text-brand-900">Hospital counter check-in</h2>
-              <p className="mt-2 text-sm leading-relaxed text-brand-900">Keep this ticket handy. Show your queue number at reception if requested.</p>
-            </aside>
+            {/* Queue 3-Metric Mini Grid */}
+            <div className="mt-4 grid grid-cols-3 gap-2 text-center">
+              <div className="rounded-2xl border border-[#DCE8EE] bg-[#F6FAFD] p-2.5">
+                <p className="text-[0.625rem] font-bold uppercase text-[#64798B]">Position</p>
+                <p className="text-base font-black text-[#183247]">{ticket.currentPosition}</p>
+              </div>
+              <div className="rounded-2xl border border-[#DCE8EE] bg-[#F6FAFD] p-2.5">
+                <p className="text-[0.625rem] font-bold uppercase text-[#64798B]">Now Serving</p>
+                <p className="text-base font-black text-[#146C94]">{ticket.nowServing || '—'}</p>
+              </div>
+              <div className="rounded-2xl border border-[#DCE8EE] bg-[#F6FAFD] p-2.5">
+                <p className="text-[0.625rem] font-bold uppercase text-[#64798B]">Ahead</p>
+                <p className="text-base font-black text-[#183247]">{ticket.patientsAhead ?? 0}</p>
+              </div>
+            </div>
+
+            {/* Progress Circular & Wait */}
+            <div className="mt-5 flex items-center justify-between rounded-2xl border border-[#DCE8EE] bg-[#F6FAFD] p-4">
+              <div className="flex items-center gap-3">
+                <CircularProgress
+                  percentage={progressPercent}
+                  size={104}
+                  strokeWidth={10}
+                  label={`${progressPercent}%`}
+                />
+                <div>
+                  <p className="text-[0.6875rem] font-bold uppercase tracking-wider text-[#64798B]">
+                    Queue Progress
+                  </p>
+                  <p className="text-xs font-bold text-[#20A779] flex items-center gap-1 mt-0.5">
+                    <span className="h-1.5 w-1.5 rounded-full bg-[#20A779]" />
+                    Queue is moving
+                  </p>
+                </div>
+              </div>
+
+              <div className="text-right">
+                <p className="text-[0.6875rem] font-bold uppercase tracking-wider text-[#64798B]">
+                  Est. Wait
+                </p>
+                <p className="text-lg font-black text-[#146C94]">~{ticket.estimatedWaitMins} min</p>
+              </div>
+            </div>
+
+            {/* Track My Queue CTA */}
+            <Button
+              onClick={() => setActiveTab('live')}
+              className="mt-5 w-full rounded-2xl bg-gradient-to-r from-[#146C94] to-[#18A6A6] py-3.5 text-sm font-bold text-white shadow-md hover:opacity-95"
+            >
+              Track My Queue →
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* SCREEN 3: LIVE QUEUE TRACKING */}
+      {activeTab === 'live' && (
+        <div className="space-y-4 animate-in fade-in duration-200">
+          {/* Top Token Comparison */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-3xl border border-[#DCE8EE] bg-white p-4 shadow-sm text-center">
+              <p className="text-[0.6875rem] font-bold uppercase tracking-wider text-[#64798B]">
+                Now Serving
+              </p>
+              <p className="mt-1 text-2xl font-black text-[#146C94]">
+                {ticket.nowServing || '—'}
+              </p>
+            </div>
+            <div className="rounded-3xl border border-[#DCE8EE] bg-gradient-to-br from-[#146C94] to-[#18A6A6] p-4 text-center text-white shadow-sm">
+              <p className="text-[0.6875rem] font-bold uppercase tracking-wider text-white/80">
+                Your Token
+              </p>
+              <p className="mt-1 text-2xl font-black tracking-tight">{ticket.ticketNumber}</p>
+            </div>
+          </div>
+
+          {/* Large Live Circular Indicator */}
+          <div className="rounded-3xl border border-[#DCE8EE] bg-white p-6 shadow-sm flex flex-col items-center text-center">
+            <CircularProgress
+              percentage={progressPercent}
+              size={190}
+              strokeWidth={14}
+              label={String(ticket.currentPosition)}
+              sublabel={`${ticket.patientsAhead ?? 0} Patients Ahead`}
+            />
+
+            <div className="mt-5 flex items-center justify-center gap-2 rounded-full bg-[#EBF5FB] px-4 py-1 text-xs font-bold text-[#146C94]">
+              <Clock size={14} />
+              <span>Est. Wait: ~{ticket.estimatedWaitMins} min</span>
+            </div>
+
+            {/* Horizontal Mini Status Icons */}
+            <div className="mt-6 flex w-full justify-between border-t border-[#DCE8EE] pt-5 text-center text-[0.6875rem] font-bold">
+              <div>
+                <span className="mx-auto flex h-7 w-7 items-center justify-center rounded-full bg-[#20A779] text-white">
+                  ✓
+                </span>
+                <span className="mt-1 block text-[#183247]">Checked In</span>
+              </div>
+              <div>
+                <span className="mx-auto flex h-7 w-7 items-center justify-center rounded-full bg-[#146C94] text-white">
+                  {ticket.currentPosition}
+                </span>
+                <span className="mt-1 block text-[#146C94]">Waiting</span>
+              </div>
+              <div>
+                <span className="mx-auto flex h-7 w-7 items-center justify-center rounded-full bg-[#F6FAFD] text-[#8EA3B0] border border-[#CBDCE6]">
+                  🔔
+                </span>
+                <span className="mt-1 block text-[#8EA3B0]">Almost Turn</span>
+              </div>
+              <div>
+                <span className="mx-auto flex h-7 w-7 items-center justify-center rounded-full bg-[#F6FAFD] text-[#8EA3B0] border border-[#CBDCE6]">
+                  📢
+                </span>
+                <span className="mt-1 block text-[#8EA3B0]">Called</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Recent Queue Activity */}
+          <div className="rounded-3xl border border-[#DCE8EE] bg-white p-5 shadow-sm">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-[#64798B]">
+              Recent Updates
+            </h3>
+            <div className="mt-3 divide-y divide-[#EBF2F6] text-xs">
+              <div className="flex items-center justify-between py-2">
+                <span className="font-bold text-[#183247]">{ticket.nowServing || ticket.ticketNumber}</span>
+                <span className="text-[#20A779] font-semibold">Now Serving</span>
+                <span className="text-[#64798B]">Just now</span>
+              </div>
+              <div className="flex items-center justify-between py-2">
+                <span className="font-bold text-[#183247]">{ticket.ticketNumber}</span>
+                <span className="text-[#146C94] font-semibold">Position {ticket.currentPosition}</span>
+                <span className="text-[#64798B]">Live order</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* SCREEN 4: QUEUE PROGRESS TIMELINE */}
+      {activeTab === 'progress' && (
+        <div className="space-y-4 animate-in fade-in duration-200">
+          <QueueProgressTimeline
+            status={ticket.status}
+            currentPosition={ticket.currentPosition}
+            departmentName={ticket.department?.name}
+          />
+        </div>
+      )}
+
+      {/* Cancel Queue Ticket Option (HCI Safety Action) */}
+      {canCancel && (
+        <div className="pt-2 text-center">
+          <Button
+            variant="ghost"
+            disabled={cancel.isPending}
+            onClick={() => cancel.mutate(ticket.ticketId)}
+            className="text-xs font-bold text-[#DE6470] hover:bg-[#FDECEF]"
+          >
+            {cancel.isPending ? 'Cancelling...' : 'Cancel queue ticket'}
+          </Button>
+          {cancelError && <p className="mt-1 text-xs text-[#DE6470]">{cancelError}</p>}
+          {cancelSuccess && (
+            <p className="mt-1 text-xs text-[#20A779]">Queue ticket cancelled successfully.</p>
           )}
-          {updated && <p className="pb-2 text-center text-xs text-ink-muted">Last updated {updated}</p>}
-        </>
+        </div>
+      )}
+
+      {/* SCREEN 2: DIGITAL QUEUE TICKET MODAL */}
+      {showTicketModal && (
+        <DigitalQueueTicketModal
+          ticket={ticket}
+          onClose={() => setShowTicketModal(false)}
+          onViewLive={() => setActiveTab('live')}
+        />
       )}
     </div>
-  );
-}
-
-function QueueStatusCard({ status, room, position }: { status: QueueStatus; room?: string; position: number }) {
-  const calling = status === 'CALLING';
-  const almost = status === 'ALMOST_TURN';
-  const exceptional = ['HELD', 'SKIPPED', 'CANCELLED'].includes(status);
-  const Icon = calling || status === 'COMPLETED' ? CheckCircle2 : almost ? Bell : exceptional ? Pause : Clock;
-  const description: Record<QueueStatus, string> = {
-    WAITING: position === 1 ? 'You are at the front of the waiting queue. Please wait until your ticket is called.' : 'Please wait for your ticket to be called. Your position updates as the queue moves.',
-    ALMOST_TURN: `Please be ready near ${room ? `Room ${room}` : 'the OPD room'}. Wait for your ticket to be called before entering.`,
-    CALLING: `Please proceed now to ${room ? `Room ${room}` : 'the consultation room'}.`,
-    IN_CONSULTATION: 'Your consultation has started. You are no longer in the waiting queue.',
-    HELD: 'Your ticket is on hold. Please contact reception for guidance.',
-    SKIPPED: 'Your ticket has been skipped. Please speak to reception about the next steps.',
-    COMPLETED: 'Your consultation is complete. You are no longer in the queue.',
-    CANCELLED: 'This queue ticket has been cancelled. Please contact reception if you need help.',
-  };
-  return (
-    <section
-      role="status"
-      aria-live="polite"
-      aria-atomic="true"
-      className={`page-enter rounded-2xl p-5 ${calling ? 'bg-gradient-to-b from-brand-700 to-brand-900 text-white shadow-lg' : almost ? 'border border-amber-200 bg-amber-50 text-amber-950' : exceptional ? 'border border-slate-300 bg-slate-100 text-ink' : 'border border-brand-200 bg-brand-50/60 text-brand-900'}`}
-    >
-      <div className="flex items-start gap-3">
-        <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-full ${calling ? 'bg-white/15' : 'bg-white/80'}`}>
-          <Icon aria-hidden="true" className="h-5 w-5" />
-        </span>
-        <div className="min-w-0">
-          <h2 className={`font-extrabold tracking-tight ${calling ? 'text-2xl' : 'text-lg'}`}>{statusLabels[status]}</h2>
-          <p className={`mt-2 break-words text-sm leading-relaxed ${calling ? 'text-white' : ''}`}>{description[status]}</p>
-        </div>
-      </div>
-    </section>
   );
 }

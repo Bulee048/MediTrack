@@ -61,7 +61,7 @@ export class NotificationService {
   static async getUserNotifications(userId: string, unreadOnly?: boolean): Promise<INotification[]> {
     validateObjectId(userId, 'user ID');
 
-    const filter: Record<string, unknown> = { user: userId };
+    const filter: Record<string, unknown> = { user: userId, isDismissed: { $ne: true } };
     if (unreadOnly) {
       filter.isRead = false;
     }
@@ -86,6 +86,46 @@ export class NotificationService {
     }
 
     notification.isRead = true;
+    return await notification.save();
+  }
+
+  /**
+   * Dismiss notification (soft dismissal)
+   */
+  static async dismiss(notificationId: string, userId: string): Promise<INotification> {
+    validateObjectId(notificationId, 'notification ID');
+    validateObjectId(userId, 'user ID');
+
+    const notification = await Notification.findById(notificationId);
+    if (!notification) {
+      throw new AppError('Notification not found', 404);
+    }
+
+    if (notification.user.toString() !== userId) {
+      throw new AppError('Access forbidden: You do not own this notification', 403);
+    }
+
+    notification.isDismissed = true;
+    return await notification.save();
+  }
+
+  /**
+   * Restore dismissed notification (undo)
+   */
+  static async restore(notificationId: string, userId: string): Promise<INotification> {
+    validateObjectId(notificationId, 'notification ID');
+    validateObjectId(userId, 'user ID');
+
+    const notification = await Notification.findById(notificationId);
+    if (!notification) {
+      throw new AppError('Notification not found', 404);
+    }
+
+    if (notification.user.toString() !== userId) {
+      throw new AppError('Access forbidden: You do not own this notification', 403);
+    }
+
+    notification.isDismissed = false;
     return await notification.save();
   }
 

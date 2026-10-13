@@ -9,6 +9,7 @@ import { Brand } from '@/components/ui/brand';
 import { ErrorState, LoadingState } from '@/components/ui/feedback';
 import { getAccessToken, useAuthSession } from '@/config/api';
 import { useProfile } from '@/features/profile/context/ProfileContext';
+import { PatientFloatingNav } from './PatientFloatingNav';
 const links = [
   { to: '/app/home', label: 'Home', icon: Home },
   { to: '/app/appointments', label: 'Visits', icon: CalendarDays },
@@ -38,14 +39,9 @@ export default function PatientShell() {
       <a href="#patient-content" className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:rounded-xl focus:bg-white focus:p-3">Skip to content</a>
       <aside className="patient-desktop-nav"><Link to="/app/home" className="px-3"><Brand /></Link><p className="mb-3 mt-10 px-3 text-xs font-semibold uppercase tracking-widest text-ink-muted">Patient workspace</p><nav aria-label="Desktop patient navigation">{links.map(({to,label,icon:Icon})=><NavLink key={to} to={to} className="nav-item"><Icon size={20} aria-hidden="true" />{label}</NavLink>)}<NavLink to="/notifications" className="nav-item"><Bell size={20} aria-hidden="true" />Notifications</NavLink><NavLink to="/app/settings" className="nav-item"><SlidersHorizontal size={20} aria-hidden="true" />Preferences</NavLink></nav><div className="mt-auto rounded-2xl border border-line bg-canvas p-4"><p className="text-xs text-ink-muted">Signed in as</p><p className="mt-1 break-words text-sm font-bold">{user.name}</p><p className="mt-1 text-xs text-brand-700">Patient account</p></div></aside>
       <div id="patient-content" tabIndex={-1} className="patient-content"><Outlet key={session} /></div>
-      <nav aria-label="Patient navigation" className="patient-bottom-nav glass-surface">
-        <div>
-          {links.map(({ to, label, icon: Icon }) => <NavLink key={to} to={to}
-            className={({ isActive }) => isActive ? 'is-active' : ''}>
-            <Icon size={21} aria-hidden="true" /><span>{label}</span>
-          </NavLink>)}
-        </div>
-      </nav>
+      <div className="patient-bottom-nav">
+        <PatientFloatingNav />
+      </div>
     </div></BookingPatientProvider>
   );
 }

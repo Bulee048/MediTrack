@@ -313,6 +313,8 @@ export class QueueService {
   static async cancelTicket(ticketId: string, requesterId: string, requesterRole: UserRole): Promise<IQueueTicket> {
     validateObjectId(ticketId, 'queue ticket ID');
     validateObjectId(requesterId, 'requester ID');
+    if (!['PATIENT', 'STAFF', 'ADMIN'].includes(requesterRole))
+      throw new AppError('Queue cancellation is not permitted for this account', 403);
 
     const transactionStarted = performance.now();
     await mongoose.connection.transaction(async session => {
@@ -328,13 +330,17 @@ export class QueueService {
         throw new AppError('Completed queue tickets cannot be cancelled', 409);
       }
 
+      // Repeated staff requests are harmless and must not unlink a later check-in.
+      if (ticket.status === 'CANCELLED') return;
+
       ticket.status = 'CANCELLED';
       ticket.currentPosition = 0;
       ticket.estimatedWaitMins = 0;
       await ticket.save({ session });
 
       // Unlink the appointment so the patient can check in again.
-      await Appointment.findByIdAndUpdate(ticket.appointment, { $set: { queueTicket: null } }, { session });
+      await Appointment.updateOne({ _id: ticket.appointment, queueTicket: ticket._id },
+        { $set: { queueTicket: null } }, { session });
 
       await NotificationService.createNotification({ userId: ticket.patient.toString(),
         queueTicketId: ticket._id.toString(), appointmentId: ticket.appointment.toString(), category: 'QUEUE_CANCELLED',

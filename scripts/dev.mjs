@@ -15,6 +15,15 @@ function start(cwd,args) { const child=spawn(process.platform==='win32'?'npm.cmd
 let stopping=false;
 function stop(){if(stopping)return;stopping=true;for(const child of children){ if(process.platform==='win32' && child.pid && child.exitCode===null){spawn('taskkill',['/PID',String(child.pid),'/T','/F'],{windowsHide:true,stdio:'ignore'});}else child.kill('SIGTERM'); }}
 process.on('SIGINT',stop);process.on('SIGTERM',stop);
-console.log(`Patient: http://localhost:${clientPort}/login\nStaff: http://localhost:${clientPort}/staff/login\nHealth: http://localhost:${apiPort}/api/health`);
+console.log(`
+=====================================================
+  🏥 MediTrack System Running:
+  ---------------------------------------------------
+  👤 Patient Portal : http://localhost:${clientPort}/login
+  👩‍⚕️ Staff Portal   : http://localhost:${clientPort}/staff/login
+  📊 Staff Flow Desk : http://localhost:${clientPort}/staff/flow
+  🩺 API Health Check: http://localhost:${apiPort}/api/health
+=====================================================
+`);
 console.log(`Data source: ${demo?'isolated meditrack_demo':'official database configured in MONGODB_URI'} (no seed/reset)`);
 start('server',['run','dev']);start('client',['run','dev','--','--host','localhost','--port',String(clientPort),'--strictPort']);

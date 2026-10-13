@@ -2,7 +2,7 @@ import { useState, useLayoutEffect, useRef, type ReactNode } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { LayoutDashboard, CalendarDays, ListOrdered, SlidersHorizontal, Users, UserPlus, Stethoscope, BarChart3, Settings, ShieldCheck, LogOut, Menu, X, PanelLeftClose, PanelLeftOpen, ArrowUpRight } from 'lucide-react';
 import { Brand } from '@/components/ui/brand';
-export const staffPages=[['/staff','Dashboard'],['/staff/appointments','Appointments'],['/staff/queue','Patient queue'],['/staff/flow','Queue controls'],['/staff/patients','Patients'],['/staff/walk-in','Walk-in registration'],['/staff/doctors','Doctors & schedules'],['/staff/stats','Analytics'],['/staff/settings','Settings']];
+export const staffPages=[['/staff','Dashboard'],['/staff/appointments','Appointments'],['/staff/queue','Patient queue'],['/staff/flow','Flow control'],['/staff/patients','Patients'],['/staff/walk-in','Walk-in registration'],['/staff/doctors','Doctors & schedules'],['/staff/stats','Analytics'],['/staff/settings','Settings']];
 export default function StaffShell({name,role,title,date,onLogout,children}:{name?:string;role:string;title:string;date:string;onLogout:()=>void;children:ReactNode}){
  const [menuOpen,setMenuOpen]=useState(false);
  const [collapsed,setCollapsed]=useState(false);

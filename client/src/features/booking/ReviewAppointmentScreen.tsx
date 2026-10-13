@@ -207,64 +207,94 @@ export default function ReviewAppointmentScreen() {
         ) : null}
 
         <SectionCard label="Doctor & Specialty" onEdit={goToDate} editLabel="Edit Doctor">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="text-[0.96875rem] font-extrabold text-ink">{doctor.name}</p>
-              <p className="mt-0.5 text-[0.78125rem] text-ink-muted">
-                {doctor.title || 'Specialist'} · {doctor.department}
-              </p>
-              <p className="mt-1 inline-flex items-center gap-1 text-[0.78125rem] font-bold text-ink">
-                <Star size={13} className="fill-[#F5A623] text-warn" /> {doctor.availabilityStatus ?? 'AVAILABLE'}
-              </p>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-tr from-[#146C94] to-[#18A6A6] text-white font-black text-lg shadow-sm">
+                {doctor.name ? doctor.name.replace(/^Dr\.\s*/i, '').charAt(0) : 'D'}
+              </div>
+              <div>
+                <p className="text-[1.0625rem] font-black text-[#183247]">{doctor.name}</p>
+                <p className="text-xs font-semibold text-[#64798B] mt-0.5">
+                  {doctor.title || 'Specialist'} · {doctor.department}
+                </p>
+                <div className="mt-1.5 flex items-center gap-2">
+                  <span className="inline-flex items-center gap-1 rounded-md bg-[#FEF7EC] px-2 py-0.5 text-xs font-bold text-[#E9A23B]">
+                    <Star size={12} className="fill-[#E9A23B] text-[#E9A23B]" /> {doctor.availabilityStatus ?? 'AVAILABLE'}
+                  </span>
+                </div>
+              </div>
             </div>
-            <span className="rounded-full bg-canvas px-2.5 py-1 text-xs font-bold text-ink-soft">
+            <span className="inline-flex items-center gap-1 self-start sm:self-center rounded-full bg-[#F6FAFD] border border-[#DCE8EE] px-3 py-1 text-xs font-extrabold text-[#146C94]">
               {doctor.room ? `Room ${doctor.room}` : 'Room not listed'}
             </span>
           </div>
         </SectionCard>
 
         <SectionCard label="Date & Time" onEdit={goToTime} editLabel="Edit Time">
-          <div className="space-y-2 text-[0.8125rem] text-ink-soft">
-            <p className="inline-flex items-center gap-2 font-bold text-ink">
-              <CalendarDays size={16} className="text-brand-600" />
-              {selectedDate ? formatLongDate(selectedDate) : 'Select a date'}
-            </p>
-            <p className="inline-flex items-center gap-2 font-semibold text-ink-soft">
-              <Clock3 size={16} className="text-brand-600" />
-              {formatSlotLabel(selectedSlotLabel)}
-            </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-[0.875rem]">
+            <div className="flex items-center gap-3 rounded-2xl bg-[#F6FAFD] border border-[#E5F0F5] p-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#EBF5FB] text-[#146C94]">
+                <CalendarDays size={20} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[0.6875rem] font-bold uppercase tracking-wider text-[#64798B]">Date</p>
+                <p className="font-extrabold text-[#183247] truncate">
+                  {selectedDate ? formatLongDate(selectedDate) : 'Select a date'}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 rounded-2xl bg-[#F6FAFD] border border-[#E5F0F5] p-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#DDF3F2] text-[#18A6A6]">
+                <Clock3 size={20} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[0.6875rem] font-bold uppercase tracking-wider text-[#64798B]">Time Slot</p>
+                <p className="font-extrabold text-[#183247] truncate">
+                  {formatSlotLabel(selectedSlotLabel)}
+                </p>
+              </div>
+            </div>
           </div>
         </SectionCard>
 
         <SectionCard label="Patient Info">
-          <div className="space-y-2 text-[0.8125rem] text-ink-soft">
-            <p className="inline-flex items-center gap-2 font-bold text-ink">
-              <User2 size={16} className="text-brand-600" />
-              {patientSummary}
-            </p>
-            <p className="inline-flex items-center gap-2 font-semibold text-ink-soft">
-              <Building2 size={16} className="text-brand-600" />
-              {doctor.department}
-            </p>
-            <p className="inline-flex items-center gap-2 font-semibold text-ink-soft">
-              <MapPin size={16} className="text-brand-600" />
-              {doctor.room ? `Room ${doctor.room}` : 'Location not listed'}
-            </p>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl bg-[#F6FAFD] border border-[#E5F0F5] p-3.5">
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-tr from-[#146C94] to-[#18A6A6] text-white shadow-sm font-black text-base">
+                {patientSummary ? patientSummary.charAt(0).toUpperCase() : <User2 size={20} />}
+              </div>
+              <div>
+                <p className="text-[0.6875rem] font-bold uppercase tracking-wider text-[#64798B]">Patient Name</p>
+                <p className="font-extrabold text-[#183247] text-[0.9375rem]">{patientSummary || 'Not selected'}</p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2 pt-2 sm:pt-0 border-t sm:border-t-0 border-[#E5F0F5]">
+              <span className="inline-flex items-center gap-1.5 rounded-xl bg-white px-3 py-1.5 text-xs font-bold text-[#146C94] border border-[#DCE8EE] shadow-2xs">
+                <Building2 size={14} className="text-[#18A6A6]" />
+                {doctor.department}
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-xl bg-white px-3 py-1.5 text-xs font-bold text-[#183247] border border-[#DCE8EE] shadow-2xs">
+                <MapPin size={14} className="text-[#DE6470]" />
+                {doctor.room ? `Room ${doctor.room}` : 'Location not listed'}
+              </span>
+            </div>
           </div>
         </SectionCard>
 
-        <div className="mt-4 surface p-4 shadow-sm">
-          <Label htmlFor="visit-reason" className="text-[0.75rem] font-semibold uppercase tracking-wide text-ink-muted">
+        <div className="mt-4 rounded-3xl border border-[#DCE8EE] bg-white p-5 shadow-sm">
+          <Label htmlFor="visit-reason" className="text-[0.75rem] font-extrabold uppercase tracking-wider text-[#64798B]">
             Reason for visit (optional)
           </Label>
           <Textarea
             id="visit-reason"
-            className="mt-2 border-line text-ink placeholder:text-ink-muted focus-visible:ring-2 focus-visible:ring-brand-500"
+            className="mt-2.5 rounded-2xl border-[#DCE8EE] bg-[#F6FAFD] p-3.5 text-[0.875rem] text-[#183247] placeholder:text-[#64798B]/70 focus-visible:ring-2 focus-visible:ring-[#146C94] focus-visible:bg-white transition"
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             placeholder="e.g. Chest pain on exertion for 2 weeks"
           />
-          <p className="mt-2 text-[0.75rem] text-ink-muted">Shared with the doctor before your consultation.</p>
+          <p className="mt-2 text-[0.75rem] font-medium text-[#64798B]">Shared with the doctor before your consultation.</p>
         </div>
 
         <div className="mt-6 flex gap-3">
@@ -307,20 +337,20 @@ function SectionCard({
   children: ReactNode;
 }) {
   return (
-    <div className="mt-4 surface p-4 shadow-sm">
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-[0.75rem] font-semibold uppercase tracking-wide text-ink-muted">{label}</p>
+    <div className="mt-4 rounded-3xl border border-[#DCE8EE] bg-white p-5 shadow-sm transition hover:shadow-md">
+      <div className="flex items-center justify-between pb-3 border-b border-[#F0F5F8]">
+        <p className="text-[0.75rem] font-extrabold uppercase tracking-wider text-[#64798B]">{label}</p>
         {onEdit ? (
           <button
             onClick={onEdit}
             aria-label={editLabel || `Edit ${label}`}
-            className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center gap-1.5 px-3 py-2 text-[0.78125rem] font-bold text-brand-600 hover:text-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 rounded-lg"
+            className="inline-flex min-h-[36px] items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold text-[#146C94] bg-[#EBF5FB] hover:bg-[#DDF3F2] hover:text-[#105779] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#146C94] transition active:scale-95"
           >
-            <Pencil size={13} /> Edit
+            <Pencil size={12} /> Edit
           </button>
         ) : null}
       </div>
-      <div className="mt-2">{children}</div>
+      <div className="pt-3.5">{children}</div>
     </div>
   );
 }

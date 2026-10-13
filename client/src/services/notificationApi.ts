@@ -19,6 +19,7 @@ export interface NotificationData {
     | 'YOUR_TURN'
     | 'SYSTEM';
   isRead: boolean;
+  isDismissed?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -42,6 +43,20 @@ export class NotificationApiService {
   static async markAsRead(notificationId: string): Promise<NotificationData> {
     const response = await apiClient.patch<{ success: boolean; data: { notification: NotificationData } }>(
       `/notifications/${notificationId}/read`
+    );
+    return response.data.data.notification;
+  }
+
+  static async dismiss(notificationId: string): Promise<NotificationData> {
+    const response = await apiClient.patch<{ success: boolean; data: { notification: NotificationData } }>(
+      `/notifications/${notificationId}/dismiss`
+    );
+    return response.data.data.notification;
+  }
+
+  static async restore(notificationId: string): Promise<NotificationData> {
+    const response = await apiClient.patch<{ success: boolean; data: { notification: NotificationData } }>(
+      `/notifications/${notificationId}/restore`
     );
     return response.data.data.notification;
   }

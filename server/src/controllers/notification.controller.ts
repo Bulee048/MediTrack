@@ -36,6 +36,40 @@ export class NotificationController {
     }
   }
 
+  static async dismiss(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const notificationId = req.params.id as string;
+      const userId = req.user!.id;
+
+      const notification = await NotificationService.dismiss(notificationId, userId);
+
+      res.status(200).json({
+        success: true,
+        message: 'Notification dismissed',
+        data: { notification },
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async restore(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const notificationId = req.params.id as string;
+      const userId = req.user!.id;
+
+      const notification = await NotificationService.restore(notificationId, userId);
+
+      res.status(200).json({
+        success: true,
+        message: 'Notification restored',
+        data: { notification },
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   static async markAllAsRead(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const userId = req.user!.id;

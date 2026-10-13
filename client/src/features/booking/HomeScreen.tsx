@@ -4,27 +4,71 @@ import { NotificationApiService } from '@/services/notificationApi';
 import { PatientVisitSummary } from './PatientVisitSummary';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, Building2, CalendarPlus, Clock3, LayoutGrid, RotateCcw, Search, User2, X } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import {
+  Bell,
+  Building2,
+  CalendarPlus,
+  Clock3,
+  LayoutGrid,
+  RotateCcw,
+  Search,
+  User2,
+  X,
+  Sparkles,
+  ArrowRight,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { fetchDepartments } from '@/features/doctors/departments.service';
 import { useProfile } from '@/features/profile/context/ProfileContext';
 import type { DoctorDepartment } from '@/features/doctors/types';
+import { LiveDigitalClock } from '@/components/ui/LiveDigitalClock';
 
 const QUICK_ACTIONS = [
-  { label: 'Book OPD', icon: CalendarPlus, to: '/app/departments', tone: 'bg-brand-50 text-brand-600' },
-  { label: 'My Queue', icon: Clock3, to: '/queue', tone: 'bg-brand-50 text-brand-700' },
-  { label: 'Departments', icon: LayoutGrid, to: '/app/departments', tone: 'bg-info-soft text-info' },
-  { label: 'My Profile', icon: User2, to: '/app/profile', tone: 'bg-brand-50 text-brand-700' },
+  {
+    label: 'Book OPD',
+    desc: 'New Appointment',
+    icon: CalendarPlus,
+    to: '/app/departments',
+    bg: 'bg-[#EBF5FB]',
+    iconColor: 'text-[#146C94]',
+  },
+  {
+    label: 'My Queue',
+    desc: 'Live OPD Status',
+    icon: Clock3,
+    to: '/queue',
+    bg: 'bg-[#E8F8F2]',
+    iconColor: 'text-[#20A779]',
+  },
+  {
+    label: 'Departments',
+    desc: 'Medical Specialties',
+    icon: LayoutGrid,
+    to: '/app/departments',
+    bg: 'bg-[#F3EEFE]',
+    iconColor: 'text-[#8B5CF6]',
+  },
+  {
+    label: 'My Profile',
+    desc: 'Medical Record',
+    icon: User2,
+    to: '/app/profile',
+    bg: 'bg-[#FEF7EC]',
+    iconColor: 'text-[#E9A23B]',
+  },
 ];
 
 export default function HomeScreen() {
   const navigate = useNavigate();
   const session = useAuthSession();
-  const updates = useQuery({ queryKey: ['myNotifications', session], queryFn: () => NotificationApiService.getUserNotifications(), refetchOnMount: false });
-  const unread = updates.data?.filter(item => !item.isRead).length ?? 0;
+  const updates = useQuery({
+    queryKey: ['myNotifications', session],
+    queryFn: () => NotificationApiService.getUserNotifications(),
+    refetchOnMount: false,
+  });
+  const unread = updates.data?.filter((item) => !item.isRead && !item.isDismissed).length ?? 0;
   const { user } = useProfile();
   const [query, setQuery] = useState('');
   const [departments, setDepartments] = useState<DoctorDepartment[]>([]);
@@ -61,149 +105,200 @@ export default function HomeScreen() {
   }, [departments, query]);
 
   return (
-    <main data-feature-accessibility className="patient-page page-enter">
-      <div className="mx-auto w-full max-w-5xl space-y-0">
-        <div className="flex items-center justify-between pb-3">
-          <div>
-            <p className="text-[0.8125rem] font-semibold text-ink-muted">Welcome back,</p>
-            <h1 className="mt-0.5 page-title font-extrabold tracking-tight text-ink">{user?.name || 'Welcome Back'}</h1>
+    <main data-feature-accessibility className="patient-page page-enter pb-24">
+      <div className="mx-auto w-full max-w-4xl space-y-6">
+        {/* SECTION A: PREMIUM WELCOMING HEADER */}
+        <div className="relative overflow-hidden rounded-3xl border border-[#DCE8EE] bg-gradient-to-r from-white via-[#F6FAFD] to-[#DDF3F2]/50 p-6 shadow-sm">
+          {/* Subtle background ambient blur */}
+          <div className="pointer-events-none absolute -right-10 -top-10 h-36 w-36 rounded-full bg-[#18A6A6]/10 blur-2xl" />
+
+          <div className="relative flex items-center justify-between">
+            <div className="flex items-center gap-3.5">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[#18A6A6] via-[#146C94] to-[#105779] text-white shadow-md shadow-[#146C94]/20 font-black text-lg">
+                {user?.name ? user.name.charAt(0).toUpperCase() : 'C'}
+              </div>
+
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider text-[#64798B]">
+                  Welcome to CareFlow,
+                </p>
+                <h1 className="text-xl font-black text-[#183247] tracking-tight">
+                  {user?.name || 'Valued Patient'}
+                </h1>
+              </div>
+            </div>
+
+            <button
+              onClick={() => navigate('/notifications')}
+              aria-label={`View notifications${unread ? `, ${unread} unread` : ''}`}
+              className="relative flex h-11 w-11 items-center justify-center rounded-2xl border border-[#DCE8EE] bg-white text-[#146C94] shadow-sm transition hover:bg-[#EBF5FB] active:scale-95"
+            >
+              <Bell size={20} />
+              {unread > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#DE6470] px-1 text-[0.625rem] font-black text-white shadow-sm animate-pulse">
+                  {unread > 99 ? '99+' : unread}
+                </span>
+              )}
+            </button>
           </div>
-          <button onClick={() => navigate('/notifications')} aria-label={`View notifications${unread?`, ${unread} unread`: ''}`} className="icon-button relative"><Bell size={20} className="mx-auto" />{unread>0&&<span className="absolute -right-1 -top-1 rounded-full bg-brand-700 px-1.5 py-0.5 text-xs text-white">{unread>99?'99+':unread}</span>}</button>
         </div>
 
+        {/* SECTION B: LIVE DATE & DIGITAL CLOCK WIDGET */}
+        <LiveDigitalClock />
+
+        {/* SECTION C: NEXT APPOINTMENT & SMART LIVE QUEUE CARDS */}
         <PatientVisitSummary />
-        <div className="relative mt-6">
-          <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-ink-muted">
+
+        {/* SECTION D: DEPARTMENT SEARCH INPUT */}
+        <div className="relative">
+          <span className="pointer-events-none absolute inset-y-0 left-4 flex items-center text-[#64798B]">
             <Search size={18} />
           </span>
           <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search departments…"
+            placeholder="Search departments, clinical specialties, or OPD rooms…"
             aria-label="Search departments and specialties"
-            className="h-12 min-h-[44px] border-line bg-white pl-10 pr-10 text-ink placeholder:text-ink-muted focus-visible:ring-2 focus-visible:ring-brand-500"
+            className="h-13 min-h-[50px] rounded-2xl border-[#DCE8EE] bg-white pl-11 pr-11 text-sm font-semibold text-[#183247] placeholder:text-[#8EA3B0] focus-visible:border-[#146C94] focus-visible:ring-4 focus-visible:ring-[#146C94]/10 shadow-sm transition-all"
           />
           {query ? (
             <button
               type="button"
               onClick={() => setQuery('')}
               aria-label="Clear search query"
-              className="absolute inset-y-0 right-0 flex min-h-[44px] min-w-[44px] items-center justify-center text-ink-muted hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 rounded-r-md"
+              className="absolute inset-y-0 right-0 flex min-h-[44px] min-w-[44px] items-center justify-center text-[#8EA3B0] hover:text-[#183247]"
             >
               <X size={16} />
             </button>
           ) : null}
         </div>
 
-        <div className="mt-5 rounded-2xl bg-gradient-to-br from-brand-600 to-brand-700 p-5 text-white shadow-md">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-extrabold uppercase tracking-wider text-brand-100">Find care faster</span>
-            <span className="text-[0.71875rem] font-semibold text-white/80">Browse specialties</span>
-          </div>
-          <p className="mt-3 text-[1.0625rem] font-extrabold leading-snug">
-            Choose a department, then pick the doctor and time that suits you.
-          </p>
-          <p className="mt-1 text-[0.78125rem] text-white/80">Use the departments directory to start booking an OPD visit.</p>
-          <Button
-            size="sm"
-            className="mt-4 h-11 min-h-[44px] bg-white font-bold text-brand-600 hover:bg-brand-50 focus-visible:ring-2 focus-visible:ring-white"
-            onClick={() => navigate('/app/departments')}
-          >
-            View Departments
-          </Button>
-        </div>
+        {/* SECTION E: FIND CARE FASTER FEATURE CARD */}
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#105779] via-[#146C94] to-[#18A6A6] p-6 text-white shadow-lg shadow-[#146C94]/20">
+          {/* Subtle medical geometric patterns */}
+          <div className="pointer-events-none absolute -right-10 -bottom-10 h-44 w-44 rounded-full border-[18px] border-white/10" />
+          <div className="pointer-events-none absolute right-20 -top-6 h-28 w-28 rounded-full bg-white/5" />
 
-        <h2 className="mt-7 text-[1rem] font-extrabold tracking-tight text-ink">Quick Actions</h2>
-        <div className="mt-3 grid grid-cols-2 gap-3">
-          {QUICK_ACTIONS.map((action) => (
-            <button
-              key={action.label}
-              onClick={() => navigate(action.to)}
-              className="flex min-h-[72px] flex-col items-start gap-3 surface p-4 text-left shadow-sm transition hover:border-brand-200 hover:shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 active:scale-[0.98]"
-            >
-              <span className={`grid h-10 w-10 place-items-center rounded-xl ${action.tone}`}>
-                <action.icon size={19} />
-              </span>
-              <span className="text-[0.84375rem] font-bold text-ink">{action.label}</span>
-            </button>
-          ))}
-        </div>
+          <div className="relative z-10 max-w-lg">
+            <div className="flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-[0.6875rem] font-bold uppercase tracking-wider text-[#DDF3F2] w-fit">
+              <Sparkles size={13} />
+              <span>Smart Hospital Scheduling</span>
+            </div>
 
-        <div className="mt-7 flex items-center justify-between">
-          <h2 className="text-[1rem] font-extrabold tracking-tight text-ink">Nearby Specialties</h2>
-          <button
-            onClick={() => navigate('/app/departments')}
-            className="inline-flex min-h-[44px] items-center px-2 text-[0.78125rem] font-bold text-brand-600 hover:text-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 rounded-lg"
-          >
-            View All
-          </button>
-        </div>
+            <h2 className="mt-3 text-xl font-black tracking-tight text-white leading-snug">
+              Find Care Faster with Verified OPD Specialists
+            </h2>
+            <p className="mt-1.5 text-xs text-white/85 leading-relaxed">
+              Explore open consultation slots, check real-time queue lengths, and book OPD visits for yourself or family members.
+            </p>
 
-        {loading ? (
-          <div role="status" aria-label="Loading specialties" className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-            {Array.from({ length: 6 }).map((_, index) => (
-              <div key={index} className="surface px-2 py-4 shadow-sm">
-                <div className="flex flex-col items-center gap-2">
-                  <Skeleton className="h-11 w-11 rounded-xl bg-line" />
-                  <Skeleton className="h-3.5 w-20 bg-line" />
-                  <Skeleton className="h-2.5 w-10 bg-line" />
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : error ? (
-          <div role="alert" className="mt-3 rounded-2xl border border-danger/30 bg-danger-soft p-4 text-sm text-danger">
-            <p className="font-bold">Could not load departments.</p>
-            <p className="mt-1 text-xs">{error}</p>
             <Button
-              size="sm"
-              variant="outline"
-              onClick={loadDepartments}
-              className="mt-3 h-11 min-h-[44px] border-danger/40 text-danger hover:bg-danger-soft focus-visible:ring-2 focus-visible:ring-danger"
+              onClick={() => navigate('/app/departments')}
+              className="mt-5 rounded-2xl bg-white px-5 py-2.5 text-xs font-black text-[#146C94] shadow-md hover:bg-[#F6FAFD] active:scale-95 transition"
             >
-              <RotateCcw className="mr-2 h-4 w-4" /> Try Again
+              Browse Specialties
+              <ArrowRight size={14} className="ml-1.5" />
             </Button>
           </div>
-        ) : results.length === 0 ? (
-          <div className="mt-3 rounded-2xl border border-dashed border-line bg-white/70 p-6 text-center">
-            <p className="text-[0.875rem] font-bold text-ink">No specialties match your search</p>
-            <p className="mt-1 text-[0.78125rem] text-ink-muted">Try a different keyword or browse all departments.</p>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setQuery('')}
-              className="mt-3 h-11 min-h-[44px] border-line text-ink-soft hover:bg-canvas focus-visible:ring-2 focus-visible:ring-brand-500"
-            >
-              Clear Search
-            </Button>
-          </div>
-        ) : (
-          <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-            {results.slice(0, 6).map((department) => (
+        </div>
+
+        {/* SECTION F: QUICK ACTIONS TILES */}
+        <div>
+          <h2 className="text-base font-black tracking-tight text-[#183247]">
+            Quick Actions
+          </h2>
+          <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {QUICK_ACTIONS.map((action) => (
               <button
-                key={department.id}
-                onClick={() =>
-                  navigate(`/app/doctors?departmentId=${department.id}&name=${encodeURIComponent(department.name)}`)
-                }
-                aria-label={`Department: ${department.name}`}
-                className="flex min-h-[80px] flex-col items-center gap-2 surface px-2 py-4 text-center shadow-sm transition hover:border-brand-200 hover:shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 active:scale-[0.97]"
+                key={action.label}
+                onClick={() => navigate(action.to)}
+                className="group flex flex-col items-start gap-3 rounded-3xl border border-[#DCE8EE] bg-white p-4 text-left shadow-sm transition-all hover:border-[#146C94]/30 hover:shadow-md active:scale-97"
               >
-                <span className="grid h-11 w-11 place-items-center rounded-xl bg-brand-50 text-brand-600">
-                  <Building2 size={20} />
+                <span className={`flex h-11 w-11 items-center justify-center rounded-2xl ${action.bg} ${action.iconColor} transition group-hover:scale-105`}>
+                  <action.icon size={20} />
                 </span>
-                <span className="text-[0.75rem] font-bold leading-tight text-ink">{department.name}</span>
-                <span className="text-xs font-medium text-ink-muted">{department.code}</span>
+                <div>
+                  <span className="block text-sm font-extrabold text-[#183247] group-hover:text-[#146C94]">
+                    {action.label}
+                  </span>
+                  <span className="block text-[0.6875rem] font-semibold text-[#8EA3B0]">
+                    {action.desc}
+                  </span>
+                </div>
               </button>
             ))}
           </div>
-        )}
+        </div>
 
-        <div className="mt-6 flex items-center justify-center gap-2 text-[0.71875rem] text-ink-muted">
-          <Badge variant="secondary" className="border-success/30 bg-success-soft text-success">
-            Live directory
-          </Badge>
-          <span>·</span>
-          <span>Patient Home</span>
+        {/* SECTION: NEARBY SPECIALTIES DIRECTORY */}
+        <div>
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-black tracking-tight text-[#183247]">
+              OPD Specialties
+            </h2>
+            <button
+              onClick={() => navigate('/app/departments')}
+              className="text-xs font-bold text-[#146C94] hover:underline"
+            >
+              View All ({departments.length})
+            </button>
+          </div>
+
+          {loading ? (
+            <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+              {Array.from({ length: 4 }).map((_, index) => (
+                <div key={index} className="rounded-3xl border border-[#DCE8EE] bg-white p-4 shadow-sm">
+                  <div className="flex flex-col items-center gap-2">
+                    <Skeleton className="h-11 w-11 rounded-2xl bg-[#E2EEF4]" />
+                    <Skeleton className="h-3.5 w-24 bg-[#E2EEF4]" />
+                    <Skeleton className="h-2.5 w-12 bg-[#E2EEF4]" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : error ? (
+            <div className="mt-3 rounded-2xl border border-[#DE6470]/30 bg-[#FDECEF] p-4 text-xs font-semibold text-[#DE6470]">
+              <p>{error}</p>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={loadDepartments}
+                className="mt-2 text-xs"
+              >
+                <RotateCcw size={12} className="mr-1.5" /> Try Again
+              </Button>
+            </div>
+          ) : results.length === 0 ? (
+            <div className="mt-3 rounded-3xl border border-dashed border-[#DCE8EE] bg-white p-6 text-center text-xs text-[#64798B]">
+              No specialties found matching &quot;{query}&quot;.
+            </div>
+          ) : (
+            <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+              {results.slice(0, 4).map((department) => (
+                <button
+                  key={department.id}
+                  onClick={() =>
+                    navigate(
+                      `/app/doctors?departmentId=${department.id}&name=${encodeURIComponent(
+                        department.name
+                      )}`
+                    )
+                  }
+                  className="flex flex-col items-center gap-2 rounded-3xl border border-[#DCE8EE] bg-white p-4 text-center shadow-sm transition hover:border-[#146C94]/40 hover:shadow-md active:scale-97"
+                >
+                  <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#EBF5FB] text-[#146C94]">
+                    <Building2 size={20} />
+                  </span>
+                  <span className="text-xs font-extrabold text-[#183247] leading-tight line-clamp-1">
+                    {department.name}
+                  </span>
+                  <span className="text-[0.625rem] font-bold text-[#8EA3B0]">
+                    {department.code}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </main>
