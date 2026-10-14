@@ -1,16 +1,19 @@
 import { Schema, model, Document, Types } from 'mongoose';
 
 export type NotificationCategory =
+  | 'APPOINTMENT_REMINDER'
   | 'APPOINTMENT_CREATED'
   | 'APPOINTMENT_UPDATED'
   | 'APPOINTMENT_CANCELLED'
   | 'QUEUE_CREATED'
   | 'QUEUE_UPDATE'
+  | 'QUEUE_CANCELLED'
   | 'ALMOST_TURN'
   | 'YOUR_TURN'
   | 'SYSTEM';
 
 export interface INotification extends Document {
+  deliveryKey?: string;
   user: Types.ObjectId;
   queueTicket?: Types.ObjectId;
   appointment?: Types.ObjectId;
@@ -18,12 +21,14 @@ export interface INotification extends Document {
   message: string;
   category: NotificationCategory;
   isRead: boolean;
+  isDismissed?: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
 
 const notificationSchema = new Schema<INotification>(
   {
+    deliveryKey: { type:String },
     user: {
       type: Schema.Types.ObjectId,
       ref: 'User',
@@ -51,11 +56,13 @@ const notificationSchema = new Schema<INotification>(
     category: {
       type: String,
       enum: [
+        'APPOINTMENT_REMINDER',
         'APPOINTMENT_CREATED',
         'APPOINTMENT_UPDATED',
         'APPOINTMENT_CANCELLED',
         'QUEUE_CREATED',
         'QUEUE_UPDATE',
+        'QUEUE_CANCELLED',
         'ALMOST_TURN',
         'YOUR_TURN',
         'SYSTEM',
@@ -66,12 +73,28 @@ const notificationSchema = new Schema<INotification>(
       type: Boolean,
       default: false,
     },
+    isDismissed: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,
   }
 );
 
+notificationSchema.index({ deliveryKey:1 },{unique:true,partialFilterExpression:{deliveryKey:{$type:'string'}}});
 notificationSchema.index({ user: 1, isRead: 1, createdAt: -1 });
+notificationSchema.index(
+  { user: 1, queueTicket: 1, category: 1 },
+  {
+    name: 'unique_queue_turn_notification',
+    unique: true,
+    partialFilterExpression: {
+      queueTicket: { $type: 'objectId' },
+      category: { $in: ['ALMOST_TURN', 'YOUR_TURN'] },
+    },
+  }
+);
 
 export const Notification = model<INotification>('Notification', notificationSchema);

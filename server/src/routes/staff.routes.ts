@@ -1,0 +1,16 @@
+import { Router } from 'express';
+import { authenticate } from '../middleware/auth.middleware.js';
+import { authorizeRoles } from '../middleware/role.middleware.js';
+import { registerWalkIn, findPatients, bookForPatient, getStaffProfile, updateStaffProfile, updateStaffPreferences, getTeam, createTeamMember, updateTeamMember } from '../controllers/staff.controller.js';
+const router=Router();
+router.use(authenticate,authorizeRoles('STAFF','ADMIN'));
+router.get('/patients',findPatients);
+router.post('/patients',registerWalkIn);
+router.post('/appointments',bookForPatient);
+router.get('/profile', getStaffProfile);
+router.patch('/profile', updateStaffProfile);
+router.patch('/preferences', updateStaffPreferences);
+router.get('/team', authorizeRoles('ADMIN'), getTeam);
+router.post('/team', authorizeRoles('ADMIN'), createTeamMember);
+router.patch('/team/:id', authorizeRoles('ADMIN'), updateTeamMember);
+export default router;

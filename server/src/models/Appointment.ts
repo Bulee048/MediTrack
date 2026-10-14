@@ -8,9 +8,13 @@ export interface IAppointment extends Document {
   doctor: Types.ObjectId;
   appointmentDate: Date;
   timeSlot: string;
+  slotId?: string;
+  slotLabel?: string;
   reason?: string;
   status: AppointmentStatus;
   queueTicket?: Types.ObjectId;
+  ref?: string;
+  referenceId?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -43,6 +47,8 @@ const appointmentSchema = new Schema<IAppointment>(
       required: [true, 'Time slot is required'],
       trim: true,
     },
+    slotId: { type: String, trim: true },
+    slotLabel: { type: String, trim: true },
     reason: {
       type: String,
       trim: true,
@@ -56,6 +62,18 @@ const appointmentSchema = new Schema<IAppointment>(
     queueTicket: {
       type: Schema.Types.ObjectId,
       ref: 'QueueTicket',
+    },
+    ref: {
+      type: String,
+      trim: true,
+      sparse: true,
+      index: true,
+    },
+    referenceId: {
+      type: String,
+      trim: true,
+      sparse: true,
+      index: true,
     },
   },
   {

@@ -1,0 +1,67 @@
+import { apiClient } from '@/config/api';
+
+export interface NotificationData {
+  _id: string;
+  user: string;
+  queueTicket?: string;
+  appointment?: string;
+  title: string;
+  message: string;
+  category:
+    | 'APPOINTMENT_REMINDER'
+    | 'APPOINTMENT_CREATED'
+    | 'APPOINTMENT_UPDATED'
+    | 'APPOINTMENT_CANCELLED'
+    | 'QUEUE_CREATED'
+    | 'QUEUE_UPDATE'
+    | 'QUEUE_CANCELLED'
+    | 'ALMOST_TURN'
+    | 'YOUR_TURN'
+    | 'SYSTEM';
+  isRead: boolean;
+  isDismissed?: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface NotificationsResponse {
+  success: boolean;
+  message: string;
+  data: {
+    notifications: NotificationData[];
+  };
+}
+
+export class NotificationApiService {
+  static async getUserNotifications(unreadOnly?: boolean): Promise<NotificationData[]> {
+    const response = await apiClient.get<NotificationsResponse>('/notifications', {
+      params: { unread: unreadOnly ? 'true' : undefined },
+    });
+    return response.data.data.notifications;
+  }
+
+  static async markAsRead(notificationId: string): Promise<NotificationData> {
+    const response = await apiClient.patch<{ success: boolean; data: { notification: NotificationData } }>(
+      `/notifications/${notificationId}/read`
+    );
+    return response.data.data.notification;
+  }
+
+  static async dismiss(notificationId: string): Promise<NotificationData> {
+    const response = await apiClient.patch<{ success: boolean; data: { notification: NotificationData } }>(
+      `/notifications/${notificationId}/dismiss`
+    );
+    return response.data.data.notification;
+  }
+
+  static async restore(notificationId: string): Promise<NotificationData> {
+    const response = await apiClient.patch<{ success: boolean; data: { notification: NotificationData } }>(
+      `/notifications/${notificationId}/restore`
+    );
+    return response.data.data.notification;
+  }
+
+  static async markAllAsRead(): Promise<void> {
+    await apiClient.patch('/notifications/read-all');
+  }
+}

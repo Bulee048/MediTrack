@@ -4,8 +4,11 @@ export const Toaster = () => {
   return (
     <SonnerToaster
       position="top-right"
+      closeButton
+      duration={4500}
+      visibleToasts={3}
       toastOptions={{
-        className: 'bg-background text-foreground border-border shadow-lg',
+        style: { borderRadius: '1rem', background: '#fff', color: 'var(--color-ink)', borderColor: 'var(--color-line)', boxShadow: 'var(--shadow-float)' },
       }}
     />
   );

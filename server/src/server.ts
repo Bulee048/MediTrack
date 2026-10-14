@@ -1,14 +1,17 @@
+import { startReminderWorker } from './services/reminder.service.js';
 import app from './app.js';
 import { env } from './config/env.js';
 import { connectDatabase, disconnectDatabase } from './config/database.js';
 import { Server } from 'http';
 
 let server: Server;
+let stopReminders: (()=>void) | undefined;
 
 async function startServer(): Promise<void> {
   try {
     // 1. Connect Database
     await connectDatabase();
+    stopReminders = startReminderWorker();
 
     // 2. Start HTTP Server
     server = app.listen(env.PORT, () => {
@@ -26,6 +29,7 @@ async function startServer(): Promise<void> {
 async function shutdownGracefully(signal: string): Promise<void> {
   console.log(`\n[MediTrack Server] ${signal} signal received. Starting graceful shutdown...`);
 
+  stopReminders?.();
   if (server) {
     server.close(async () => {
       console.log('[MediTrack Server] HTTP server closed');

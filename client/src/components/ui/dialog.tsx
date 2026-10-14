@@ -8,18 +8,20 @@ export interface DialogProps {
 }
 
 const Dialog: React.FC<DialogProps> = ({ open, onOpenChange, children }) => {
+  const dialog = React.useRef<HTMLDialogElement>(null);
+  React.useLayoutEffect(() => {
+    const element = dialog.current;
+    if (!open || !element) return;
+    const previous = document.activeElement as HTMLElement;
+    element.showModal();
+    return () => { element.close(); if (previous?.isConnected) previous.focus(); };
+  }, [open]);
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div
-        className="fixed inset-0"
-        onClick={() => onOpenChange(false)}
-      />
-      <div className="relative z-10 w-full max-w-lg rounded-lg bg-background p-6 shadow-lg border border-border">
+    <dialog ref={dialog} className="ui-dialog" aria-label="Dialog" onCancel={e => { e.preventDefault(); onOpenChange(false); }} onClick={e => { if (e.target === dialog.current) onOpenChange(false); }}>
         {children}
-      </div>
-    </div>
+    </dialog>
   );
 };
 

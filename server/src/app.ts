@@ -17,7 +17,7 @@ app.use(
     credentials: true,
   })
 );
-app.use(morgan('dev'));
+app.use(morgan(':date[iso] :method :url :status :response-time ms - :res[content-length]'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());

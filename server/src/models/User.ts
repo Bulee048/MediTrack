@@ -3,6 +3,8 @@ import { Schema, model, Document } from 'mongoose';
 export type UserRole = 'PATIENT' | 'STAFF' | 'ADMIN';
 export type StaffRole = 'RECEPTIONIST' | 'DOCTOR' | 'ADMIN';
 
+export interface NotificationPreferences { inAppAlerts: boolean; queueAlerts: boolean; promoEmailOptIn: boolean; reminders: boolean; reminderOffset: '30m' | '1h' | '1d'; }
+
 export interface IUser extends Document {
   name: string;
   phone: string;
@@ -15,6 +17,8 @@ export interface IUser extends Document {
   dateOfBirth?: Date;
   gender?: string;
   address?: string;
+  notificationPreferences?: NotificationPreferences;
+  staffPreferences?: { refreshSeconds: 15 | 30 | 60; showCompletedTickets: boolean };
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -73,6 +77,8 @@ const userSchema = new Schema<IUser>(
       type: String,
       trim: true,
     },
+    notificationPreferences: { type: new Schema({ inAppAlerts:{type:Boolean,default:true}, queueAlerts:{type:Boolean,default:true}, promoEmailOptIn:{type:Boolean,default:false}, reminders:{type:Boolean,default:true}, reminderOffset:{type:String,enum:['30m','1h','1d'],default:'1h'} },{_id:false}), default:()=>({}) },
+    staffPreferences: { type: new Schema({ refreshSeconds: { type: Number, enum: [15, 30, 60], default: 15 }, showCompletedTickets: { type: Boolean, default: true } }, { _id: false }), default: () => ({}) },
     isActive: {
       type: Boolean,
       default: true,
