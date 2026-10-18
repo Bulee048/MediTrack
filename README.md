@@ -239,6 +239,4 @@ Contributions, issues, and feature requests are welcome!
 
 This project is licensed under the [MIT License](LICENSE).
 
-<p align="center">
-  Crafted with ❤️ for healthcare efficiency and seamless patient experiences.
 </p>
