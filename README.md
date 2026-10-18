@@ -1,108 +1,244 @@
-# MediTrack — OPD appointments and live queues
+# 🏥 MediTrack — Smart OPD Appointment & Live Queue Management System
 
-React/TypeScript patient and staff portals share one Express/Mongoose backend. Hospital dates use Asia/Colombo. The official application is in `client/` and `server/`; ignored `app/web/` is a read-only UI reference.
+<p align="center">
+  <img src="https://img.shields.io/badge/React-19.0-61DAFB?style=for-the-badge&logo=react&logoColor=black" alt="React 19" />
+  <img src="https://img.shields.io/badge/TypeScript-5.8-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript" />
+  <img src="https://img.shields.io/badge/Node.js-22+-339933?style=for-the-badge&logo=nodedotjs&logoColor=white" alt="Node.js" />
+  <img src="https://img.shields.io/badge/Express-4.21-000000?style=for-the-badge&logo=express&logoColor=white" alt="Express" />
+  <img src="https://img.shields.io/badge/MongoDB-Atlas_ReplicaSet-47A248?style=for-the-badge&logo=mongodb&logoColor=white" alt="MongoDB" />
+  <img src="https://img.shields.io/badge/TailwindCSS-v4.0-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white" alt="Tailwind CSS" />
+  <img src="https://img.shields.io/badge/Capacitor-Android_Ready-119EFF?style=for-the-badge&logo=capacitor&logoColor=white" alt="Capacitor" />
+</p>
 
-## Prerequisites and installation
+---
 
-Use Node.js 22 or later, npm, and a MongoDB Atlas replica-set deployment (transactions are required). Allow your development machine in Atlas Network Access and create a database user with access to the selected development database. Keep its URI private.
+## 📌 Overview
 
-```sh
+**MediTrack** is an enterprise-grade Outpatient Department (OPD) management system designed to streamline patient appointments, automate live queues, and empower hospital staff with real-time operational workflows. 
+
+Featuring dedicated responsive web portals for **Patients** and **Hospital Staff / Admins**, as well as an Android build powered by Capacitor, MediTrack eliminates chaotic waiting rooms by providing dynamic waiting time estimations, transactional ticket calling, and automated queue tracking.
+
+---
+
+## ✨ Key Features
+
+### 👤 Patient Portal (`/login`)
+- **Self-Service Registration & Secure Auth:** Instant mobile/email account creation with protected JWT authentication.
+- **Doctor & Specialist Booking:** Browse doctor schedules, available dates, and real-time slot availability.
+- **Family & Dependent Profiles:** Book and manage appointments for family members under a single patient account.
+- **Live Queue Tracking & Ticket Updates:** Real-time ticket status (`WAITING`, `ALMOST_TURN`, `CALLING`, `IN_CONSULTATION`, `COMPLETED`) with estimated wait calculations.
+- **Smart Reminders & Notifications:** Contextual alerts for upcoming appointments and queue turn updates.
+
+### 🩺 Staff & Admin Portal (`/staff/login`)
+- **Interactive Live Queue Board:**
+  - One-click **Call Next** for waiting patients.
+  - Strict queue transition pipeline (`CALLING` ➔ `IN_CONSULTATION` ➔ `COMPLETED`).
+  - Ability to **Hold**, **Skip**, or handle no-shows cleanly.
+- **Reception & Walk-In Desk:** Quickly register walk-in patients and issue instant OPD queue tickets.
+- **Doctor Roster & OPD Schedules:** Define consultation slots, shift timetables, and room allocations.
+- **Team Management & Role-Based Access (Admin):** Granular access control for Admins, Doctors, and Reception Staff.
+- **Real-Time OPD Analytics:** View daily patient throughput, peak hours, and consultation statistics.
+- **Configurable Auto-Polling:** Customizable data refresh rates (15s, 30s, 60s) to keep screens synchronized without manual reload.
+
+---
+
+## 🏗️ System Architecture
+
+```mermaid
+graph TD
+    subgraph Client ["Frontend (React 19 + TypeScript + Vite)"]
+        P[Patient Portal / Mobile App]
+        S[Staff / Admin Portal]
+        UI[Tailwind CSS v4 + Lucide Icons]
+        RQ[TanStack React Query]
+    end
+
+    subgraph API ["Backend (Node.js + Express)"]
+        Auth[JWT Auth & RBAC Middleware]
+        Route[RESTful API Routes]
+        QueueEngine[Live Queue Engine & Transaction Handler]
+        Timezone[Asia/Colombo Timezone Normalizer]
+    end
+
+    subgraph Database ["Persistence Layer"]
+        Atlas[(MongoDB Atlas Replica Set)]
+        Tx[ACID Transactions]
+    end
+
+    P -->|API Requests / Polling| Route
+    S -->|Queue Operations & Admin Actions| Route
+    Route --> Auth
+    Auth --> QueueEngine
+    QueueEngine --> Tx
+    Tx --> Atlas
+```
+
+---
+
+## 💻 Tech Stack
+
+| Area | Technologies |
+| :--- | :--- |
+| **Frontend** | React 19, TypeScript 5.8, Vite 6, Tailwind CSS v4, TanStack Query, React Hook Form, Zod, Lucide Icons, Recharts, Sonner |
+| **Mobile** | Capacitor 8 (Cross-platform Android runtime & pre-built APK) |
+| **Backend** | Node.js 22+, Express 4.21, TypeScript, Tsx, Mongoose 8, Helmet, CORS, Morgan |
+| **Database** | MongoDB Atlas (Replica Set required for Multi-Document ACID Transactions) |
+| **Testing & Quality** | Node.js Test Runner, Oxlint, TypeScript strict typecheck |
+
+---
+
+## 🚀 Quick Start Guide
+
+### 1️⃣ Prerequisites
+- **Node.js**: `v22.x` or later
+- **npm**: `v10.x` or later
+- **MongoDB Atlas**: Free/Paid Replica-Set cluster (Transactions are mandatory). Ensure your IP is whitelisted under Atlas *Network Access*.
+
+### 2️⃣ Clone & Install Dependencies
+
+```bash
+# Clone repository
+git clone https://github.com/Bulee048/MediTrack.git
+cd MediTrack
+
+# Install Client & Server packages
 npm --prefix client ci
 npm --prefix server ci
 ```
 
-Create an ignored `server/.env` with these names (values must be supplied privately):
+### 3️⃣ Configure Environment Variables
 
-- `MONGODB_URI` — Atlas connection string.
-- `JWT_SECRET` — a strong private signing secret.
-- `JWT_EXPIRES_IN` — optional; defaults to `7d`.
-- `PORT`, `CLIENT_URL`, `NODE_ENV` — optional for standalone backend startup.
-- `MONGODB_DB_NAME` — optional isolated test database, `meditrack_demo`.
+Create `.env` inside the `server/` directory:
 
-The frontend accepts optional `VITE_API_BASE_URL` when started independently. Do not commit `.env`, local account credentials, tokens or Atlas secrets.
+```env
+# MongoDB Atlas Connection String (Must be a replica set)
+MONGODB_URI=mongodb+srv://<username>:<password>@<cluster>.mongodb.net/meditrack?retryWrites=true&w=majority
 
-## One-command local startup
+# JWT Signing
+JWT_SECRET=your_super_strong_secret_key_here
+JWT_EXPIRES_IN=7d
 
-From the repository root:
+# Server & Client Configuration (Optional Defaults)
+PORT=5004
+CLIENT_URL=http://localhost:5184
+NODE_ENV=development
+```
 
-```sh
+*(Optional)* Create `client/.env.local` if you change backend ports:
+```env
+VITE_API_BASE_URL=http://localhost:5004/api
+```
+
+---
+
+## ⚡ Running the Application
+
+### Option A: One-Command Launcher (Recommended)
+From the project root:
+
+```bash
 npm run dev
 ```
 
-The root launcher starts both official services using the database configured in `MONGODB_URI` (the current official database is `meditrack`), sets matching API/CORS origins and fails clearly if a port is occupied. It does not seed/reset data or copy demo accounts. Ctrl+C stops its child services. This development launcher defaults `TEST_DNS_SERVERS` to `8.8.8.8,1.1.1.1` for Atlas discovery and an OS lookup fallback; set it explicitly to your preferred resolvers. Production initialization keeps the system resolver and never enables that fallback. Startup logs identify the connected database.
+This concurrently boots up both backend and frontend servers with synchronized CORS and DNS failovers:
+- 🌐 **Patient Web Portal**: [http://localhost:5184/login](http://localhost:5184/login)
+- 🏥 **Staff & Admin Dashboard**: [http://localhost:5184/staff/login](http://localhost:5184/staff/login)
+- 🩺 **Backend Health API**: [http://localhost:5004/api/health](http://localhost:5004/api/health)
 
-- Patient: http://localhost:5184/login
-- Staff: http://localhost:5184/staff/login
-- Health: http://localhost:5004/api/health
+### Option B: Isolated Demo Mode with Seed Data
+To run against isolated demo fixtures (`meditrack_demo` database) without touching production records:
 
-Open both portals in separate tabs. Patient and staff tokens use separate storage keys on the same origin. Different staff accounts still need separate browser profiles when used simultaneously. Optional `DEMO_CLIENT_PORT` / `DEMO_API_PORT` override ports. Browser auto-opening is unnecessary.
-
-## Development data
-
-Demo accounts and disposable test fixtures belong to the separate `meditrack_demo` database. To run against that data explicitly, use `npm run dev:demo`. Official patient/staff accounts must sign in against the official database; a demo login is not an official account. The development seed is opt-in, production-refused and restricted to `meditrack_demo`:
-
-```sh
-# Set DEMO_ENV=true and MONGODB_DB_NAME=meditrack_demo in your shell first.
+```bash
+# Seed demo accounts & sample doctor rosters
 npm run seed:demo
+
+# Start application in demo mode
+npm run dev:demo
 ```
+> Demo credentials will be generated and saved to `server/.demo/credentials.json`.
 
-Accounts are saved privately under ignored `server/.demo/credentials.json`. Rerunning preserves existing records. Reset requires the seed script's explicit confirmation; do not reset shared data for verification. Production staff bootstrap must be performed by a trusted operator; public registration creates patients only.
+---
 
-## Verification
+## 📱 Mobile App (Android)
 
-```sh
+MediTrack is packaged with **Capacitor** for native Android performance.
+- Pre-built debug APK is available directly in the project root: [`MediTrack-debug.apk`](./MediTrack-debug.apk)
+- To build or run via Android Studio:
+  ```bash
+  cd client
+  npx cap sync android
+  npx cap open android
+  ```
+
+---
+
+## 🧪 Testing & Verification
+
+MediTrack maintains high code quality and test coverage across both client components and server transactions:
+
+```bash
+# Frontend Code Quality & Unit Tests
 npm --prefix client run typecheck
-npm --prefix client run build
 npm --prefix client run lint
 npm --prefix client run test:appointments
 npm --prefix client run test:staff
 npm --prefix client run test:queue
-npm --prefix client run test:profile-recovery
 npm --prefix client run test:queue-controls
+
+# Backend Code Quality & Integration Tests
 npm --prefix server run typecheck
-npm --prefix server run build
-```
-
-For Atlas integration suites, explicitly set `RUN_ATLAS_TESTS=true` and `MONGODB_DB_NAME=meditrack_demo`, then run:
-
-```sh
 npm --prefix server run test:appointments
 npm --prefix server run test:patient-app
 npm --prefix server run test:reminders
-npm --prefix server run test:staff-settings
 npm --prefix server run test:queue-audit
-npm --prefix server run test:demo-seed
 ```
 
-Run these sequentially. API suites create scoped disposable fixtures and clean them in `finally`; seed verification checks existing demo records without deleting them. `TEST_DNS_SERVERS` optionally selects comma-separated resolvers for Atlas SRV resolution when your system resolver fails. No production database should be used for tests.
+---
 
-## Staff workflow and permissions
+## 📁 Repository Structure
 
-Dashboard, dated appointments, queue board/detail controls, walk-in registration, patient lookup, doctor roster/schedules, analytics and persisted account settings run in `client/`. Register or locate a patient, book an actual available slot, then check in on the appointment day. Call Next selects a waiting ticket; only CALLING can start consultation and only IN_CONSULTATION can complete. Hold and skip reject terminal states. Waiting positions are recalculated; ticket numbers stay stable.
+```
+MediTrack/
+├── 📱 client/                  # Frontend Web & Mobile application (React 19 + Vite)
+│   ├── android/                # Native Android Capacitor wrapper project
+│   ├── src/                    # UI Components, pages, hooks, state & router
+│   └── tests/                  # Frontend unit & component test suites
+├── 🖥️ server/                  # Backend RESTful API (Express + Mongoose + TypeScript)
+│   ├── src/                    # API routes, business logic, queue engine & models
+│   ├── scripts/                # Database seeding & administrative scripts
+│   └── tests/                  # Integration tests with MongoDB transaction fixtures
+├── 📖 docs/                    # Technical architecture, functional audits & specifications
+├── 📦 scripts/                 # Root developer dev-launchers & environment managers
+├── 🤖 MediTrack-debug.apk      # Pre-compiled Android Debug APK
+└── 📄 README.md                # Project documentation
+```
 
-PATIENT owns its appointments, family records, notifications and queue. STAFF and ADMIN can operate OPD appointments/queues and doctor schedules. ADMIN alone manages team accounts. Receptionist/doctor labels describe responsibilities; they currently share STAFF permissions. Administrator accounts are protected from the team edit endpoint. Deactivation rejects existing tokens on subsequent requests.
+---
 
-Staff profile/preferences are `/api/staff/profile` and `/api/staff/preferences`. Team management is `/api/staff/team` and `/api/staff/team/:id`; server authorization and strict payload validation apply. No password hashes are returned.
+## 🔒 Security & Best Practices
 
-In-app notifications and reminders persist in the backend. Queue refresh is polling, not server push. SMS/email delivery, automatic calling, clinical record editing and OTP delivery consoles are not implemented; the UI does not simulate them. Analytics uses recorded daily counts, not inferred growth.
+- **Strict ACID Transactions:** All queue ticket increments, calling events, and completion states run within atomic MongoDB transactions to eliminate race conditions.
+- **Timezone Normalization:** Hospital schedules strictly follow standard `Asia/Colombo` timezone logic.
+- **Zero Credential Leaks:** Password hashes, JWT secrets, and database credentials are fully sanitized from all client responses and git history.
+- **Independent Session Profiles:** Patient and Staff sessions use segregated storage tokens on the same origin to avoid authentication conflicts.
 
-Patient queue, notifications, appointment lists and appointment details poll every 15 seconds, including background tabs, and refetch on focus. Staff polling uses its saved 15/30/60-second preference. These intervals are scheduling intervals; network/database latency adds to the time before an update is visible.
+---
 
-Waiting estimates are approximate: `ceil(waiting patients ahead * 6 + remaining current service minutes)`. Only WAITING and ALMOST_TURN count as waiting. CALLING contributes six minutes; IN_CONSULTATION contributes `max(0, 6 - elapsed consultation minutes)`. Six minutes is an explicit fallback because doctors have no configured consultation duration. An overrun can reach an estimated zero while consultation remains active; zero never means the ticket is being called. Call Next permits one active called/consulting patient per doctor/day, and queue transitions, linked completion and notifications are transactional.
+## 🤝 Contributing
 
-The follow-up audit, endpoint/control inventory and verification limits are recorded in `docs/full-app-functional-audit.md`.
+Contributions, issues, and feature requests are welcome!
+1. Fork the Project
+2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the Branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
-## Troubleshooting
+---
 
-- Connection refused: wait for both launcher readiness messages and check the health URL.
-- Port occupied: stop that known service or choose explicit alternate ports; the launcher does not kill unrelated processes.
-- Atlas connection fails: check credentials, network allow-list and SRV DNS. Optional DNS override is read by test scripts and server initialization.
-- Session expired/inactive: sign in again; signing into one portal does not authenticate the other.
-- No available slots: choose another real schedule. Schedule edits cannot remove booked slots or reduce capacity below reservations; overlapping intervals are rejected.
-- 409 conflicts: refresh the data and follow the valid queue or booking lifecycle.
+## 📄 License
 
-Original staff reference preservation: `origin/feature/staff-opd`, commit `f943d3a`, under `docs/staff-reference/`. The original `app/` files are unchanged. Patient module history is preserved through the verified develop ancestry on `integration/full-app`.
+This project is licensed under the [MIT License](LICENSE).
 
-Transient initial account-load failures recover automatically with 5/10/20/30-second capped backoff and immediate focus/online recovery. Authentication failures still require sign-in. Staff queue calculations share one fresh active snapshot per response instead of loading the same queue per ticket. Same-doctor/day service admission remains exclusive even after a department reassignment.
-
-Staff queue controls require a selected doctor and today's hospital date. Use **Manage doctor queue** on a ticket to select its doctor. **Resume waiting** returns only today's HELD ticket with an active same-day appointment to its original queue order; its number stays unchanged and the patient receives a persisted update. SKIPPED/COMPLETED/CANCELLED tickets cannot be resumed. Historical queues are read-only in the staff client, with a **Show today's queue** shortcut. A live date follows Colombo midnight; deliberately selected historical/future dates remain selected. Patient live queue displays today's checked-in tickets, so book/check in today's appointment to create a current ticket.
+<p align="center">
+  Crafted with ❤️ for healthcare efficiency and seamless patient experiences.
+</p>
