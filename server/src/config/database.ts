@@ -5,7 +5,12 @@ import { env } from './env.js';
 
 // Set public DNS servers to resolve MongoDB Atlas SRV records reliably on Windows
 try {
-  if(process.env.TEST_DNS_SERVERS)dns.setServers(process.env.TEST_DNS_SERVERS.split(','));
+  const dnsServers = (process.env.TEST_DNS_SERVERS || '8.8.8.8,1.1.1.1').split(',');
+  dns.setServers(dnsServers);
+  const resolver = new dns.promises.Resolver();
+  resolver.setServers(dnsServers);
+  dns.promises.resolveSrv = resolver.resolveSrv.bind(resolver);
+  dns.promises.resolveTxt = resolver.resolveTxt.bind(resolver);
 } catch {
   // Fallback to default DNS configuration
 }

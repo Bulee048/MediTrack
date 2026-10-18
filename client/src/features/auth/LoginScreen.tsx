@@ -10,9 +10,11 @@ import { setAuthToken } from './auth.storage';
 import { AuthShell } from './AuthShell';
 import { loginFormSchema, type LoginFormValues } from './auth.schemas';
 import { buildLoginInput, loginPatient, loginStaff } from './auth.service';
+import { useNavigate, Link } from 'react-router-dom';
 import { getAuthErrorMessage } from './auth.utils';
 
 export default function LoginScreen({ staff = false }: { staff?: boolean }) {
+  const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
 
   const {
@@ -30,7 +32,7 @@ export default function LoginScreen({ staff = false }: { staff?: boolean }) {
     mutationFn: staff ? loginStaff : loginPatient,
     onSuccess: (response) => {
       setAuthToken(response.token);
-      window.location.assign(staff ? '/staff' : '/app/home');
+      navigate(staff ? '/staff' : '/app/home', { replace: true });
     },
     onError: (error) => {
       setError('root', { message: getAuthErrorMessage(error, 'Unable to sign in') });
@@ -46,15 +48,15 @@ export default function LoginScreen({ staff = false }: { staff?: boolean }) {
       accountTitle={staff ? "Staff Account" : "Patient Account"}
       title={staff ? "Staff Sign In" : "Welcome Back"}
       description="Enter your email or phone number to continue securely."
-      footer={staff ? <a href="/login">Patient sign in</a> :
+      footer={staff ? <Link to="/login">Patient sign in</Link> :
         <>
           New here?{' '}
-          <a
-            href="/register"
+          <Link
+            to="/register"
             className="font-semibold text-brand-600 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 rounded-sm"
           >
             Register
-          </a>
+          </Link>
         </>
       }
     >

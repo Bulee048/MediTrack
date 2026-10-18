@@ -48,12 +48,9 @@ export class QueueService {
   } | null> {
     validateObjectId(patientId, 'patient ID');
 
-    const today = QueueCalculationService.getQueueDayRange();
-
     let ticket = await QueueTicket.findOne({
       patient: patientId,
       status: { $in: ['WAITING', 'ALMOST_TURN', 'CALLING', 'IN_CONSULTATION', 'HELD'] },
-      createdAt: today,
     })
       .sort({ createdAt: -1, _id: -1 })
       .populate('patient', 'name email phone')
@@ -186,10 +183,15 @@ export class QueueService {
   }): Promise<IQueueTicket[]> {
     const filter: Record<string, unknown> = {};
 
-    const queueDate = params.date
-      ? new Date(params.date)
-      : new Date();
-    filter.createdAt = QueueCalculationService.getQueueDayRange(queueDate);
+    if (params.date) {
+      filter.createdAt = QueueCalculationService.getQueueDayRange(new Date(params.date));
+    } else if (params.status) {
+      // If status filter is passed, filter on that status
+      filter.status = params.status;
+    } else {
+      // Default staff desk view: all active queue tickets currently waiting or being served
+      filter.status = { $in: ['WAITING', 'ALMOST_TURN', 'CALLING', 'IN_CONSULTATION', 'HELD'] };
+    }
 
     if (params.departmentId) {
       validateObjectId(params.departmentId, 'department ID');

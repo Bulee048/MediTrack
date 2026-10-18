@@ -42,3 +42,10 @@ Thumbs.db
 
 # Development-only generated demo credentials
 .demo/
+
+# Binary & mobile builds
+*.apk
+client/android/
+
+# Temp scripts
+set_staff_pwd.cjs

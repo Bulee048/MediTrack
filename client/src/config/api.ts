@@ -1,7 +1,21 @@
 import axios from 'axios';
 import { useSyncExternalStore } from 'react';
 import { AUTH_CHANGED_EVENT, clearAuthToken, getAuthToken, getAuthSessionVersion, setAuthToken } from '@/features/auth/auth.storage';
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+
+function resolveApiBaseUrl(): string {
+  if (typeof window !== 'undefined' && localStorage.getItem('meditrack.custom_api_url')) {
+    return localStorage.getItem('meditrack.custom_api_url')!;
+  }
+  if (import.meta.env.VITE_API_BASE_URL) {
+    return import.meta.env.VITE_API_BASE_URL;
+  }
+  if (typeof window !== 'undefined' && window.location?.hostname && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+    return `http://${window.location.hostname}:5004/api`;
+  }
+  return 'http://192.168.2.236:5004/api';
+}
+
+export const API_BASE_URL = resolveApiBaseUrl();
 function subscribe(onChange: () => void) {
   window.addEventListener(AUTH_CHANGED_EVENT, onChange);
   return () => window.removeEventListener(AUTH_CHANGED_EVENT, onChange);
